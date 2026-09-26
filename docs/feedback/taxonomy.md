@@ -36,3 +36,9 @@ The Worker needs a Cloudflare Workers AI `[ai]` binding named `AI`. Classificati
 ## Dependencies
 
 This feature uses D1 migrations and outbox/audit tables, Auth0 role/scopes through the Worker identity adapter, the Cloudflare Workers AI binding, and the existing feedback submission flow. The model input/output shape follows [Cloudflare's Granite 4.0 H Micro documentation](https://developers.cloudflare.com/workers-ai/models/granite-4.0-h-micro/), and binding syntax follows [Cloudflare Workers AI bindings](https://developers.cloudflare.com/workers-ai/configuration/bindings/).
+
+## Live acceptance
+
+On 2026-09-26, deployed Worker version `4e4165b1-cc2f-4e58-9a59-2be7a4cb40c4` accepted one fictional Toronto sandbox streetlight report. Production D1 saved provider `workers-ai`, model `@cf/ibm-granite/granite-4.0-h-micro`, published taxonomy version `1`, category `streetlights_signals`, intent `complaint`, model-reported confidence `0.95`, and review outcome `accepted`. The submission and classification IDs are `fb_89c88bd60db28a39b9e47faaa100d35a` and `fc_c7526048c45c44aca209ea60a64b8330`. The private receipt token and original message were not written to verification logs.
+
+An earlier live call on the prior Worker version produced `other_or_unsure` with `needs_review` when the model response could not be parsed. The classifier now accepts both `response` and `choices[0].message.content` provider shapes and records a specific non-sensitive fallback reason. The live test ran on the verified Workers Free account. [Cloudflare's pricing documentation](https://developers.cloudflare.com/workers-ai/platform/pricing/) states that its 10,000 daily free Neurons have no paid overage on Workers Free; excess calls fail until reset. Confidence is the model's self-report, not a calibrated probability.
