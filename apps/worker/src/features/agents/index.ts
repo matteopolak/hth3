@@ -332,7 +332,10 @@ async function sendMessage(
   const previousIssue = [...previousMessages]
     .reverse()
     .find(
-      (item) => item.role === "user" && suggestsServiceIssue(item.content),
+      (item) =>
+        item.role === "user" &&
+        (suggestsServiceIssue(item.content) ||
+          requestsFeedbackPreparation(item.content)),
     )?.content;
   const clarifiesToronto =
     /\bToronto\b/i.test(safeMessage) &&
@@ -346,11 +349,18 @@ async function sendMessage(
       previousAssistant ?? "",
     ) &&
     !!previousIssue;
+  const resumesFeedbackPreparation =
+    requestsFeedbackPreparation(safeMessage) &&
+    /feedback preview|report draft|proposal card|aperçu du signalement|brouillon du signalement/i.test(
+      previousAssistant ?? "",
+    ) &&
+    !!previousIssue;
   const residentIssueText =
     conversation.mode === "resident"
-      ? clarifiesToronto || confirmsSeparateIssue
+      ? clarifiesToronto || confirmsSeparateIssue || resumesFeedbackPreparation
         ? previousIssue
-        : suggestsServiceIssue(safeMessage)
+        : suggestsServiceIssue(safeMessage) ||
+            requestsFeedbackPreparation(safeMessage)
           ? safeMessage
           : null
       : null;
@@ -413,7 +423,8 @@ async function sendMessage(
     } else if (
       /\bToronto\b/i.test(residentIssueText) ||
       clarifiesToronto ||
-      confirmsSeparateIssue
+      confirmsSeparateIssue ||
+      resumesFeedbackPreparation
     ) {
       assistantText =
         conversation.locale === "fr"
@@ -481,6 +492,24 @@ async function sendMessage(
           : "Which municipality did this happen in? I can help prepare a report.";
     }
   }
+  if (proposal && !residentIssueText)
+    assistantText =
+      conversation.locale === "fr"
+        ? "L'aperçu de l'action est prêt. Vérifiez-le avant de l'approuver."
+        : "The action preview is ready. Review it before approving.";
+  const toolStatus = (toolResult as { status?: number } | undefined)?.status;
+  if (
+    !proposal &&
+    (claimsUnverifiedAction(assistantText) ||
+      ((toolStatus === undefined || toolStatus >= 400) &&
+        /\b(?:preview|proposal|draft|prepared|created|submitted|sent|filed|published|updated|closed)\b/i.test(
+          assistantText,
+        )))
+  )
+    assistantText =
+      conversation.locale === "fr"
+        ? "Je n'ai pas préparé d'aperçu pour le moment. Décrivez le problème et sa municipalité pour que je puisse le préparer."
+        : "I haven't prepared a preview yet. Describe the issue and municipality so I can prepare one.";
   assistantText = assistantText
     .replace(/\p{Extended_Pictographic}/gu, "")
     .trim();
@@ -1306,7 +1335,30 @@ function appearsEmergency(message: string): boolean {
 }
 
 function suggestsServiceIssue(message: string): boolean {
-  return /\b(broken|unsafe|complaint|not working|service failed|pothole|missed garbage|water outage|noise complaint|streetlight|défectueux|problème|plainte|service en panne)\b/i.test(
+  return /\b(broken|damaged|unsafe|complaint|not working|service failed|pothole|missed garbage|water outage|noise complaint|streetlight|défectueux|endommagé|endommagée|problème|plainte|service en panne)\b/i.test(
+    message,
+  );
+}
+
+function requestsFeedbackPreparation(message: string): boolean {
+  if (
+    /\b(?:do not|don't|never|ne pas)\s+(?:prepare|draft|create|make|show|start|open|call|préparer|créer)\b/i.test(
+      message,
+    )
+  )
+    return false;
+  return (
+    /\b(?:prepare|draft|create|make|show|start|open|call|préparer|créer|montre|rédiger)\b/i.test(
+      message,
+    ) &&
+    /\b(?:feedback|complaint|report|proposal|preview|signalement|plainte|aperçu|brouillon)\b/i.test(
+      message,
+    )
+  );
+}
+
+function claimsUnverifiedAction(message: string): boolean {
+  return /\b(?:i(?:'ve| have)?(?: now| just)?\s+(?:prepared|created|drafted|called|submitted|sent|filed|published|updated|closed)|(?:proposal card|action preview|feedback preview|report draft)\s+(?:is|has been)\s+(?:ready|displayed|prepared|created)|(?:here(?:'s| is)|below is)\s+(?:the|your|a)\s+(?:feedback\s+)?(?:report\s+)?(?:preview|draft|proposal)|(?:j['’]ai|je viens de)\s+(?:préparé|créé|rédigé|envoyé|soumis)|(?:aperçu|brouillon)\s+(?:est|a été)\s+(?:prêt|préparé|créé))/i.test(
     message,
   );
 }
