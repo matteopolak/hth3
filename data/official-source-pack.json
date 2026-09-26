@@ -143,7 +143,16 @@
         "municipalityName": "Ottawa"
       },
       "termsUrl": "https://www.ontario.ca/page/terms-use",
-      "termsReview": "Ontario welcomes linking; address verified on official location page; hours and services stay on publisher site."
+      "termsReview": "Ontario welcomes linking; address verified on official location page; hours and services stay on publisher site.",
+      "serviceCategory": "government",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "detailsSourceUrl": "https://www.ontario.ca/locations/serviceontario/st-joseph-ottawa",
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "address": "2864 St. Joseph Boulevard, Ottawa, Ontario K1C 1G7",
+      "publicAccessSummary": "ServiceOntario lists this as an in-person location. Walk-ins are limited by demand; check the location page before visiting.",
+      "servicesSummary": "Driver licence and vehicle registration services are listed for this location; confirm the specific transaction on the official page.",
+      "accessibilitySummary": "The location page lists accessible parking, entrance, counter, seating and public washroom."
     },
     {
       "id": "toronto-city-hall-counters",
@@ -161,7 +170,15 @@
         "municipalityName": "Toronto"
       },
       "termsUrl": "https://www.toronto.ca/home/copyright-information/",
-      "termsReview": "Link and original short description only; address checked on official page; no hours or service guarantee."
+      "termsReview": "Link and original short description only; address checked on official page; no hours or service guarantee.",
+      "serviceCategory": "government",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "detailsSourceUrl": "https://www.toronto.ca/services-payments/venues-facilities-bookings/booking-city-facilities/counter-services-at-city-hall-civic-centres/",
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "address": "100 Queen Street West, Toronto, Ontario",
+      "publicAccessSummary": "City Hall has in-person inquiry, payment and information counters. Some services require an appointment.",
+      "servicesSummary": "Property tax and utility inquiries and payments, parking violation payments, and help finding City services are listed on the official page."
     },
     {
       "id": "bc-govtogetherbc",
@@ -456,8 +473,15 @@
       },
       "termsUrl": "https://www.alberta.ca/disclaimer",
       "termsReview": "Official address and coordinates checked; link metadata and original summary only; hours and services remain on publisher site.",
-      "checkedAt": "2026-09-26T19:50:00.000Z",
-      "expiresAt": "2026-10-03T19:50:00.000Z"
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "serviceCategory": "government",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "detailsSourceUrl": "https://www.alberta.ca/find-an-alberta-supports-centre",
+      "address": "2752 Sunridge Way NE, Calgary, Alberta",
+      "publicAccessSummary": "Alberta lists this as an in-person Alberta Supports Centre; check the official finder before visiting.",
+      "servicesSummary": "Income Support benefit inquiries and changes, and document submission for active clients are listed for this centre.",
+      "coordinatesEvidenceUrl": "https://www.alberta.ca/find-an-alberta-supports-centre"
     },
     {
       "id": "alberta-supports-edmonton-central",
@@ -480,8 +504,15 @@
       },
       "termsUrl": "https://www.alberta.ca/disclaimer",
       "termsReview": "Official address and coordinates checked; link metadata and original summary only; hours and services remain on publisher site.",
-      "checkedAt": "2026-09-26T19:50:00.000Z",
-      "expiresAt": "2026-10-03T19:50:00.000Z"
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "serviceCategory": "government",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "detailsSourceUrl": "https://www.alberta.ca/find-an-alberta-supports-centre",
+      "address": "10242 105 Street, Edmonton, Alberta",
+      "publicAccessSummary": "Alberta lists this as an in-person Alberta Supports Centre; check the official finder before visiting.",
+      "servicesSummary": "Income Support benefit inquiries and changes, and document submission for active clients are listed for this centre.",
+      "coordinatesEvidenceUrl": "https://www.alberta.ca/find-an-alberta-supports-centre"
     },
     {
       "id": "alberta-supports-canmore",
@@ -504,8 +535,15 @@
       },
       "termsUrl": "https://www.alberta.ca/disclaimer",
       "termsReview": "Official address and coordinates checked; link metadata and original summary only; hours and services remain on publisher site.",
-      "checkedAt": "2026-09-26T19:50:00.000Z",
-      "expiresAt": "2026-10-03T19:50:00.000Z"
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "serviceCategory": "government",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "detailsSourceUrl": "https://www.alberta.ca/find-an-alberta-supports-centre",
+      "address": "800 Railway Avenue, Canmore, Alberta",
+      "publicAccessSummary": "Alberta lists this as an in-person Alberta Supports Centre; check the official finder before visiting.",
+      "servicesSummary": "Income Support benefit inquiries and changes, and document submission for active clients are listed for this centre.",
+      "coordinatesEvidenceUrl": "https://www.alberta.ca/find-an-alberta-supports-centre"
     },
     {
       "id": "alberta-supports-grande-prairie",
@@ -528,8 +566,173 @@
       },
       "termsUrl": "https://www.alberta.ca/disclaimer",
       "termsReview": "Official address and coordinates checked; link metadata and original summary only; hours and services remain on publisher site.",
-      "checkedAt": "2026-09-26T19:50:00.000Z",
-      "expiresAt": "2026-10-03T19:50:00.000Z"
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "serviceCategory": "government",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "detailsSourceUrl": "https://www.alberta.ca/find-an-alberta-supports-centre",
+      "address": "100 Towne Centre Mall, 9845 99 Avenue, Grande Prairie, Alberta",
+      "publicAccessSummary": "Alberta lists this as an in-person Alberta Supports Centre; check the official finder before visiting.",
+      "servicesSummary": "Income Support benefit inquiries and changes, and document submission for active clients are listed for this centre.",
+      "coordinatesEvidenceUrl": "https://www.alberta.ca/find-an-alberta-supports-centre"
+    },
+    {
+      "area": "nearby",
+      "kind": "service_location",
+      "publisher": "Vancouver Public Library",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-BC-VAN",
+        "name": "Vancouver, British Columbia",
+        "municipalityCode": "CA-BC-VAN",
+        "municipalityName": "Vancouver"
+      },
+      "termsUrl": "https://www.vpl.ca/about/policies",
+      "termsReview": "Link and original short location summary only; no VPL page text republished. Coordinates are from the City of Vancouver Open Data libraries dataset under its open data licence and were cross-checked against the current branch page.",
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "serviceCategory": "library",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "coordinatesEvidenceUrl": "https://opendata.vancouver.ca/explore/dataset/libraries/",
+      "id": "vpl-central-library",
+      "title": "Vancouver Public Library — Central Library",
+      "summary": "Public library at 350 West Georgia Street, Vancouver. Visit the branch page for collections, facilities and hours.",
+      "url": "https://www.vpl.ca/branches/central",
+      "coordinates": {
+        "latitude": 49.2797,
+        "longitude": -123.1156
+      },
+      "address": "350 West Georgia Street, Vancouver, British Columbia V6B 6B1",
+      "publicAccessSummary": "Vancouver Public Library lists Central Library as a public branch with visitor information and directions.",
+      "servicesSummary": "Library collections, information services, computers and accessible services are described on the branch page.",
+      "accessibilitySummary": "The branch page lists street-level access, automatic doors and low service counters.",
+      "detailsSourceUrl": "https://www.vpl.ca/branches/central"
+    },
+    {
+      "area": "nearby",
+      "kind": "service_location",
+      "publisher": "Vancouver Public Library",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-BC-VAN",
+        "name": "Vancouver, British Columbia",
+        "municipalityCode": "CA-BC-VAN",
+        "municipalityName": "Vancouver"
+      },
+      "termsUrl": "https://www.vpl.ca/about/policies",
+      "termsReview": "Link and original short location summary only; no VPL page text republished. Coordinates are from the City of Vancouver Open Data libraries dataset under its open data licence and were cross-checked against the current branch page.",
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "serviceCategory": "library",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "coordinatesEvidenceUrl": "https://opendata.vancouver.ca/explore/dataset/libraries/",
+      "id": "vpl-kitsilano-library",
+      "title": "Vancouver Public Library — Kitsilano Branch",
+      "summary": "Public library at 2425 Macdonald Street, Vancouver. Visit the branch page for services and hours.",
+      "url": "https://www.vpl.ca/branches/kitsilano",
+      "coordinates": {
+        "latitude": 49.2647,
+        "longitude": -123.1687
+      },
+      "address": "2425 Macdonald Street, Vancouver, British Columbia V6K 3Y9",
+      "publicAccessSummary": "Vancouver Public Library lists Kitsilano as a public branch with visitor information and directions.",
+      "servicesSummary": "Public computers, printing, copying, scanning, Wi-Fi and library collections are listed on the branch page.",
+      "accessibilitySummary": "The branch page lists a street-level entrance with automatic door, accessible washroom and worktables.",
+      "detailsSourceUrl": "https://www.vpl.ca/branches/kitsilano"
+    },
+    {
+      "area": "nearby",
+      "kind": "service_location",
+      "publisher": "Vancouver Public Library",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-BC-VAN",
+        "name": "Vancouver, British Columbia",
+        "municipalityCode": "CA-BC-VAN",
+        "municipalityName": "Vancouver"
+      },
+      "termsUrl": "https://www.vpl.ca/about/policies",
+      "termsReview": "Link and original short location summary only; no VPL page text republished. Coordinates are from the City of Vancouver Open Data libraries dataset under its open data licence and were cross-checked against the current branch page.",
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "serviceCategory": "library",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "coordinatesEvidenceUrl": "https://opendata.vancouver.ca/explore/dataset/libraries/",
+      "id": "vpl-mount-pleasant-library",
+      "title": "Vancouver Public Library — Mount Pleasant Branch",
+      "summary": "Public library at 1 Kingsway, Vancouver. Visit the branch page for services and hours.",
+      "url": "https://www.vpl.ca/branches/mount-pleasant",
+      "coordinates": {
+        "latitude": 49.2643,
+        "longitude": -123.1002
+      },
+      "address": "1 Kingsway, Vancouver, British Columbia V5T 3H7",
+      "publicAccessSummary": "Vancouver Public Library lists Mount Pleasant as a public branch with visitor information and directions.",
+      "servicesSummary": "Library collections and branch services are listed on the official page.",
+      "detailsSourceUrl": "https://www.vpl.ca/branches/mount-pleasant"
+    },
+    {
+      "id": "calgary-thornhill-recreation-centre",
+      "area": "nearby",
+      "kind": "service_location",
+      "title": "Thornhill Aquatic & Recreation Centre",
+      "summary": "City recreation centre at 6715 Centre Street NW, Calgary. Check the drop-in schedule and admission details before visiting.",
+      "url": "https://www.calgary.ca/rec-locations/pools/thornhill.html",
+      "publisher": "City of Calgary",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-AB-CGY",
+        "name": "Calgary, Alberta",
+        "municipalityCode": "CA-AB-CGY",
+        "municipalityName": "Calgary"
+      },
+      "coordinates": {
+        "latitude": 51.112577,
+        "longitude": -114.0653043
+      },
+      "termsUrl": "https://www.calgary.ca/info-requests/terms-of-use.html",
+      "termsReview": "City page linked with an original short summary; no site text copied or automated page extraction. Coordinates are from the City of Calgary Open Data recreation facilities dataset.",
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "serviceCategory": "community",
+      "address": "6715 Centre Street NW, Calgary, Alberta",
+      "publicAccessSummary": "The City lists public drop-in swimming and fitness; pool and weight rooms can be used without an appointment, subject to schedule and admission.",
+      "servicesSummary": "Public swimming, lane swimming, fitness classes and registered recreation programs are listed on the City page.",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "detailsSourceUrl": "https://www.calgary.ca/rec-locations/pools/thornhill.html",
+      "coordinatesEvidenceUrl": "https://data.calgary.ca/d/hxfu-6d96"
+    },
+    {
+      "id": "translink-waterfront-service-centre",
+      "area": "nearby",
+      "kind": "service_location",
+      "title": "TransLink Customer Service Centre — Waterfront",
+      "summary": "In-person transit information counter at Waterfront Station, Vancouver. The map pin marks the station; use the official address for the counter.",
+      "url": "https://www.translink.ca/contactus",
+      "publisher": "TransLink",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-BC-VAN",
+        "name": "Vancouver, British Columbia",
+        "municipalityCode": "CA-BC-VAN",
+        "municipalityName": "Vancouver"
+      },
+      "coordinates": {
+        "latitude": 49.286075484422376,
+        "longitude": -123.11173815504947
+      },
+      "termsUrl": "https://www.translink.ca/terms-and-conditions",
+      "termsReview": "Link and original short description only; TransLink site content is not copied. Coordinate is an approximate Waterfront Station point from City of Vancouver Open Data, not the precise desk entrance.",
+      "checkedAt": "2026-09-26T20:25:00.000Z",
+      "expiresAt": "2026-10-03T20:25:00.000Z",
+      "serviceCategory": "transit",
+      "address": "#54 – 601 West Cordova Street, Vancouver, British Columbia V6B 1G1",
+      "publicAccessSummary": "TransLink lists an in-person Customer Service Centre at Waterfront Station. The map point indicates the station, not the exact counter entrance.",
+      "servicesSummary": "Transit customer information and assistance with West Coast Express questions are listed by TransLink; see the official page for current services.",
+      "detailsCheckedAt": "2026-09-26T20:25:00.000Z",
+      "detailsSourceUrl": "https://www.translink.ca/contactus",
+      "coordinatesEvidenceUrl": "https://opendata.vancouver.ca/explore/dataset/rapid-transit-stations/",
+      "mapLocationPrecision": "station"
     }
   ]
 }

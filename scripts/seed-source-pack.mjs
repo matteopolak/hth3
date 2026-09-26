@@ -54,10 +54,20 @@ for (const item of pack.records) {
   )} ON CONFLICT(id) DO UPDATE SET title=excluded.title, summary=excluded.summary, source_url=excluded.source_url, publisher=excluded.publisher, terms_url=excluded.terms_url, verified_at=excluded.verified_at, expires_at=excluded.expires_at, payload_hash=excluded.payload_hash, evidence_url=excluded.evidence_url, freshness_state=excluded.freshness_state, updated_at=excluded.updated_at;`);
   if (item.kind) {
     const coordinates = item.coordinates;
-    if (coordinates && (item.kind !== "service_location" || !Number.isFinite(coordinates.latitude) || !Number.isFinite(coordinates.longitude))) {
+    if (coordinates && (item.kind !== "service_location" || !Number.isFinite(coordinates.latitude) || !Number.isFinite(coordinates.longitude) || Math.abs(coordinates.latitude) > 90 || Math.abs(coordinates.longitude) > 180)) {
       throw new Error(`Invalid coordinates: ${item.id}`);
     }
     sql.push(`INSERT INTO source_record_details ${row(["record_id", "kind", "latitude", "longitude"], [recordId, item.kind, coordinates?.latitude ?? null, coordinates?.longitude ?? null])} ON CONFLICT(record_id) DO UPDATE SET kind=excluded.kind, latitude=excluded.latitude, longitude=excluded.longitude;`);
+  }
+  if (item.area === "nearby") {
+    const categories = ["government", "library", "community", "transit", "other"];
+    if (item.kind !== "service_location" || !categories.includes(item.serviceCategory) || !item.address || !item.publicAccessSummary || !item.servicesSummary || !/^https:\/\//.test(item.detailsSourceUrl) || !Number.isFinite(Date.parse(item.detailsCheckedAt)) || Date.parse(item.detailsCheckedAt) > Date.parse(expiresAt) || (item.coordinates && !/^https:\/\//.test(item.coordinatesEvidenceUrl))) {
+      throw new Error(`Incomplete service location evidence: ${item.id}`);
+    }
+    sql.push(`INSERT INTO service_location_metadata ${row(
+      ["record_id", "service_category", "address", "public_access_summary", "services_summary", "hours_summary", "accessibility_summary", "details_verified_at", "details_source_url", "coordinates_source_url"],
+      [recordId, item.serviceCategory, item.address, item.publicAccessSummary, item.servicesSummary, item.hoursSummary ?? null, item.accessibilitySummary ?? null, item.detailsCheckedAt, item.detailsSourceUrl, item.coordinatesEvidenceUrl ?? null],
+    )} ON CONFLICT(record_id) DO UPDATE SET service_category=excluded.service_category, address=excluded.address, public_access_summary=excluded.public_access_summary, services_summary=excluded.services_summary, hours_summary=excluded.hours_summary, accessibility_summary=excluded.accessibility_summary, details_verified_at=excluded.details_verified_at, details_source_url=excluded.details_source_url, coordinates_source_url=excluded.coordinates_source_url;`);
   }
   sql.push(`INSERT INTO discovery_record_areas ${row(["record_id", "area"], [recordId, item.area])} ON CONFLICT(record_id) DO UPDATE SET area=excluded.area;`);
 }
