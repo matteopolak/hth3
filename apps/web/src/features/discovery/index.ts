@@ -94,6 +94,20 @@ const copy = {
     practice: "Show practice records",
     noResults: "No matching records from reviewed sources yet.",
     noSaved: "Nothing saved yet.",
+    emptyJobs: "No reviewed job sources match",
+    emptySupport: "No matching support sources",
+    emptyFunding: "No matching funding sources",
+    emptyNearby: "No matching service locations",
+    emptyParticipation: "No matching participation sources",
+    emptyAll: "No matching sources",
+    emptyFiltered: "Try another keyword or city, or clear your search.",
+    emptyUnfiltered: "Reviewed sources will appear here when available.",
+    emptySaved: "Save a source to keep it here with your checklist.",
+    jobBankIntro:
+      "Search current openings directly on the Government of Canada’s Job Bank.",
+    jobBankAction: "Search Job Bank",
+    jobBankSource: "Government of Canada · jobbank.gc.ca",
+    clearSearch: "Clear search",
     loading: "Loading sources…",
     source: "Source",
     evidence: "Evidence",
@@ -163,6 +177,23 @@ const copy = {
     noResults:
       "Aucun dossier correspondant des sources examinées pour le moment.",
     noSaved: "Aucun élément enregistré.",
+    emptyJobs: "Aucune source d’emplois examinée ne correspond",
+    emptySupport: "Aucune source d’aide correspondante",
+    emptyFunding: "Aucune source de financement correspondante",
+    emptyNearby: "Aucun point de service correspondant",
+    emptyParticipation: "Aucune source de participation correspondante",
+    emptyAll: "Aucune source correspondante",
+    emptyFiltered:
+      "Essayez un autre mot-clé ou une autre ville, ou effacez la recherche.",
+    emptyUnfiltered:
+      "Les sources examinées apparaîtront ici lorsqu’elles seront disponibles.",
+    emptySaved:
+      "Enregistrez une source pour la retrouver ici avec votre liste.",
+    jobBankIntro:
+      "Cherchez les offres actuelles directement sur le Guichet-Emplois du gouvernement du Canada.",
+    jobBankAction: "Chercher sur le Guichet-Emplois",
+    jobBankSource: "Gouvernement du Canada · jobbank.gc.ca",
+    clearSearch: "Effacer la recherche",
     loading: "Chargement des sources…",
     source: "Source",
     evidence: "Preuve",
@@ -346,23 +377,17 @@ export function createDiscoveryPage({
       );
       root.append(alert);
     }
+    if (!displayed.length) {
+      if (loading) root.append(node("p", "discovery-loading", text.loading));
+      else if (!error) root.append(emptyState());
+      return;
+    }
     const workspace = node(
       "div",
       `discovery-workspace ${mobileDetail ? "is-detail-open" : ""} ${selected ? "" : "is-empty"}`,
     );
     const results = node("section", "discovery-results");
-    if (loading && !displayed.length)
-      results.append(node("p", "discovery-empty", text.loading));
-    else if (!error && !displayed.length)
-      results.append(
-        node(
-          "p",
-          "discovery-empty",
-          area === "saved" ? text.noSaved : text.noResults,
-        ),
-      );
-    else if (display === "map" && area === "nearby")
-      results.append(map(displayed));
+    if (display === "map" && area === "nearby") results.append(map(displayed));
     else {
       for (const item of displayed) results.append(row(item));
       if (area !== "saved" && records.length < total) {
@@ -382,6 +407,60 @@ export function createDiscoveryPage({
     );
     workspace.append(results, panel);
     root.append(workspace);
+  }
+
+  function emptyState(): HTMLElement {
+    const section = node("section", "discovery-no-results");
+    const titleKey = {
+      all: "emptyAll",
+      jobs: "emptyJobs",
+      support: "emptySupport",
+      funding: "emptyFunding",
+      nearby: "emptyNearby",
+      participation: "emptyParticipation",
+      saved: "noSaved",
+    } as const;
+    section.append(node("h2", "", text[titleKey[area]]));
+    if (area === "saved") {
+      section.append(node("p", "", text.emptySaved));
+      return section;
+    }
+    const hasFilters = Boolean(query || location || currentOnly);
+    section.append(
+      node("p", "", hasFilters ? text.emptyFiltered : text.emptyUnfiltered),
+    );
+    const actions = node("div", "discovery-no-results-actions");
+    if (area === "jobs") {
+      section.append(node("p", "", text.jobBankIntro));
+      const jobBank = node(
+        "a",
+        "discovery-button discovery-button-primary",
+        text.jobBankAction,
+      );
+      jobBank.href = "https://www.jobbank.gc.ca/jobsearch/jobsearch";
+      jobBank.target = "_blank";
+      jobBank.rel = "noopener noreferrer";
+      actions.append(jobBank);
+    }
+    if (hasFilters) {
+      actions.append(
+        action(text.clearSearch, "discovery-button", () => {
+          query = "";
+          queryDraft = "";
+          location = "";
+          locationDraft = "";
+          currentOnly = false;
+          offset = 0;
+          void refresh();
+        }),
+      );
+    }
+    if (actions.childElementCount) section.append(actions);
+    if (area === "jobs")
+      section.append(
+        node("small", "discovery-no-results-source", text.jobBankSource),
+      );
+    return section;
   }
 
   function filters(): HTMLElement {

@@ -10,6 +10,8 @@ The resident web workspace has a source-backed discovery view for jobs, support,
 
 The Nearby area offers a list/map switch when records include verified coordinates. The map plots the source positions in a schematic coordinate view without a basemap or inferred distance. Search by city or location to narrow the alphabetical source directory; the client never represents the unfiltered directory as distance ranked. Service location rows show the source address without repeating the hours caveat, which remains on the detail.
 
+When a search has no reviewed records, the view shows a compact empty state and offers to clear active filters. Jobs also links directly to the Government of Canada’s [Job Bank search](https://www.jobbank.gc.ca/jobsearch/jobsearch) for current openings. This link is an external search handoff, not an imported posting or a submission recorded by Envoy.
+
 Signed-in applicants can save a record and maintain up to 12 personal checklist steps. The view calls `/api/v1/discovery/saved` and passes `includeSamples=true` only after the person chooses to show practice records. Guest search works without a token; saving requires an applicant token.
 
 The shell can pass `onPrepare(recordId)` to route a permitted `official_external` record to Envoy’s external preparation page. Jobs, support, and funding use a “Prepare application” action; service locations and consultations use visit/participation wording. The publisher handoff remains a separate action. Practice records and records without a permitted official handoff do not show this preparation action.
