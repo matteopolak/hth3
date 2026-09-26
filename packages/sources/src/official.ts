@@ -9,7 +9,7 @@ export interface OfficialIngestRecord {
   id: string;
   sourceId: string;
   externalId: string;
-  kind: OfficialRecordKind;
+  kind: OfficialRecordKind | null;
   title: string;
   summary: string;
   sourceUrl: string;
@@ -83,6 +83,20 @@ const FINDERS = [
       "Choose a funding category and continue to the official program site.",
     sourceUrl: "https://www.canada.ca/en/government/grants-funding.html",
     expectedTitle: "Grants and funding",
+    publisher: "Government of Canada",
+    jurisdictionCode: "CA",
+    jurisdictionName: "Canada",
+    jurisdictionLevel: "federal",
+    termsUrl: CANADA_TERMS,
+    maxBytes: 1_000_000,
+  },
+  {
+    sourceId: "federal-consultations-finder",
+    kind: null,
+    title: "Consulting with Canadians",
+    summary: "Search federal consultations and continue to the official participation page.",
+    sourceUrl: "https://www.canada.ca/en/government/system/consultations/consultingcanadians.html",
+    expectedTitle: "Consulting with Canadians",
     publisher: "Government of Canada",
     jurisdictionCode: "CA",
     jurisdictionName: "Canada",

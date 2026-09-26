@@ -44,12 +44,12 @@ export async function ingestOfficialSources(
           'permitted', ?, ?, ?, ?, ?, ?, 'current', ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           external_id=excluded.external_id, title=excluded.title,
-          summary=excluded.summary, source_url=excluded.source_url,
+          summary=excluded.summary,
           publisher=excluded.publisher, licence_name=excluded.licence_name,
           licence_url=excluded.licence_url, terms_url=excluded.terms_url,
           fetched_at=excluded.fetched_at, verified_at=excluded.verified_at,
           expires_at=excluded.expires_at, payload_hash=excluded.payload_hash,
-          evidence_url=excluded.evidence_url, freshness_state='current',
+          freshness_state='current',
           last_error_code=NULL, updated_at=excluded.updated_at
       `,
         )
@@ -82,21 +82,23 @@ export async function ingestOfficialSources(
           `Could not persist official source record ${record.id}`,
         );
 
-      const detail = await database
-        .prepare(
-          `
+      if (record.kind !== null) {
+        const detail = await database
+          .prepare(
+            `
         INSERT INTO source_record_details (record_id, kind, latitude, longitude)
         VALUES (?, ?, ?, ?)
         ON CONFLICT(record_id) DO UPDATE SET kind=excluded.kind,
           latitude=excluded.latitude, longitude=excluded.longitude
       `,
-        )
-        .bind(record.id, record.kind, record.latitude, record.longitude)
-        .run();
-      if (!detail.success)
-        throw new Error(
-          `Could not persist official source details ${record.id}`,
-        );
+          )
+          .bind(record.id, record.kind, record.latitude, record.longitude)
+          .run();
+        if (!detail.success)
+          throw new Error(
+            `Could not persist official source details ${record.id}`,
+          );
+      }
     }
 
     const latestExpiry = records.reduce(
