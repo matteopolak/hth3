@@ -45,8 +45,13 @@ export async function ingestOfficialSources(
         ON CONFLICT(id) DO UPDATE SET
           external_id=excluded.external_id, title=excluded.title,
           summary=excluded.summary, source_url=excluded.source_url,
-          publisher=excluded.publisher, licence_name=excluded.licence_name,
+          publisher=excluded.publisher,
+          jurisdiction_level=excluded.jurisdiction_level,
+          jurisdiction_code=excluded.jurisdiction_code,
+          jurisdiction_name=excluded.jurisdiction_name,
+          licence_name=excluded.licence_name,
           licence_url=excluded.licence_url, terms_url=excluded.terms_url,
+          terms_status=excluded.terms_status, language=excluded.language,
           fetched_at=excluded.fetched_at, verified_at=excluded.verified_at,
           expires_at=excluded.expires_at, payload_hash=excluded.payload_hash,
           evidence_url=excluded.evidence_url,
@@ -114,15 +119,25 @@ export async function ingestOfficialSources(
       (value, record) => (record.expiresAt < value ? record.expiresAt : value),
       records[0]!.expiresAt,
     );
+    const sourceRecord = records[0]!;
     const source = await database
       .prepare(
         `
-      UPDATE source_registry SET terms_status='permitted', fetched_at=?,
+      UPDATE source_registry SET publisher=?, jurisdiction_level=?,
+        jurisdiction_code=?, jurisdiction_name=?, licence_name=?,
+        licence_url=?, terms_url=?, terms_status='permitted', fetched_at=?,
         verified_at=?, expires_at=?, freshness_state='current',
         last_error=NULL, updated_at=? WHERE id=?
     `,
       )
       .bind(
+        sourceRecord.publisher,
+        sourceRecord.jurisdictionLevel,
+        sourceRecord.jurisdictionCode,
+        sourceRecord.jurisdictionName,
+        sourceRecord.licenceName,
+        sourceRecord.licenceUrl,
+        sourceRecord.termsUrl,
         now.toISOString(),
         now.toISOString(),
         latestExpiry,
