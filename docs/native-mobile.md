@@ -24,7 +24,7 @@ When an API request or response changes, update the Worker and shared contract f
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
-| `CIVICRESOLVE_API_BASE_URL` | Debug: `http://127.0.0.1:8787/api/v1`; Release: `https://civicresolve-api-production.matteopolak.workers.dev/api/v1` | Worker API base URL is selected by the Xcode build configuration. Change the matching `CIVICRESOLVE_API_BASE_URL` setting in `project.pbxproj` when adding another environment. |
+| `CIVICRESOLVE_API_BASE_URL` | Debug: `http://127.0.0.1:5173/api/v1`; Release: `https://civicresolve-api-production.matteopolak.workers.dev/api/v1` | Worker API base URL is selected by the Xcode build configuration. Debug uses the combined `pnpm dev -- --host` Vite and Cloudflare Worker server. Change the matching `CIVICRESOLVE_API_BASE_URL` setting in `project.pbxproj` when adding another environment. |
 | `CIVICRESOLVE_AUTH0_DOMAIN` | `dev-ole6i03kzvf3yb8z.us.auth0.com` | Auth0 tenant domain. |
 | `CIVICRESOLVE_AUTH0_CLIENT_ID` | Mobile public client ID in `Info.plist` | Auth0 native application identifier; this is public client configuration, not a secret. |
 | `CIVICRESOLVE_AUTH0_AUDIENCE` | `https://civicresolve.example/api` | API audience requested for Worker access tokens. |

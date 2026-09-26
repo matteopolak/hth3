@@ -18,7 +18,7 @@ Edit `Features/Discovery/DiscoveryView.swift` for search, detail, save, and hand
 
 ## Configuration
 
-The Worker base URL comes from `CIVICRESOLVE_API_BASE_URL` in Xcode build settings. Debug points to local Wrangler; Release points to the production Worker. Auth0 bearer tokens are used only for saved items and applications. The public search needs no sign-in. The app does not need a geolocation permission because the map displays publisher-supplied coordinates.
+The Worker base URL comes from `CIVICRESOLVE_API_BASE_URL` in Xcode build settings. Debug points to the combined local Vite and Cloudflare Worker server on port 5173; Release points to the production Worker. Auth0 bearer tokens are used only for saved items and applications. The public search needs no sign-in. The app does not need a geolocation permission because the map displays publisher-supplied coordinates.
 
 For simulator visual QA, a Debug launch can use `-envoy-area nearby -envoy-map` to open the nearby map directly when simulator tapping is unavailable. The flags do not affect Release builds. The Debug API still points to local Wrangler; use live Worker data only through an explicit non-secret build setting override.
 

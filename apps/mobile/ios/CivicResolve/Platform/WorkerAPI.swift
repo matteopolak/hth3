@@ -206,7 +206,7 @@ struct WorkerAPI {
                   let url = URL(string: configured) {
             self.baseURL = url
         } else {
-            self.baseURL = URL(string: "http://127.0.0.1:8787/api/v1")!
+            self.baseURL = URL(string: "http://127.0.0.1:5173/api/v1")!
         }
         self.session = session
     }
