@@ -123,6 +123,34 @@ describe("guest feedback duplicate checks", () => {
     expect(store.duplicateQueryCount).toBe(0);
   });
 
+  it("matches an unresolved report outside the recent time window", async () => {
+    const store = new GuestDuplicateStore([
+      {
+        original_text:
+          "The pedestrian crossing signal at Queen St. and Lansdowne Avenue stays green for only a few seconds each evening.",
+        status: "in_review",
+        created_at: new Date(
+          Date.now() - 365 * 24 * 60 * 60 * 1_000,
+        ).toISOString(),
+      },
+    ]);
+    const response = await handleFeedbackRequest(
+      guestFeedbackRequest("/api/v1/feedback/duplicate-check", {
+        message: repeatedReport,
+        municipalityId: "3520005",
+      }),
+      new URL("https://example.test/api/v1/feedback/duplicate-check"),
+      store.context(),
+    );
+
+    expect(response?.status).toBe(200);
+    expect(await response!.json()).toMatchObject({
+      duplicate: { status: "in_review" },
+    });
+    expect(store.duplicateQuerySql).not.toMatch(/created_at\s*>=/i);
+    expect(store.duplicateQuerySql).toMatch(/LIMIT\s+500/i);
+  });
+
   it("returns a status-only duplicate outcome at creation", async () => {
     const store = new GuestDuplicateStore([
       { original_text: repeatedReport, status: "waiting_on_resident" },
@@ -661,6 +689,7 @@ describe("guest abuse limits", () => {
 
 class GuestDuplicateStore {
   duplicateQueryCount = 0;
+  duplicateQuerySql = "";
   batchCount = 0;
   private readonly candidates: Array<{
     original_text: string;
@@ -675,6 +704,7 @@ class GuestDuplicateStore {
     candidates: Array<{
       original_text: string;
       status: FeedbackRow["status"];
+      created_at?: string;
     }>,
   ) {
     this.candidates = candidates.map((candidate) => ({
@@ -682,7 +712,7 @@ class GuestDuplicateStore {
       organization_id: "org_43G1B1RhPwac7EjS",
       municipality_csd_uid: "3520005",
       category: "other_or_unsure",
-      created_at: new Date().toISOString(),
+      created_at: candidate.created_at ?? new Date().toISOString(),
     }));
   }
 
@@ -713,14 +743,29 @@ class GuestDuplicateStore {
           async all<Row>() {
             if (query.includes("SELECT original_text, status")) {
               store.duplicateQueryCount += 1;
+              store.duplicateQuerySql = query;
+              const limit = Number(query.match(/LIMIT\s+(\d+)/i)?.[1] ?? 0);
               return {
-                results: store.candidates.filter(
-                  (candidate) =>
-                    candidate.organization_id === values[0] &&
-                    candidate.municipality_csd_uid === values[1] &&
-                    candidate.category === values[2] &&
-                    candidate.created_at >= String(values[3]),
-                ) as Row[],
+                results: store.candidates
+                  .filter(
+                    (candidate) =>
+                      candidate.organization_id === values[0] &&
+                      candidate.municipality_csd_uid === values[1] &&
+                      candidate.category === values[2],
+                  )
+                  .sort((left, right) => {
+                    const leftResolved =
+                      left.status === "closed" ||
+                      left.status === "outcome_recorded";
+                    const rightResolved =
+                      right.status === "closed" ||
+                      right.status === "outcome_recorded";
+                    return (
+                      Number(leftResolved) - Number(rightResolved) ||
+                      right.created_at.localeCompare(left.created_at)
+                    );
+                  })
+                  .slice(0, limit) as Row[],
                 success: true,
                 meta: emptyMeta(),
               };

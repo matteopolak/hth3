@@ -77,7 +77,7 @@ interface DestinationRow {
   province_name: string;
 }
 
-const FEEDBACK_DUPLICATE_WINDOW_MS = 90 * 24 * 60 * 60 * 1_000;
+const GUEST_DUPLICATE_CANDIDATE_LIMIT = 500;
 
 export async function handleGuestFeedback(
   request: Request,
@@ -137,15 +137,17 @@ async function findRecentGuestDuplicate(
       `SELECT original_text, status
        FROM feedback_submissions
        WHERE organization_id = ? AND municipality_csd_uid = ?
-         AND category = ? AND created_at >= ?
-       ORDER BY created_at DESC
-       LIMIT 250`,
+         AND category = ?
+       ORDER BY CASE
+         WHEN status IN ('closed', 'outcome_recorded') THEN 1
+         ELSE 0
+       END, created_at DESC
+       LIMIT ${GUEST_DUPLICATE_CANDIDATE_LIMIT}`,
     )
     .bind(
       input.destination.organization_id,
       input.destination.municipality_csd_uid,
       input.category,
-      recentFeedbackCutoff(),
     )
     .all<FeedbackDuplicateCandidateRow>();
   return (
@@ -165,12 +167,6 @@ function duplicateCreateResponse(
     created: false,
     duplicate: { status },
   });
-}
-
-function recentFeedbackCutoff(now = new Date().toISOString()): string {
-  return new Date(
-    new Date(now).getTime() - FEEDBACK_DUPLICATE_WINDOW_MS,
-  ).toISOString();
 }
 
 async function checkGuestFeedbackDuplicate(
@@ -480,14 +476,13 @@ async function createGuestFeedback(
       insertGuards.push(`NOT EXISTS (
         SELECT 1 FROM feedback_submissions
         WHERE organization_id = ? AND municipality_csd_uid = ?
-          AND category = ? AND created_at >= ?
+          AND category = ?
           AND lower(trim(original_text)) = lower(trim(?))
       )`);
       insertGuardValues.push(
         destination.organization_id,
         destination.municipality_csd_uid,
         category,
-        recentFeedbackCutoff(now),
         message,
       );
     }
