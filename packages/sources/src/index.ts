@@ -1,3 +1,5 @@
+import type { OfficialRecordKind } from "./official.js";
+
 export type SourceOrigin = "official_external" | "participating_org" | "sample";
 
 export type SourceFreshness =
@@ -91,6 +93,11 @@ export interface SourceRecord {
   lastErrorCode: string | null;
   sampleLabel: string | null;
   verified: boolean;
+}
+
+export interface SourceRecordWithDetails extends SourceRecord {
+  kind: OfficialRecordKind | null;
+  coordinates: { latitude: number; longitude: number } | null;
 }
 
 export interface SourceRecordRow {
@@ -209,3 +216,5 @@ export function isPublicSourceOrigin(value: unknown): value is SourceOrigin {
     value === "sample"
   );
 }
+
+export * from "./official.js";

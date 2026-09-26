@@ -4,6 +4,11 @@ import {
   listSourceRecords,
   listSourceRegistry,
 } from "@civicresolve/db/d1";
+import type {
+  OfficialRecordKind,
+  SourceRecord,
+  SourceRecordWithDetails,
+} from "@civicresolve/sources";
 import type { FeatureContext } from "../shared.js";
 
 const COLLECTION_PATH = "/api/v1/sources";
@@ -67,9 +72,17 @@ export async function handleSourceRecordRequest(
   const recordPath = url.pathname.slice(RECORDS_PATH.length);
   if (recordPath === "") {
     const records = await listSourceRecords(context.env.DB, { includeSamples });
+    const details = await context.env.DB.prepare(
+      "SELECT record_id, kind, latitude, longitude FROM source_record_details",
+    ).all<SourceRecordDetailRow>();
+    const detailById = new Map(
+      (details.results ?? []).map((detail) => [detail.record_id, detail]),
+    );
     return sourceJson(context, {
       apiVersion: API_VERSION,
-      records,
+      records: records.map((record) =>
+        withDetails(record, detailById.get(record.id)),
+      ),
       samplesIncluded: includeSamples,
       policy: {
         sampleRecordsAreFictional: true,
@@ -86,11 +99,40 @@ export async function handleSourceRecordRequest(
   });
   if (!record)
     return sourceError(context, "NOT_FOUND", "Source record not found.", 404);
+  const detail = await context.env.DB.prepare(
+    "SELECT record_id, kind, latitude, longitude FROM source_record_details WHERE record_id = ?",
+  )
+    .bind(record.id)
+    .first<SourceRecordDetailRow>();
   return sourceJson(context, {
     apiVersion: API_VERSION,
-    record,
+    record: withDetails(record, detail),
     requestId: context.requestId,
   });
+}
+
+interface SourceRecordDetailRow {
+  record_id: string;
+  kind: OfficialRecordKind;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+function withDetails(
+  record: SourceRecord,
+  detail: SourceRecordDetailRow | undefined | null,
+): SourceRecordWithDetails {
+  if (record.origin !== "official_external" || !detail)
+    return { ...record, kind: null, coordinates: null };
+  return {
+    ...record,
+    kind: detail.kind,
+    coordinates:
+      typeof detail.latitude === "number" &&
+      typeof detail.longitude === "number"
+        ? { latitude: detail.latitude, longitude: detail.longitude }
+        : null,
+  };
 }
 
 function sourceJson(
