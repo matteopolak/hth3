@@ -3,21 +3,45 @@ import type en from "./en.js";
 type Catalogue = { [Key in keyof typeof en]: string };
 
 const fr: Catalogue = {
-  "app.name": "CivicResolve",
+  "app.name": "Envoy",
   "app.language": "Langue",
-  "nav.feedback": "Donner votre avis",
-  "nav.applications": "Occasion fictive",
-  "nav.employee": "Espace de l’équipe",
+  "nav.assistant": "Assistant",
+  "nav.feedback": "Commentaires",
+  "nav.applications": "Possibilités",
+  "nav.employee": "Équipe",
   "nav.feedbackQueue": "Avis reçus",
   "nav.applicationQueue": "Candidatures",
-  "local.identityLabel": "Identité API locale",
-  "local.identityNone": "Aucune identité de test",
-  "local.applicant": "Candidat fictif",
-  "local.civicReviewer": "Réviseur civique fictif",
-  "local.hiringReviewer": "Réviseur d’embauche fictif",
-  "local.admin": "Administrateur fictif",
+  "local.identityLabel": "Identité de développement",
+  "local.identityNone": "Choisir un rôle",
+  "local.applicant": "Personne candidate",
+  "local.civicReviewer": "Évaluation civique",
+  "local.hiringReviewer": "Évaluation des candidatures",
+  "local.admin": "Administration de l’organisme",
   "local.identityNotice":
     "Identités de test réservées au développement. Elles ne permettent pas de se connecter et sont absentes des versions de production.",
+  "assistant.residentMode": "Assistant des résidents",
+  "assistant.staffMode": "Assistant de l’équipe",
+  "assistant.newChat": "Nouvelle conversation",
+  "assistant.welcome": "Comment puis-je vous aider?",
+  "assistant.you": "Vous",
+  "assistant.placeholder": "Écrivez à Envoy",
+  "assistant.send": "Envoyer",
+  "assistant.reviewAction": "Vérifier l’action",
+  "assistant.approve": "Approuver l’action",
+  "assistant.decline": "Refuser",
+  "assistant.actionCompleted": "Action terminée.",
+  "assistant.actionDeclined": "Action refusée.",
+  "assistant.sessionExpired":
+    "Cette conversation n’est plus disponible. Commencez une nouvelle conversation.",
+  "assistant.unavailable":
+    "L’assistant est temporairement indisponible. Réessayez plus tard.",
+  "assistant.toolResult": "Afficher le résultat",
+  "voice.start": "Utiliser la voix",
+  "voice.stop": "Arrêter la voix",
+  "voice.connecting": "Connexion…",
+  "voice.listening": "Écoute · vos mots apparaissent ci-dessous",
+  "voice.unavailable":
+    "La voix est indisponible pour le moment. Vous pouvez toujours saisir votre commentaire.",
   "language.english": "Anglais",
   "language.french": "Français",
   "common.loading": "Chargement…",
@@ -31,7 +55,7 @@ const fr: Catalogue = {
   "auth.signInRequired": "Connectez-vous pour continuer.",
   "auth.forbidden":
     "Vous n’avez pas l’autorisation de consulter ces renseignements.",
-  "feedback.title": "Donner votre avis",
+  "feedback.title": "Commentaires",
   "feedback.intro":
     "Expliquez à l’équipe ce qui s’est passé et comment améliorer le service.",
   "feedback.messageLabel": "Que s’est-il passé?",
@@ -42,12 +66,17 @@ const fr: Catalogue = {
   "feedback.reviewTitle": "Vérifiez votre avis",
   "feedback.edit": "Modifier l’avis",
   "feedback.sandboxAcknowledgement":
-    "Je comprends que mon avis sera transmis uniquement à une équipe fictive de CivicResolve, et non à une municipalité ou à un organisme gouvernemental.",
-  "feedback.sandboxBadge": "Exemple fictif · aucun service gouvernemental",
-  "feedback.sandboxExplanation": "Une file fictive de commentaires",
+    "Je comprends que mon avis sera transmis uniquement à l’équipe fictive d’Envoy à Toronto, et non à une municipalité ou à un organisme gouvernemental.",
+  "feedback.sandboxBadge":
+    "Environnement d’essai · aucun envoi à une municipalité ou à un employeur",
+  "feedback.sandboxExplanation": "Votre message reste ici",
+  "feedback.aboutThisService": "Avant de partager",
+  "feedback.emergencyTitle": "Besoin d’aide urgente?",
+  "feedback.emergencyAction": "Obtenir de l’aide d’urgence",
+  "feedback.call911": "Appeler le 911",
   "feedback.emergencyNote":
-    "Ce prototype n’est pas un service d’urgence. Appelez le 911 si une personne est en danger immédiat.",
-  "feedback.sendToSample": "Envoyer à l’espace fictif",
+    "Appelez le 911 si une personne est en danger immédiat. Cette boîte n’est pas surveillée pour les urgences.",
+  "feedback.sendToSample": "Envoyer le commentaire",
   "feedback.replyPlaceholder": "Ajouter un suivi à ce reçu",
   "feedback.replySend": "Envoyer le suivi",
   "feedback.receiptSecretHelp":
@@ -57,57 +86,73 @@ const fr: Catalogue = {
   "feedback.staffReply": "Réponse de l’équipe",
   "feedback.noFeedback": "Aucun avis ne se trouve encore dans cette file.",
   "feedback.reply": "Répondre à la personne",
+  "feedback.followUpLabel": "Ajouter un suivi",
+  "feedback.newReport": "Rédiger un autre avis",
   "feedback.nextStatus": "État suivant",
   "feedback.updateStatus": "Mettre à jour l’état",
-  "feedback.outcomeLabel": "Résumé du résultat (requis pour consigner un résultat)",
+  "feedback.outcomeLabel":
+    "Résumé du résultat (requis pour consigner un résultat)",
   "feedback.privacyNotice":
-    "Décrivez uniquement les faits nécessaires pour comprendre votre expérience. N’incluez ni numéro d’assurance sociale, ni mot de passe, ni renseignement bancaire. L’équipe fictive de CivicResolve peut lire ce message et les renseignements que vous fournissez afin de répondre à votre suivi; ce prototype ne transmet rien à une municipalité ni à un organisme gouvernemental. Conservez le lien de reçu privé dans un endroit sûr : toute personne qui le possède peut consulter les mises à jour de cet envoi.",
+    "N’indiquez aucun mot de passe, renseignement bancaire ou numéro d’assurance sociale. L’équipe fictive d’Envoy à Toronto lit ce message; la Ville de Toronto ne le reçoit pas.",
   "feedback.submitted":
-    "Votre avis a été enregistré. Gardez le reçu {receiptId} pour consulter les mises à jour.",
+    "Commentaire enregistré. Votre reçu privé se trouve ci-dessous.",
   "feedback.receiptTitle": "Reçu de votre avis",
   "feedback.receiptStatus": "État",
   "feedback.receiptNotFound": "Impossible de vérifier ce reçu.",
   "feedback.staffReplyLabel": "Réponse de l’équipe",
-  "application.title": "Postuler auprès d’un employeur participant",
+  "application.title": "Possibilités",
   "application.sampleNotice":
-    "Cette offre fictive sert aux essais. Votre candidature reste dans cet espace de démonstration et n’est transmise à aucun organisme gouvernemental.",
+    "Offre d’essai. Aucun employeur ni organisme gouvernemental ne reçoit cette candidature.",
   "application.experienceLabel": "Expérience pertinente",
-  "application.experiencePlaceholder": "Rédigez une réponse pour cette offre fictive",
+  "application.experiencePlaceholder": "Décrivez votre expérience pertinente",
   "application.availabilityLabel": "Disponibilités",
-  "application.availabilityPlaceholder": "Indiquez un horaire fictif",
+  "application.availabilityPlaceholder": "Quand êtes-vous disponible?",
   "application.applicantConfirmation":
-    "J’ai vérifié mes réponses et je confirme explicitement cette candidature fictive.",
-  "application.apply": "Envoyer la candidature fictive",
+    "J’ai vérifié mes réponses et je comprends que cette candidature d’essai reste dans l’environnement Envoy. Aucun employeur ne la reçoit.",
+  "application.apply": "Envoyer la candidature",
   "application.signInStep":
     "Connectez-vous au moment de l’envoi afin de retrouver l’état de votre candidature.",
-  "application.noApplications": "Aucune candidature de ce compte pour le moment.",
+  "application.noApplications":
+    "Aucune candidature de ce compte pour le moment.",
   "application.status": "État de la candidature",
-  "application.inQueue": "Candidatures dans cette file fictive",
+  "application.inQueue": "Vos candidatures",
   "application.noQueue": "Aucune candidature n’attend dans cette file.",
   "application.answers": "Réponses de la personne",
   "application.changeStatus": "Passer à l’état suivant",
   "application.saveStatus": "Enregistrer l’état",
-  "application.sampleGeography": "Toronto, Ontario · emplacement fictif",
+  "application.sampleGeography": "Toronto, Ontario",
+  "application.practicePosting": "Offre d’essai · aucun poste réel",
   "application.confirmReview":
     "J’ai vérifié mes réponses et je confirme vouloir envoyer cette candidature.",
   "application.confirmRequired":
     "Vérifiez et confirmez vos réponses avant l’envoi.",
-  "application.submitted": "Votre candidature a été envoyée à {organization}.",
+  "application.submitted":
+    "Votre candidature a été enregistrée dans l’environnement Envoy pour {organization}; aucun employeur ne l’a reçue.",
   "application.employerQueue": "Candidatures de l’employeur",
   "application.applicant": "Personne candidate",
   "application.loadError": "Impossible de charger cette offre.",
   "staff.permissionNotice":
     "Choisissez une identité de test locale pour vérifier les autorisations du Worker.",
-  "error.network": "Le Worker est inaccessible. Vérifiez l’API locale et réessayez.",
+  "error.network":
+    "Le Worker est inaccessible. Vérifiez l’API locale et réessayez.",
   "error.invalidRequest": "Vérifiez les champs indiqués et réessayez.",
   "error.unauthenticated": "Connectez-vous au moment d’effectuer cette action.",
-  "error.forbidden": "Ce compte n’a pas l’autorisation d’effectuer cette action.",
+  "error.forbidden":
+    "Ce compte n’a pas l’autorisation d’effectuer cette action.",
   "error.notFound": "Ce dossier n’est plus disponible.",
   "error.invalidTransition": "Ce changement d’état n’est pas autorisé.",
   "error.feedbackClosed": "Ce reçu de commentaire est fermé.",
   "error.destinationUnsupported":
-    "Cette destination n’est pas prise en charge dans cet exemple.",
-  "error.emergency": "Ce n’est pas un service d’urgence. Appelez le 911 en cas de danger immédiat.",
+    "Cette municipalité n’est pas encore prise en charge. Rien n’a été envoyé ailleurs.",
+  "error.sandboxAcknowledgement":
+    "Confirmez la destination d’essai avant l’envoi.",
+  "error.abuseUnavailable":
+    "Le service de commentaires est temporairement indisponible. Réessayez plus tard.",
+  "error.rateLimited": "Trop de demandes. Attendez avant de réessayer.",
+  "error.invalidEvidence":
+    "La pièce jointe n’a pas été acceptée. Vérifiez son format et sa taille.",
+  "error.emergency":
+    "Ce n’est pas un service d’urgence. Appelez le 911 en cas de danger immédiat.",
   "error.generic": "La demande n’a pas pu être effectuée. Réessayez.",
   "status.submitted": "Envoyée",
   "status.acknowledged": "Accusé de réception",
@@ -121,7 +166,8 @@ const fr: Catalogue = {
   "status.shortlisted": "Présélectionnée",
   "status.declined": "Refusée",
   "status.offer": "Offre",
-  "feedback.outcomeRequired": "Un résultat doit être accompagné d’un court résumé.",
+  "feedback.outcomeRequired":
+    "Un résultat doit être accompagné d’un court résumé.",
 };
 
 export default fr;
