@@ -957,8 +957,11 @@ function duplicateMessage(status: string, locale: "en" | "fr"): string {
 }
 
 function isSeparateIssueConfirmation(message: string): boolean {
-  return /\b(separate|different|new occurrence|happened again|recurred|recurrence|distinct|différent|différente|nouvel incident|encore une fois|récurrent|récurrence)\b/i.test(
-    message,
+  return (
+    /^(?:yes|yeah|yep|oui|exactly|correct)[.! ]*$/i.test(message) ||
+    /\b(separate|different|new occurrence|happened again|recurred|recurrence|distinct|différent|différente|nouvel incident|encore une fois|récurrent|récurrence)\b/i.test(
+      message,
+    )
   );
 }
 
