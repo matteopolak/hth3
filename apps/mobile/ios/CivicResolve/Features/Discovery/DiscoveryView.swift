@@ -60,19 +60,25 @@ struct DiscoveryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(DiscoveryArea.allCases) { option in
-                            Button { area = option; Task { await refresh() } } label: {
-                                Label(text("discovery.\(option.rawValue)"), systemImage: option.icon)
-                                    .font(.subheadline.weight(area == option ? .semibold : .regular))
-                                    .padding(.horizontal, 12).padding(.vertical, 9)
-                                    .foregroundStyle(area == option ? .white : CivicTheme.ink)
-                                    .background(area == option ? CivicTheme.ink : .white, in: Capsule())
-                                    .overlay(Capsule().stroke(CivicTheme.border, lineWidth: area == option ? 0 : 1))
+                ScrollViewReader { categories in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(DiscoveryArea.allCases) { option in
+                                Button { area = option; Task { await refresh() } } label: {
+                                    Label(text("discovery.\(option.rawValue)"), systemImage: option.icon)
+                                        .font(.subheadline.weight(area == option ? .semibold : .regular))
+                                        .padding(.horizontal, 12).padding(.vertical, 9)
+                                        .foregroundStyle(area == option ? .white : CivicTheme.ink)
+                                        .background(area == option ? CivicTheme.ink : .white, in: Capsule())
+                                        .overlay(Capsule().stroke(CivicTheme.border, lineWidth: area == option ? 0 : 1))
+                                }
+                                .buttonStyle(.plain)
+                                .id(option)
                             }
-                            .buttonStyle(.plain)
                         }
+                    }
+                    .onChange(of: area) { _, selected in
+                        withAnimation { categories.scrollTo(selected, anchor: .leading) }
                     }
                 }
                 if area != .saved {
@@ -151,7 +157,7 @@ struct DiscoveryView: View {
                     NearbyMapView(items: items, onShowList: { mapMode = false })
                 }
                 let visible = area == .saved ? saved.map(\.item) : items
-                if !loading && !visible.isEmpty {
+                if !loading && !visible.isEmpty && !(area == .nearby && mapMode) {
                     HStack {
                         Text(text(area == .saved ? "discovery.savedHeading" : "discovery.sourcesHeading"))
                             .font(.subheadline.weight(.semibold))
