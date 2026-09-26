@@ -147,6 +147,11 @@ const fr: Catalogue = {
   "feedback.review": "Vérifier avant l’envoi",
   "feedback.reviewTitle": "Vérifiez votre avis",
   "feedback.edit": "Modifier l’avis",
+  "feedback.duplicateTitle": "Un problème semblable est déjà suivi",
+  "feedback.duplicateExplanation": "Vous pouvez voir son état actuel ci-dessous. S’il s’agit d’un autre problème ou d’une récidive, confirmez-le avant d’envoyer un rapport distinct.",
+  "feedback.duplicateStatus": "État actuel",
+  "feedback.separateIssue": "Il s’agit d’un autre problème ou d’une récidive. Envoyer un rapport distinct.",
+  "feedback.submitSeparate": "Envoyer un rapport distinct",
   "feedback.sandboxAcknowledgement":
     "Je comprends que mon avis sera transmis uniquement à l’équipe fictive d’Envoy à Toronto, et non à une municipalité ou à un organisme gouvernemental.",
   "feedback.sandboxBadge":
@@ -241,6 +246,7 @@ const fr: Catalogue = {
   "error.abuseUnavailable":
     "Le service de commentaires est temporairement indisponible. Réessayez plus tard.",
   "error.rateLimited": "Trop de demandes. Attendez avant de réessayer.",
+  "error.duplicateCheckUnavailable": "La recherche de problèmes semblables est indisponible. Réessayez avant l’envoi.",
   "error.invalidEvidence":
     "La pièce jointe n’a pas été acceptée. Vérifiez son format et sa taille.",
   "error.emergency":

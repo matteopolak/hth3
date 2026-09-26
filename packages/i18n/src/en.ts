@@ -142,6 +142,11 @@ const en = {
   "feedback.review": "Review before sending",
   "feedback.reviewTitle": "Review your report",
   "feedback.edit": "Edit report",
+  "feedback.duplicateTitle": "A similar issue is already being tracked",
+  "feedback.duplicateExplanation": "You can check its current status below. If this is a different issue or a recurrence, confirm that before sending a separate report.",
+  "feedback.duplicateStatus": "Current status",
+  "feedback.separateIssue": "This is a different issue or a recurrence. Send a separate report.",
+  "feedback.submitSeparate": "Submit separate report",
   "feedback.sandboxAcknowledgement":
     "I understand this goes only to Envoy's fictional Toronto team, not to a municipality or government agency.",
   "feedback.sandboxBadge":
@@ -234,6 +239,7 @@ const en = {
   "error.abuseUnavailable":
     "Feedback is temporarily unavailable. Please try again later.",
   "error.rateLimited": "Too many requests. Please wait before trying again.",
+  "error.duplicateCheckUnavailable": "Similar issues could not be checked. Try again before submitting.",
   "error.invalidEvidence":
     "The attachment could not be accepted. Check its format and size.",
   "error.emergency":

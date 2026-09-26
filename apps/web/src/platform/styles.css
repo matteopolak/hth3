@@ -345,6 +345,18 @@ p {
   font-size: 15px;
   font-weight: 650;
 }
+.feedback-duplicate {
+  border: 1px solid #dddddd;
+  border-radius: 9px;
+  background: #fff;
+  margin: 14px 0;
+  padding: 15px;
+}
+.feedback-duplicate h4 { margin: 0 0 7px; font-size: 14px; font-weight: 650; }
+.feedback-duplicate p { margin: 0 0 12px; color: #575757; font-size: 12px; line-height: 1.5; }
+.feedback-duplicate-status { display: flex; align-items: center; gap: 9px; margin-bottom: 15px; font-size: 12px; }
+.feedback-duplicate-status > span:first-child { color: #777; }
+.feedback-duplicate .checkbox-row { border-top: 1px solid #ececec; padding-top: 13px; }
 .labeled-value {
   min-width: 0;
   border-top: 1px solid #eaeaea;

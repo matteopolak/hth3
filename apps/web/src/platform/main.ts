@@ -55,6 +55,7 @@ interface ChatState {
   pending: boolean;
   error: string;
   approvalChecked: Record<string, boolean>;
+  duplicateOverrideChecked: Record<string, boolean>;
   reportEdits: Record<string, string>;
   tools: AgentTool[];
   tray: "actions" | "area" | "files" | "plugins" | null;
@@ -75,6 +76,7 @@ function newChatState(): ChatState {
     pending: false,
     error: "",
     approvalChecked: {},
+    duplicateOverrideChecked: {},
     reportEdits: {},
     tools: [],
     tray: null,
@@ -123,6 +125,8 @@ interface AppState {
   feedbackDraft: string;
   feedbackImprovement: string;
   feedbackReviewing: boolean;
+  feedbackDuplicate: { status: FeedbackStatus } | null;
+  feedbackDuplicateOverride: boolean;
   showFeedbackForm: boolean;
   sandboxAcknowledged: boolean;
   applicationExperience: string;
@@ -187,6 +191,8 @@ const state: AppState = {
   feedbackDraft: "",
   feedbackImprovement: "",
   feedbackReviewing: false,
+  feedbackDuplicate: null,
+  feedbackDuplicateOverride: false,
   showFeedbackForm: !readReceiptCredentials(),
   sandboxAcknowledged: false,
   applicationExperience: "",
@@ -1073,6 +1079,32 @@ function feedbackProposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElem
   }
   card.append(el("p", "proposal-notice", t("assistant.reportDestination")));
 
+  const duplicateStatus = typeof proposal.preview.duplicateStatus === "string"
+    ? proposal.preview.duplicateStatus : null;
+  let duplicateMatch: HTMLElement | null = null;
+  if (proposal.preview.requiresDuplicateOverride === true && duplicateStatus) {
+    duplicateMatch = el("section", "feedback-duplicate");
+    duplicateMatch.append(
+      el("h4", "", t("feedback.duplicateTitle")),
+      el("p", "", t("feedback.duplicateExplanation")),
+      el("div", "feedback-duplicate-status",
+        el("span", "", t("feedback.duplicateStatus")),
+        statusPill(duplicateStatus),
+      ),
+    );
+    const separate = el("label", "checkbox-row");
+    const confirm = el("input") as HTMLInputElement;
+    confirm.type = "checkbox";
+    confirm.checked = chat.duplicateOverrideChecked[proposal.id] === true;
+    confirm.addEventListener("change", () => {
+      chat.duplicateOverrideChecked[proposal.id] = confirm.checked;
+      updateButton();
+    });
+    separate.append(confirm, el("span", "", t("feedback.separateIssue")));
+    duplicateMatch.append(separate);
+    card.append(duplicateMatch);
+  }
+
   const acknowledgment = el("label", "checkbox-row proposal-ack");
   const check = el("input") as HTMLInputElement;
   check.type = "checkbox";
@@ -1095,8 +1127,12 @@ function feedbackProposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElem
   function updateButton(): void {
     const edited = input.value.trim() !== original.trim();
     acknowledgment.hidden = edited;
-    approve.textContent = t(edited ? "assistant.reviewUpdatedReport" : "assistant.confirmReport");
-    approve.disabled = chat.pending || !input.value.trim() || (!edited && !chat.approvalChecked[proposal.id]);
+    if (duplicateMatch) duplicateMatch.hidden = edited;
+    approve.textContent = t(edited ? "assistant.reviewUpdatedReport"
+      : duplicateMatch ? "feedback.submitSeparate" : "assistant.confirmReport");
+    approve.disabled = chat.pending || !input.value.trim() ||
+      (!edited && (!chat.approvalChecked[proposal.id] ||
+        Boolean(duplicateMatch && !chat.duplicateOverrideChecked[proposal.id])));
   }
   input.addEventListener("input", updateButton);
   updateButton();
@@ -1367,7 +1403,7 @@ async function sendChat(mode: ChatMode): Promise<void> {
       message,
     );
     chat.messages.push({ role: "assistant", content: response.message });
-    if (response.toolResult !== undefined) {
+    if (response.toolResult !== undefined && !feedbackDuplicateStatusFromResult(response.toolResult)) {
       chat.messages.push({
         role: "tool",
         content: visibleToolResult(response.toolResult),
@@ -1409,6 +1445,11 @@ async function decideProposal(
     !sandboxAcknowledged
   )
     return;
+  const duplicateOverride = approved && proposal.preview.name === "create_feedback" &&
+    proposal.preview.requiresDuplicateOverride === true &&
+    chat.duplicateOverrideChecked[proposal.id] === true;
+  if (approved && proposal.preview.requiresDuplicateOverride === true && !duplicateOverride)
+    return;
   chat.pending = true;
   chat.error = "";
   render();
@@ -1419,7 +1460,21 @@ async function decideProposal(
       approved ? "approve" : "reject",
       chatCredentials(mode),
       sandboxAcknowledged,
+      duplicateOverride,
     );
+    const duplicateStatus = approved && proposal.preview.name === "create_feedback"
+      ? feedbackDuplicateStatusFromResult(response.result) : null;
+    if (duplicateStatus) {
+      proposal.status = "pending";
+      proposal.preview = {
+        ...proposal.preview,
+        ...response.proposal.preview,
+        requiresDuplicateOverride: true,
+        duplicateStatus,
+      };
+      chat.duplicateOverrideChecked[proposal.id] = false;
+      return;
+    }
     proposal.status = approved ? "approved" : "rejected";
     chat.messages.push({
       role: "assistant",
@@ -1441,6 +1496,19 @@ async function decideProposal(
     chat.pending = false;
     render();
   }
+}
+
+function feedbackDuplicateStatusFromResult(result: unknown): FeedbackStatus | null {
+  if (!result || typeof result !== "object") return null;
+  const data = (result as { data?: unknown }).data;
+  if (!data || typeof data !== "object") return null;
+  const outcome = data as { result?: unknown; created?: unknown; duplicate?: { status?: unknown } };
+  if (outcome.result !== "duplicate" || outcome.created !== false) return null;
+  const status = outcome.duplicate?.status;
+  return typeof status === "string" && [
+    "submitted", "acknowledged", "in_review", "waiting_on_resident",
+    "outcome_recorded", "closed", "reopened",
+  ].includes(status) ? status as FeedbackStatus : null;
 }
 
 async function prepareEditedFeedback(mode: ChatMode, previous: AgentProposal, message: string): Promise<void> {
@@ -1730,18 +1798,9 @@ function feedbackForm(): HTMLElement {
   );
   form.append(message, improvement);
   const actions = el("div", "form-actions");
-  const review = button(t("feedback.review"), "button-primary", async () => {
-    if (state.voiceStatus !== "idle") await stopVoice();
-    if (!state.feedbackDraft.trim()) {
-      state.error = { message: t("error.invalidRequest"), requestId: "" };
-      render();
-      return;
-    }
-    state.feedbackReviewing = true;
-    state.error = null;
-    render();
-  });
-  review.disabled = state.pending === "feedback";
+  const review = button(t("feedback.review"), "button-primary", () => void checkFeedbackBeforeReview());
+  review.disabled = state.pending === "feedback-check" || state.pending === "feedback";
+  if (state.pending === "feedback-check") review.prepend(spinner());
   actions.append(review);
   form.append(actions);
   form.addEventListener("submit", (event) => event.preventDefault());
@@ -1834,16 +1893,35 @@ function feedbackReview(): HTMLElement {
       labeledValue(t("feedback.improvementLabel"), state.feedbackImprovement),
     );
   }
+  if (state.feedbackDuplicate) {
+    const match = el("section", "feedback-duplicate");
+    match.append(
+      el("h4", "", t("feedback.duplicateTitle")),
+      el("p", "", t("feedback.duplicateExplanation")),
+      el("div", "feedback-duplicate-status",
+        el("span", "", t("feedback.duplicateStatus")),
+        statusPill(state.feedbackDuplicate.status),
+      ),
+    );
+    const separate = el("label", "checkbox-row");
+    const confirm = el("input") as HTMLInputElement;
+    confirm.type = "checkbox";
+    confirm.checked = state.feedbackDuplicateOverride;
+    confirm.addEventListener("change", () => {
+      state.feedbackDuplicateOverride = confirm.checked;
+      updateSend();
+    });
+    separate.append(confirm, el("span", "", t("feedback.separateIssue")));
+    match.append(separate);
+    review.append(match);
+  }
   const acknowledgment = el("label", "checkbox-row");
   const checkbox = el("input") as HTMLInputElement;
   checkbox.type = "checkbox";
   checkbox.checked = state.sandboxAcknowledged;
   checkbox.addEventListener("change", () => {
     state.sandboxAcknowledged = checkbox.checked;
-    const send = review.querySelector<HTMLButtonElement>(
-      "[data-send-feedback]",
-    );
-    if (send) send.disabled = !checkbox.checked || state.pending === "feedback";
+    updateSend();
   });
   acknowledgment.append(
     checkbox,
@@ -1859,12 +1937,16 @@ function feedbackReview(): HTMLElement {
     }),
   );
   const send = button(
-    t("feedback.sendToSample"),
+    t(state.feedbackDuplicate ? "feedback.submitSeparate" : "feedback.sendToSample"),
     "button-primary",
     () => void submitFeedback(),
   );
   send.dataset.sendFeedback = "true";
-  send.disabled = !state.sandboxAcknowledged || state.pending === "feedback";
+  function updateSend(): void {
+    send.disabled = !state.sandboxAcknowledged || state.pending === "feedback" ||
+      Boolean(state.feedbackDuplicate && !state.feedbackDuplicateOverride);
+  }
+  updateSend();
   if (state.pending === "feedback") send.prepend(spinner());
   actions.append(send);
   review.append(actions);
@@ -2433,6 +2515,7 @@ function formatError(error: unknown): { message: string; requestId: string } {
     PROPOSAL_EXPIRED: "assistant.sessionExpired",
     STALE_PROPOSAL: "error.invalidTransition",
     FEEDBACK_UNAVAILABLE: "error.abuseUnavailable",
+    DUPLICATE_CHECK_UNAVAILABLE: "error.duplicateCheckUnavailable",
     VOICE_UNAVAILABLE: "voice.unavailable",
     INTERNAL_ERROR: "error.generic",
     SANDBOX_UNAVAILABLE: "error.generic",
@@ -2461,6 +2544,32 @@ async function loadPostings(): Promise<void> {
   }
 }
 
+async function checkFeedbackBeforeReview(): Promise<void> {
+  if (state.voiceStatus !== "idle") await stopVoice();
+  const message = state.feedbackDraft.trim();
+  if (!message) {
+    state.error = { message: t("error.invalidRequest"), requestId: "" };
+    render();
+    return;
+  }
+  state.pending = "feedback-check";
+  state.error = null;
+  render();
+  try {
+    const result = await api.checkFeedbackDuplicate(message, "3520005");
+    if (state.feedbackDraft.trim() !== message) return;
+    state.feedbackDuplicate = result.duplicate;
+    state.feedbackDuplicateOverride = false;
+    state.sandboxAcknowledged = false;
+    state.feedbackReviewing = true;
+  } catch (error) {
+    state.error = formatError(error);
+  } finally {
+    state.pending = "";
+    render();
+  }
+}
+
 async function submitFeedback(): Promise<void> {
   if (!state.sandboxAcknowledged || !state.feedbackDraft.trim()) return;
   state.pending = "feedback";
@@ -2476,7 +2585,17 @@ async function submitFeedback(): Promise<void> {
       state.feedbackImprovement,
       credentials,
       state.locale,
+      state.feedbackDuplicateOverride,
     );
+    if ("duplicate" in response && response.duplicate) {
+      state.feedbackDuplicate = response.duplicate;
+      state.feedbackDuplicateOverride = false;
+      state.sandboxAcknowledged = false;
+      state.feedbackReviewing = true;
+      return;
+    }
+    if (!("submission" in response) || !("receiptToken" in response))
+      throw new Error("Invalid feedback response");
     state.receiptCredentials = {
       submissionId: response.submission.id,
       receiptToken: response.receiptToken,
@@ -2484,6 +2603,8 @@ async function submitFeedback(): Promise<void> {
     state.receipt = response.submission;
     storeReceiptCredentials(state.receiptCredentials);
     state.feedbackReviewing = false;
+    state.feedbackDuplicate = null;
+    state.feedbackDuplicateOverride = false;
     state.showFeedbackForm = false;
     state.feedbackDraft = "";
     state.feedbackImprovement = "";
