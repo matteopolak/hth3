@@ -10,16 +10,16 @@
     ],
     "sources": [
       "A useful civic journey starts with a source people can trust.",
-      "Here, envoy opens the British Columbia job finder, then moves to nearby public service locations.",
-      "The Service BC office record shows its publisher, address, review date, and a link to the official site.",
+      "Here, envoy opens official job finders, current public consultations, and nearby service locations.",
+      "The Service BC office record shows its publisher, address, review date, and a link to the official site. Participation links also lead to the government publisher.",
       "A finder link is a route to the publisher. It is not a claim that an individual vacancy is open or that someone qualifies for a program.",
       "Before visiting, residents should confirm current hours and services with the source agency."
     ],
     "agent": [
       "A resident can also describe a service problem in ordinary language, without choosing a form first.",
       "In this production chat, the question is about a broken streetlight in Toronto.",
-      "Workers AI responds with a reviewable report proposal. The model does not send the report on its own.",
-      "Because a similar practice report already exists, envoy warns about the duplicate and asks whether this is a different issue or a recurrence.",
+      "Workers AI warns that a similar practice report already exists, then asks whether this is a different issue or a recurrence.",
+      "A separate production capture shows the reviewable report proposal. The model does not send a report on its own.",
       "The resident can edit, decline, or deliberately approve the next step."
     ],
     "feedback": [

@@ -8,22 +8,22 @@ type Still = {
 export const draftStills: Partial<Record<SceneId, Still[]>> = {
   home: [
     {
-      file: "captures/pages-home-2026-09-26.png",
-      description: "Production Pages home, 2026-09-26",
+      file: "captures/unified-home-2026-09-26.png",
+      description: "Unified production guest entry, 2026-09-26",
     },
   ],
   sources: [
     {
-      file: "captures/pages-jobs-2026-09-26.png",
-      description: "Official BC job finder on production Pages",
+      file: "captures/unified-jobs-2026-09-26.png",
+      description: "Official job finders on unified production",
     },
     {
-      file: "captures/pages-nearby-2026-09-26.png",
-      description: "65 Service BC locations on production Pages",
+      file: "captures/unified-participation-2026-09-26.png",
+      description: "Live public consultation links on unified production",
     },
     {
-      file: "captures/native-nearby-simulator-2026-09-26.png",
-      description: "Native SwiftUI Nearby map in iPhone simulator",
+      file: "captures/unified-nearby-2026-09-26.png",
+      description: "78 public service records on unified production",
     },
   ],
   agent: [
@@ -34,8 +34,8 @@ export const draftStills: Partial<Record<SceneId, Still[]>> = {
   ],
   feedback: [
     {
-      file: "captures/pages-feedback-2026-09-26.png",
-      description: "Guest feedback intake with practice notice",
+      file: "captures/unified-feedback-review-2026-09-26.png",
+      description: "Unified production review step, still unsubmitted",
     },
     {
       file: "captures/pages-report-submitted-2026-09-26.png",
@@ -48,8 +48,8 @@ export const draftStills: Partial<Record<SceneId, Still[]>> = {
   ],
   closing: [
     {
-      file: "captures/pages-jobs-2026-09-26.png",
-      description: "Official BC source handoff",
+      file: "captures/unified-participation-2026-09-26.png",
+      description: "Current official public consultation links",
     },
     {
       file: "captures/pages-feedback-receipt-2026-09-26.png",

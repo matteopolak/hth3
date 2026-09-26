@@ -15,8 +15,8 @@ export const scenes = [
     seconds: 55,
     title: "Follow the official source",
     caption:
-      "BC finder links lead to publisher sites. Service BC office records show their source and freshness.",
-    capture: "BC finder search, Service BC detail, and official handoff",
+      "Official job and participation links lead to publishers. Nearby services show source and freshness.",
+    capture: "Job finder, public consultations, nearby service detail, and official handoff",
     required: true,
   },
   {
@@ -24,8 +24,8 @@ export const scenes = [
     seconds: 50,
     title: "Talk through a service issue",
     caption:
-      "A resident can describe a problem in plain language. Workers AI prepares a reviewable report proposal.",
-    capture: "New production guest chat with Toronto streetlight proposal",
+      "A resident describes a problem in plain language. Workers AI checks for a match and asks before a report is sent.",
+    capture: "Production guest chat and separately captured reviewable proposal",
     required: true,
   },
   {

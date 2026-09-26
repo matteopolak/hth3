@@ -1,0 +1,32 @@
+{
+  "recordedAt": "2026-09-26T21:16:00Z",
+  "origin": "https://civicresolve-api-production.matteopolak.workers.dev/",
+  "method": "An isolated headless Chrome profile captured the current unified Worker site through Chrome DevTools Protocol. JPEG frames were encoded as silent MP4 clips. The user's active browser was not used.",
+  "scope": "These are short, visually inspected production review clips. They do not establish full final-scene coverage, provider role acceptance, a physical-device run, or submission of the feedback draft.",
+  "clips": [
+    {
+      "file": "captures/unified-home-interaction-2026-09-26.mp4",
+      "seconds": 16,
+      "sha256": "be6f2bb4a24439af119e1fe79ab1c1e13e5f42b38dbe88ff68f5274b7b8e8a8e",
+      "observed": "New chat returned to the guest assistant entry with Find work, Explore support, and Report an issue suggestions."
+    },
+    {
+      "file": "captures/unified-sources-interaction-2026-09-26.mp4",
+      "seconds": 48,
+      "sha256": "0869c0320c1013a98e077d0a8a0bac98787763b99866d7eff96d561113ffb711",
+      "observed": "Jobs showed six official finders, Participation showed four open public consultations and official handoffs, and Nearby showed 78 results with a Service BC detail and List/Map controls."
+    },
+    {
+      "file": "captures/unified-agent-interaction-2026-09-26.mp4",
+      "seconds": 38,
+      "sha256": "6cae780b5078269ccb1134da33929d7582d279212cc8fc805a0232537e24c627",
+      "observed": "Guest sent a Toronto streetlight question. Workers AI warned that a matching practice report already existed and asked whether this was separate or a recurrence. This clip does not show a new proposal or submission; an older dated production screenshot shows a separate earlier proposal."
+    },
+    {
+      "file": "captures/unified-feedback-interaction-2026-09-26.mp4",
+      "seconds": 28,
+      "sha256": "fffaff919e447bf471ab41e25adb2ef51f0dbf2dd8774007f33fe8492d5d3f0e",
+      "observed": "Guest filled a clearly labeled practice crosswalk concern and opened the review screen. The acknowledgement remained unchecked; this clip does not submit the report."
+    }
+  ]
+}

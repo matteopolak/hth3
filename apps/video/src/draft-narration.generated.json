@@ -29,30 +29,30 @@
   },
   {
     "sceneId": "sources",
-    "text": "Here, envoy opens the British Columbia job finder, then moves to nearby public service locations.",
+    "text": "Here, envoy opens official job finders, current public consultations, and nearby service locations.",
     "file": "narration-draft/sources-02.m4a",
     "startSeconds": 6.430023,
-    "durationSeconds": 6.462222
+    "durationSeconds": 7.40263
   },
   {
     "sceneId": "sources",
-    "text": "The Service BC office record shows its publisher, address, review date, and a link to the official site.",
+    "text": "The Service BC office record shows its publisher, address, review date, and a link to the official site. Participation links also lead to the government publisher.",
     "file": "narration-draft/sources-03.m4a",
-    "startSeconds": 13.592245,
-    "durationSeconds": 6.884626
+    "startSeconds": 14.532653,
+    "durationSeconds": 10.274739
   },
   {
     "sceneId": "sources",
     "text": "A finder link is a route to the publisher. It is not a claim that an individual vacancy is open or that someone qualifies for a program.",
     "file": "narration-draft/sources-04.m4a",
-    "startSeconds": 21.176871,
+    "startSeconds": 25.507392,
     "durationSeconds": 7.700635
   },
   {
     "sceneId": "sources",
     "text": "Before visiting, residents should confirm current hours and services with the source agency.",
     "file": "narration-draft/sources-05.m4a",
-    "startSeconds": 29.577506,
+    "startSeconds": 33.908027,
     "durationSeconds": 5.470748
   },
   {
@@ -71,23 +71,23 @@
   },
   {
     "sceneId": "agent",
-    "text": "Workers AI responds with a reviewable report proposal. The model does not send the report on its own.",
+    "text": "Workers AI warns that a similar practice report already exists, then asks whether this is a different issue or a recurrence.",
     "file": "narration-draft/agent-03.m4a",
     "startSeconds": 14.412653,
-    "durationSeconds": 5.900091
+    "durationSeconds": 7.142313
   },
   {
     "sceneId": "agent",
-    "text": "Because a similar practice report already exists, envoy warns about the duplicate and asks whether this is a different issue or a recurrence.",
+    "text": "A separate production capture shows the reviewable report proposal. The model does not send a report on its own.",
     "file": "narration-draft/agent-04.m4a",
-    "startSeconds": 21.012744,
-    "durationSeconds": 7.990068
+    "startSeconds": 22.254966,
+    "durationSeconds": 6.597687
   },
   {
     "sceneId": "agent",
     "text": "The resident can edit, decline, or deliberately approve the next step.",
     "file": "narration-draft/agent-05.m4a",
-    "startSeconds": 29.702812,
+    "startSeconds": 29.552653,
     "durationSeconds": 4.644218
   },
   {
