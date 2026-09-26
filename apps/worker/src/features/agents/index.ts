@@ -42,6 +42,7 @@ interface AgentRequestBody {
   args?: unknown;
   approved?: unknown;
   sandboxAcknowledged?: unknown;
+  duplicateOverride?: unknown;
 }
 
 interface ModelInstruction {
@@ -338,13 +339,12 @@ async function sendMessage(
         status: outcome.status,
         data: (await outcome.json()) as unknown,
       };
-    } else if ("proposal" in outcome) {
-      proposal = outcome.proposal;
     } else {
       toolResult = outcome.result;
+      proposal = outcome.proposal;
     }
   }
-  if (toolResult && !proposal) {
+  if (toolResult && !proposal && !feedbackDuplicateStatus(toolResult)) {
     const result = toolResult as { status?: number; data?: unknown };
     if (result.status && result.status < 400 && context.env.AI) {
       try {
@@ -372,6 +372,9 @@ async function sendMessage(
       }
     }
   }
+  const selectedDuplicate = feedbackDuplicateStatus(toolResult);
+  if (selectedDuplicate)
+    assistantText = duplicateMessage(selectedDuplicate, conversation.locale);
   if (residentServiceIssue) {
     if (appearsEmergency(safeMessage)) {
       assistantText =
@@ -395,10 +398,22 @@ async function sendMessage(
         },
         context,
       );
-      if (!(draft instanceof Response) && "proposal" in draft) {
-        proposal = draft.proposal;
+      if (draft instanceof Response) {
+        toolResult = {
+          status: draft.status,
+          data: (await draft.json()) as unknown,
+        };
         assistantText =
           conversation.locale === "fr"
+            ? "Je ne peux pas vérifier les signalements semblables pour le moment. Réessayez bientôt."
+            : "I cannot check for matching reports right now. Please try again soon.";
+      } else {
+        toolResult = draft.result;
+        proposal = draft.proposal;
+        const duplicate = feedbackDuplicateStatus(toolResult);
+        assistantText = duplicate
+          ? duplicateMessage(duplicate, conversation.locale)
+          : conversation.locale === "fr"
             ? "Je peux vous aider à signaler ce problème. Vérifiez le brouillon avant de l'envoyer."
             : "You can report this problem through Envoy. Review the draft before sending it.";
       }
@@ -445,7 +460,7 @@ async function invokeTool(
   return featureJson(
     context,
     { apiVersion: API_VERSION, ...outcome },
-    "proposal" in outcome ? 201 : 200,
+    outcome.proposal ? 201 : 200,
   );
 }
 
@@ -455,7 +470,7 @@ async function callTool(
   name: string,
   args: ToolArguments,
   context: AgentContext,
-): Promise<{ result: unknown } | { proposal: unknown } | Response> {
+): Promise<{ result?: unknown; proposal?: unknown } | Response> {
   if (JSON.stringify(args).length > MAX_ARGUMENTS)
     return featureError(
       context,
@@ -488,6 +503,17 @@ async function callTool(
   const now = new Date();
   const id = `proposal_${randomHex(16)}`;
   const expiresAt = new Date(now.getTime() + 30 * 60_000).toISOString();
+  let duplicateStatus: string | null = null;
+  if (name === "create_feedback") {
+    const check = await checkFeedbackDuplicate(
+      request,
+      args,
+      conversation,
+      context,
+    );
+    if (check instanceof Response) return check;
+    duplicateStatus = check;
+  }
   let programSample = false;
   if (name === "submit_program_application") {
     const program = await executeTool(
@@ -517,6 +543,8 @@ async function callTool(
     ...(name === "create_feedback"
       ? {
           requiresSandboxAcknowledgment: true,
+          requiresDuplicateOverride: duplicateStatus !== null,
+          ...(duplicateStatus ? { duplicateStatus } : {}),
           destinationNotice:
             "This report goes only to Envoy's Toronto intake queue. It is not connected to a government office.",
         }
@@ -546,7 +574,10 @@ async function callTool(
       expiresAt,
     )
     .run();
-  return { proposal: { id, status: "pending", preview } };
+  return {
+    proposal: { id, status: "pending", preview },
+    ...(duplicateStatus ? { result: duplicateResult(duplicateStatus) } : {}),
+  };
 }
 
 async function approveProposal(
@@ -630,6 +661,8 @@ async function approveProposal(
   const preview = JSON.parse(proposal.preview_json) as {
     recordVersion?: string;
     requiresSandboxAcknowledgment?: boolean;
+    requiresDuplicateOverride?: boolean;
+    duplicateStatus?: string;
   };
   if (preview.recordVersion) {
     const latest = await recordVersion(
@@ -657,12 +690,54 @@ async function approveProposal(
       "Confirm the practice destination shown in the action preview.",
       409,
     );
+  if (proposal.tool_name === "create_feedback") {
+    const check = await checkFeedbackDuplicate(
+      request,
+      args,
+      conversation,
+      context,
+    );
+    if (check instanceof Response) return check;
+    if (
+      check &&
+      (!preview.requiresDuplicateOverride || body.duplicateOverride !== true)
+    ) {
+      const updated = await noteDuplicateOnProposal(
+        proposal,
+        preview,
+        check,
+        context,
+      );
+      return pendingDuplicateResponse(context, proposal.id, updated, check);
+    }
+    if (preview.requiresDuplicateOverride && body.duplicateOverride !== true) {
+      if (!preview.duplicateStatus)
+        return featureError(
+          context,
+          "STALE_PROPOSAL",
+          "Prepare this report again before submitting.",
+          409,
+        );
+      return pendingDuplicateResponse(
+        context,
+        proposal.id,
+        preview,
+        preview.duplicateStatus,
+      );
+    }
+  }
   if (
     proposal.tool_name === "create_feedback" &&
     prepared.body &&
     typeof prepared.body === "object"
   )
-    prepared.body = { ...prepared.body, sandboxAcknowledged: true };
+    prepared.body = {
+      ...prepared.body,
+      sandboxAcknowledged: true,
+      duplicateOverride:
+        preview.requiresDuplicateOverride === true &&
+        body.duplicateOverride === true,
+    };
   if (
     proposal.tool_name === "submit_program_application" &&
     prepared.body &&
@@ -697,6 +772,23 @@ async function approveProposal(
       { apiVersion: API_VERSION, result },
       result.status,
     );
+  if (proposal.tool_name === "create_feedback") {
+    const racedDuplicate = feedbackDuplicateStatus(result);
+    if (racedDuplicate) {
+      const updated = await noteDuplicateOnProposal(
+        proposal,
+        preview,
+        racedDuplicate,
+        context,
+      );
+      return pendingDuplicateResponse(
+        context,
+        proposal.id,
+        updated,
+        racedDuplicate,
+      );
+    }
+  }
   const stored =
     proposal.tool_name === "create_feedback"
       ? { ...result, data: stripReceiptToken(result.data) }
@@ -753,6 +845,118 @@ async function getProposal(
   )
     .bind(id, conversationId)
     .first<ProposalRow>();
+}
+
+const FEEDBACK_STATUS_LABELS: Readonly<
+  Record<string, { en: string; fr: string }>
+> = {
+  submitted: { en: "submitted", fr: "reçu" },
+  acknowledged: { en: "acknowledged", fr: "accusé de réception envoyé" },
+  in_review: { en: "in review", fr: "en cours d'examen" },
+  waiting_on_resident: {
+    en: "waiting for resident details",
+    fr: "en attente de précisions",
+  },
+  outcome_recorded: { en: "outcome recorded", fr: "résultat consigné" },
+  closed: { en: "closed", fr: "fermé" },
+  reopened: { en: "reopened", fr: "rouvert" },
+};
+
+function feedbackDuplicateStatus(result: unknown): string | null | undefined {
+  if (!result || typeof result !== "object") return undefined;
+  const payload = result as { data?: unknown };
+  if (!payload.data || typeof payload.data !== "object") return undefined;
+  const data = payload.data as { duplicate?: unknown };
+  if (!Object.hasOwn(data, "duplicate")) return undefined;
+  if (data.duplicate === null) return null;
+  if (!data.duplicate || typeof data.duplicate !== "object") return undefined;
+  const status = (data.duplicate as { status?: unknown }).status;
+  return typeof status === "string" && FEEDBACK_STATUS_LABELS[status]
+    ? status
+    : undefined;
+}
+
+function duplicateMessage(status: string, locale: "en" | "fr"): string {
+  const label = FEEDBACK_STATUS_LABELS[status]?.[locale] ?? status;
+  return locale === "fr"
+    ? `Un signalement semblable existe déjà dans Envoy pour cette municipalité. Son état actuel est ${label}.`
+    : `A matching report already exists in Envoy for this municipality. Its current status is ${label}.`;
+}
+
+function duplicateResult(status: string): { status: 200; data: unknown } {
+  return {
+    status: 200,
+    data: {
+      apiVersion: API_VERSION,
+      result: "duplicate",
+      created: false,
+      duplicate: { status },
+    },
+  };
+}
+
+async function checkFeedbackDuplicate(
+  request: Request,
+  args: ToolArguments,
+  conversation: ConversationRow,
+  context: AgentContext,
+): Promise<string | null | Response> {
+  const result = await executeTool(
+    request,
+    context,
+    prepareTool(
+      "check_feedback_duplicate",
+      {
+        message: args.message,
+        municipalityId: args.municipalityId,
+        category: args.category,
+      },
+      conversation.mode,
+      conversation.organization_id,
+    ),
+  );
+  const duplicate = feedbackDuplicateStatus(result);
+  if (result.status !== 200 || duplicate === undefined)
+    return featureError(
+      context,
+      "DUPLICATE_CHECK_UNAVAILABLE",
+      "Matching reports could not be checked. Try again before submitting.",
+      503,
+    );
+  return duplicate;
+}
+
+async function noteDuplicateOnProposal(
+  proposal: ProposalRow,
+  preview: Record<string, unknown>,
+  status: string,
+  context: AgentContext,
+): Promise<Record<string, unknown>> {
+  const updated = {
+    ...preview,
+    requiresDuplicateOverride: true,
+    duplicateStatus: status,
+  };
+  await context.env.DB.prepare(
+    `UPDATE agent_proposals SET preview_json = ?
+     WHERE id = ? AND conversation_id = ? AND status = 'pending'`,
+  )
+    .bind(JSON.stringify(updated), proposal.id, proposal.conversation_id)
+    .run();
+  return updated;
+}
+
+function pendingDuplicateResponse(
+  context: AgentContext,
+  proposalId: string,
+  preview: Record<string, unknown>,
+  status: string,
+): Response {
+  return featureJson(context, {
+    apiVersion: API_VERSION,
+    proposal: { id: proposalId, status: "pending", preview },
+    result: duplicateResult(status),
+  });
 }
 
 const VERSION_READ_TOOL: Readonly<Record<string, string>> = {
@@ -961,7 +1165,7 @@ function systemPrompt(conversation: ConversationRow): string {
   const tools = visibleTools(conversation.mode)
     .map((tool) => `${tool.name} (${tool.access}): ${tool.description}`)
     .join("\n");
-  return `You are Envoy's ${conversation.mode} assistant. Reply in ${conversation.locale === "fr" ? "French" : "English"} with at most two short, natural sentences. No emoji. Never invent URLs, menu names, click paths, official processes, source records, eligibility, locations, case status, or tool results. Do not claim an external application or report was submitted. Envoy is unaffiliated with government; the action preview discloses the queue destination. Do not include practice records unless the person asks for them, and disclose their status when recommending one. Never ask for or print access tokens. Direct emergencies to 911. Offer to prepare feedback when a resident describes an unresolved service problem. Do not execute writes without the approval card. Employee tools access only the current role and organization.\nAvailable tools:\n${tools}\nRespond as compact JSON: {"message":"plain answer","tool":{"name":"one exact tool name","args":{}}}. Omit tool if none is needed. Use at most one tool per turn. Ask for missing details. For write tools, the server creates a proposal card.`;
+  return `You are Envoy's ${conversation.mode} assistant. Reply in ${conversation.locale === "fr" ? "French" : "English"} with at most two short, natural sentences. No emoji. Never invent URLs, menu names, click paths, official processes, source records, eligibility, locations, case status, or tool results. Do not claim an external application or report was submitted. Envoy is unaffiliated with government; the action preview discloses the queue destination. Do not include practice records unless the person asks for them, and disclose their status when recommending one. Never ask for or print access tokens. Direct emergencies to 911. Offer to prepare feedback when a resident describes an unresolved service problem. Before proposing feedback, check for a matching report; if found, say its status and only offer a separate report when the resident confirms a distinct issue or recurrence. Do not execute writes without the approval card. Employee tools access only the current role and organization.\nAvailable tools:\n${tools}\nRespond as compact JSON: {"message":"plain answer","tool":{"name":"one exact tool name","args":{}}}. Omit tool if none is needed. Use at most one tool per turn. Ask for missing details. For write tools, the server creates a proposal card.`;
 }
 
 function parseInstruction(raw: string | undefined): {

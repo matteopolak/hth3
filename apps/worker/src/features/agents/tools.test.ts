@@ -7,6 +7,7 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
   const employee = visibleTools("employee").map((tool) => tool.name);
   expect(resident).toContain("save_external_preparation");
   expect(resident).toContain("submit_program_application");
+  expect(resident).toContain("check_feedback_duplicate");
   expect(resident).not.toContain("staff_assign_feedback");
   expect(employee).toContain("staff_assign_feedback");
   expect(employee).not.toContain("save_external_preparation");
@@ -39,6 +40,29 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
   expect(assignment.path).toBe(
     `/api/v1/staff/organizations/${org}/feedback/fb_${"a".repeat(32)}/assignment`,
   );
+  const duplicateCheck = prepareTool(
+    "check_feedback_duplicate",
+    {
+      message: "The streetlight outside the library is broken.",
+      municipalityId: "3520005",
+      category: "public_space",
+    },
+    "resident",
+    null,
+  );
+  expect(duplicateCheck.path).toBe("/api/v1/feedback/duplicate-check");
+  expect(duplicateCheck.tool.access).toBe("read");
+  const feedback = prepareTool(
+    "create_feedback",
+    {
+      message: "The streetlight outside the library is broken.",
+      municipalityId: "3520005",
+      duplicateOverride: true,
+    },
+    "resident",
+    null,
+  );
+  expect(feedback.body).toMatchObject({ duplicateOverride: false });
   expect(() =>
     prepareTool("staff_assign_feedback", {}, "resident", null),
   ).toThrow(ToolInputError);

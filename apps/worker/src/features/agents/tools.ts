@@ -384,6 +384,20 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     path: (args) => `/api/v1/feedback/receipts/${feedbackId(args)}`,
     handler: handleFeedbackRequest,
   },
+  check_feedback_duplicate: {
+    mode: "resident",
+    access: "read",
+    description:
+      "Check for a strong recent match in the same municipality and category. Returns only a matching case's current status, never its text or identity.",
+    method: "POST",
+    path: () => "/api/v1/feedback/duplicate-check",
+    handler: handleFeedbackRequest,
+    body: (args) => ({
+      message: string(args, "message"),
+      municipalityId: string(args, "municipalityId"),
+      category: args.category,
+    }),
+  },
   read_feedback_attachment: {
     mode: "resident",
     access: "read",
@@ -421,6 +435,7 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       whatWouldImprove: args.whatWouldImprove,
       category: args.category,
       sandboxAcknowledged: args.sandboxAcknowledged,
+      duplicateOverride: false,
       locale: args.locale,
     }),
   },
@@ -1116,7 +1131,7 @@ export async function executeTool(
 ): Promise<{ status: number; data: unknown }> {
   const url = new URL(prepared.path, request.url);
   const headers = new Headers();
-  for (const key of ["Authorization", "Accept-Language"]) {
+  for (const key of ["Authorization", "Accept-Language", "CF-Connecting-IP"]) {
     const value = request.headers.get(key);
     if (value) headers.set(key, value);
   }
