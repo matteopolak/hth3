@@ -41,6 +41,10 @@
 	<string>civicresolve://auth/callback</string>
 	<key>CIVICRESOLVE_API_BASE_URL</key>
 	<string>$(CIVICRESOLVE_API_BASE_URL)</string>
+	<key>PRESAGE_API_KEY</key>
+	<string>$(PRESAGE_API_KEY)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Envoy uses the camera only when you start an optional accessibility check.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FeedbackView: View {
     @EnvironmentObject private var model: CivicResolveModel
+    @AppStorage("envoy.calmWriting") private var calmWriting = false
 
     var body: some View {
         ScrollView {
@@ -10,9 +11,11 @@ struct FeedbackView: View {
                     emergencyGuidance
                 } else {
                     SandboxBadge(title: copy("sandbox.title"))
-                    Text(copy("feedback.intro"))
-                        .font(.subheadline)
-                        .foregroundStyle(CivicTheme.muted)
+                    if !calmWriting {
+                        Text(copy("feedback.intro"))
+                            .font(.subheadline)
+                            .foregroundStyle(CivicTheme.muted)
+                    }
                     CivicTheme.card {
                         VStack(alignment: .leading, spacing: 16) {
                             if model.feedbackReviewing {
@@ -20,8 +23,10 @@ struct FeedbackView: View {
                             } else {
                                 Text(copy("feedback.title"))
                                     .font(.title2.weight(.semibold))
-                                field(copy("feedback.message"), hint: copy("feedback.messageHint"), text: $model.feedbackDraft, minHeight: 124)
-                                field(copy("feedback.improvement"), hint: copy("feedback.improvementHint"), text: $model.improvementDraft, minHeight: 84)
+                                field(copy("feedback.message"), hint: copy("feedback.messageHint"), text: $model.feedbackDraft, minHeight: calmWriting ? 230 : 124)
+                                if !calmWriting || !model.improvementDraft.isEmpty {
+                                    field(copy("feedback.improvement"), hint: copy("feedback.improvementHint"), text: $model.improvementDraft, minHeight: 84)
+                                }
                                 Button(copy("feedback.review")) {
                                     model.error = nil
                                     model.feedbackReviewing = true
@@ -150,6 +155,7 @@ struct FeedbackView: View {
             Text(title).font(.subheadline.weight(.semibold))
             TextField(hint, text: text, axis: .vertical)
                 .lineLimit(3...8)
+                .font(calmWriting ? .title3 : .body)
                 .padding(12)
                 .frame(minHeight: minHeight, alignment: .topLeading)
                 .background(.white, in: RoundedRectangle(cornerRadius: 10))

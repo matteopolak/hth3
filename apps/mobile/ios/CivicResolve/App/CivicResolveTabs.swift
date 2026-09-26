@@ -25,6 +25,13 @@ struct CivicResolveTabs: View {
                     .toolbar { languageToolbar }
             }
             .tabItem { Label(copy("nav.profile"), systemImage: "person.crop.circle") }
+
+            NavigationStack {
+                AccessibilityView()
+                    .navigationTitle(model.locale == .en ? "Accessibility" : "Accessibilité")
+                    .toolbar { languageToolbar }
+            }
+            .tabItem { Label(model.locale == .en ? "Access" : "Accès", systemImage: "textformat.size") }
         }
         .tint(CivicTheme.accent)
         .task { await model.restoreAuthSession() }

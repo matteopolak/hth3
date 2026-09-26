@@ -19,6 +19,8 @@
 		A1000000000000000000000B /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000D /* ProfileView.swift */; };
 		A1000000000000000000000C /* Auth0Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* Auth0Session.swift */; };
 		A1000000000000000000000D /* Auth0 in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000001 /* Auth0 */; };
+		A1000000000000000000000E /* AccessibilityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* AccessibilityView.swift */; };
+		A1000000000000000000000F /* SmartSpectra in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000002 /* SmartSpectra */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,10 +38,11 @@
 		B1000000000000000000000C /* CivicResolve.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CivicResolve.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1000000000000000000000D /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		B1000000000000000000000E /* Auth0Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth0Session.swift; sourceTree = "<group>"; };
+		B1000000000000000000000F /* AccessibilityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C10000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000D /* Auth0 in Frameworks */,); runOnlyForDeploymentPostprocessing = 0; };
+		C10000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000D /* Auth0 in Frameworks */, A1000000000000000000000F /* SmartSpectra in Frameworks */,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -64,10 +67,11 @@
 		D10000000000000000000004 /* App */ = {isa = PBXGroup; path = App; sourceTree = "<group>"; children = (B10000000000000000000001 /* CivicResolveApp.swift */, B10000000000000000000002 /* CivicResolveTabs.swift */, B10000000000000000000003 /* CivicResolveModel.swift */); };
 		D10000000000000000000005 /* Design */ = {isa = PBXGroup; path = Design; sourceTree = "<group>"; children = (B10000000000000000000004 /* CivicTheme.swift */); };
 		D10000000000000000000006 /* Platform */ = {isa = PBXGroup; path = Platform; sourceTree = "<group>"; children = (B10000000000000000000005 /* AppCopy.swift */, B10000000000000000000006 /* LocalIdentity.swift */, B10000000000000000000007 /* KeychainReceiptStore.swift */, B10000000000000000000008 /* WorkerAPI.swift */, B1000000000000000000000E /* Auth0Session.swift */); };
-		D10000000000000000000007 /* Features */ = {isa = PBXGroup; children = (D10000000000000000000008 /* Feedback */, D10000000000000000000009 /* Applications */, D1000000000000000000000A /* Profile */); sourceTree = "<group>"; };
+		D10000000000000000000007 /* Features */ = {isa = PBXGroup; children = (D10000000000000000000008 /* Feedback */, D10000000000000000000009 /* Applications */, D1000000000000000000000A /* Profile */, D1000000000000000000000B /* Accessibility */); sourceTree = "<group>"; };
 		D10000000000000000000008 /* Feedback */ = {isa = PBXGroup; path = Features/Feedback; sourceTree = "<group>"; children = (B10000000000000000000009 /* FeedbackView.swift */); };
 		D10000000000000000000009 /* Applications */ = {isa = PBXGroup; path = Features/Applications; sourceTree = "<group>"; children = (B1000000000000000000000A /* ApplicationsView.swift */); };
 		D1000000000000000000000A /* Profile */ = {isa = PBXGroup; path = Features/Profile; sourceTree = "<group>"; children = (B1000000000000000000000D /* ProfileView.swift */); };
+		D1000000000000000000000B /* Accessibility */ = {isa = PBXGroup; path = Features/Accessibility; sourceTree = "<group>"; children = (B1000000000000000000000F /* AccessibilityView.swift */); };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -77,7 +81,7 @@
 			buildPhases = (C10000000000000000000002 /* Sources */, C10000000000000000000001 /* Frameworks */, C10000000000000000000003 /* Resources */);
 			buildRules = ();
 			dependencies = ();
-			packageProductDependencies = (B20000000000000000000001 /* Auth0 */,);
+			packageProductDependencies = (B20000000000000000000001 /* Auth0 */, B20000000000000000000002 /* SmartSpectra */,);
 			name = CivicResolve;
 			productName = CivicResolve;
 			productReference = B1000000000000000000000C /* CivicResolve.app */;
@@ -86,7 +90,7 @@
 /* End PBXNativeTarget section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* CivicResolveApp.swift in Sources */, A10000000000000000000002 /* CivicResolveTabs.swift in Sources */, A10000000000000000000003 /* CivicResolveModel.swift in Sources */, A10000000000000000000004 /* CivicTheme.swift in Sources */, A10000000000000000000005 /* AppCopy.swift in Sources */, A10000000000000000000006 /* LocalIdentity.swift in Sources */, A10000000000000000000007 /* KeychainReceiptStore.swift in Sources */, A10000000000000000000008 /* WorkerAPI.swift in Sources */, A10000000000000000000009 /* FeedbackView.swift in Sources */, A1000000000000000000000A /* ApplicationsView.swift in Sources */, A1000000000000000000000B /* ProfileView.swift in Sources */, A1000000000000000000000C /* Auth0Session.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+		C10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* CivicResolveApp.swift in Sources */, A10000000000000000000002 /* CivicResolveTabs.swift in Sources */, A10000000000000000000003 /* CivicResolveModel.swift in Sources */, A10000000000000000000004 /* CivicTheme.swift in Sources */, A10000000000000000000005 /* AppCopy.swift in Sources */, A10000000000000000000006 /* LocalIdentity.swift in Sources */, A10000000000000000000007 /* KeychainReceiptStore.swift in Sources */, A10000000000000000000008 /* WorkerAPI.swift in Sources */, A10000000000000000000009 /* FeedbackView.swift in Sources */, A1000000000000000000000A /* ApplicationsView.swift in Sources */, A1000000000000000000000B /* ProfileView.swift in Sources */, A1000000000000000000000C /* Auth0Session.swift in Sources */, A1000000000000000000000E /* AccessibilityView.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
@@ -96,8 +100,8 @@
 /* Begin XCBuildConfiguration section */
 		F10000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 6.0; }; name = Debug; };
 		F10000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 6.0; }; name = Release; };
-		F10000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CIVICRESOLVE_API_BASE_URL = "http://127.0.0.1:8787/api/v1"; CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = CivicResolve/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.matteopolak.envoy; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
-		F10000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CIVICRESOLVE_API_BASE_URL = "https://civicresolve-api-production.matteopolak.workers.dev/api/v1"; CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = CivicResolve/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.matteopolak.envoy; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
+		F10000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CIVICRESOLVE_API_BASE_URL = "http://127.0.0.1:8787/api/v1"; CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = CivicResolve/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRESAGE_API_KEY = ""; PRODUCT_BUNDLE_IDENTIFIER = com.matteopolak.envoy; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+		F10000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CIVICRESOLVE_API_BASE_URL = "https://civicresolve-api-production.matteopolak.workers.dev/api/v1"; CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = CivicResolve/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRESAGE_API_KEY = ""; PRODUCT_BUNDLE_IDENTIFIER = com.matteopolak.envoy; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -119,11 +123,13 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (E10000000000000000000001 /* CivicResolve */);
-			packageReferences = (B30000000000000000000001 /* XCRemoteSwiftPackageReference "Auth0.swift" */,);
+			packageReferences = (B30000000000000000000001 /* XCRemoteSwiftPackageReference "Auth0.swift" */, B30000000000000000000002 /* XCRemoteSwiftPackageReference "SmartSpectra-Swift" */,);
 		};
 /* End PBXProject section */
 		B20000000000000000000001 /* Auth0 */ = {isa = XCSwiftPackageProductDependency; package = B30000000000000000000001 /* XCRemoteSwiftPackageReference "Auth0.swift" */; productName = Auth0; };
+		B20000000000000000000002 /* SmartSpectra */ = {isa = XCSwiftPackageProductDependency; package = B30000000000000000000002 /* XCRemoteSwiftPackageReference "SmartSpectra-Swift" */; productName = SmartSpectra; };
 		B30000000000000000000001 /* XCRemoteSwiftPackageReference "Auth0.swift" */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/auth0/Auth0.swift"; requirement = {kind = exactVersion; version = 3.0.0; }; };
+		B30000000000000000000002 /* XCRemoteSwiftPackageReference "SmartSpectra-Swift" */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/Presage-Security/SmartSpectra-Swift"; requirement = {kind = exactVersion; version = 3.3.0; }; };
 	};
 	rootObject = E10000000000000000000002 /* Project object */;
 }
