@@ -26,7 +26,7 @@ const en = {
   "sidebar.programs": "Programs",
   "sidebar.programRequests": "My requests",
   "sidebar.programSponsor": "Program intake",
-  "sidebar.externalPreparation": "Application preparation",
+  "sidebar.externalPreparation": "Preparation",
   "sidebar.nearby": "Nearby",
   "sidebar.participation": "Participation",
   "sidebar.plugins": "Plugins",

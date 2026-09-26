@@ -30,7 +30,7 @@ const fr: Catalogue = {
   "sidebar.programs": "Programmes",
   "sidebar.programRequests": "Mes demandes",
   "sidebar.programSponsor": "Demandes de programmes",
-  "sidebar.externalPreparation": "Préparation de demande",
+  "sidebar.externalPreparation": "Préparation",
   "sidebar.nearby": "À proximité",
   "sidebar.participation": "Participation",
   "sidebar.plugins": "Modules",
