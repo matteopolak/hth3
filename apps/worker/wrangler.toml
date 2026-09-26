@@ -17,7 +17,7 @@ ELEVENLABS_AGENT_ID = "agent_5801m3fcxxsfez68g5v7gr22fzky"
 [env.production.vars]
 APP_ENV = "production"
 DEV_AUTH_ENABLED = "false"
-ALLOWED_ORIGINS = "https://envoy-web.pages.dev"
+ALLOWED_ORIGINS = "https://civicresolve-api-production.matteopolak.workers.dev,https://envoy-web.pages.dev"
 AUTH0_DOMAIN = "dev-ole6i03kzvf3yb8z.us.auth0.com"
 AUTH0_AUDIENCE = "https://civicresolve.example/api"
 ELEVENLABS_AGENT_ID = "agent_5801m3fcxxsfez68g5v7gr22fzky"
@@ -25,8 +25,17 @@ ELEVENLABS_AGENT_ID = "agent_5801m3fcxxsfez68g5v7gr22fzky"
 [env.production]
 compatibility_flags = ["nodejs_compat"]
 
+[env.production.assets]
+directory = "../web/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api", "/api/*"]
+
 [env.production.ai]
 binding = "AI"
+
+[[env.production.vectorize]]
+binding = "THEME_VECTORS"
+index_name = "envoy-feedback-themes"
 
 [[env.production.hyperdrive]]
 binding = "HYPERDRIVE"

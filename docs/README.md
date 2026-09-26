@@ -5,7 +5,7 @@ This repository contains the product plan and the shared workspace/CI foundation
 | Document                                                                     | Description                                                                                                                                                   |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Project plan](../PLAN.md)                                                   | Canada-wide bilingual web/mobile product scope, source provenance, native applications, civic feedback, architecture, challenge coverage, and delivery gates. |
-| [Deployment](deployment.md) | Pages and Worker URLs, production configuration, migrations, monitoring, and rollback. |
+| [Deployment](deployment.md) | Single Worker web and API deploy, production bindings, migrations, Auth0 origin, and rollback. |
 | [Presentation run](presentation.md) | Honest live demo sequence and fallback paths. |
 | [Submission checklist](submission-checklist.md) | Required challenge evidence, links, roster, and final submission checks. |
 | [Video storyboard](video-storyboard.md) | Five-minute sequence using actual product captures and verified provider results. |

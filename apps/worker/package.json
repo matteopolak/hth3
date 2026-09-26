@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "node scripts/wrangler.mjs dev --local --port 8787",
     "migrations:apply:local": "node scripts/wrangler.mjs d1 migrations apply civicresolve-local --local",
+    "deploy:production": "node scripts/wrangler.mjs deploy --env production",
     "smoke": "node scripts/smoke.mjs",
     "typecheck": "tsc --noEmit",
     "build": "node scripts/wrangler.mjs deploy --dry-run --env \"\""
   },
   "dependencies": {
+    "@civicresolve/ai": "workspace:*",
     "@civicresolve/contracts": "workspace:*",
     "@civicresolve/db": "workspace:*",
     "@civicresolve/domain": "workspace:*",

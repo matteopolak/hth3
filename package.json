@@ -12,6 +12,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm exec vitest run",
     "build": "pnpm -r --if-present build",
+    "deploy:production": "pnpm --filter @civicresolve/web build && pnpm --filter @civicresolve/worker deploy:production",
     "smoke": "pnpm --filter @civicresolve/worker smoke",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm smoke"
   },

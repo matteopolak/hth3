@@ -2,24 +2,24 @@
 
 ## What it is
 
-Envoy's web client is hosted on Cloudflare Pages at `https://envoy-web.pages.dev`. The API runs on the existing Workers Free deployment at `https://civicresolve-api-production.matteopolak.workers.dev`; the internal Worker name is retained for continuity.
+Envoy is one Cloudflare Worker application. The Worker serves the built Vite site and handles its API at `/api/` on the same origin. Its existing Cloudflare script name, `civicresolve-api-production`, is retained so the installed HMAC and ElevenLabs secrets remain attached. The public endpoint is `https://civicresolve-api-production.matteopolak.workers.dev/`.
 
 ## How it works
 
-Build the static Vite client with `VITE_API_BASE_URL=https://civicresolve-api-production.matteopolak.workers.dev/api/v1` and deploy `apps/web/dist` to the `envoy-web` Pages project. The production Worker allows only the Pages origin through `ALLOWED_ORIGINS`. Auth0's public SPA client allows that origin and `/callback` for Universal Login; the staff organization remains an explicitly unaffiliated practice workspace. Guest conversations and feedback do not require Auth0.
+`pnpm deploy:production` builds `apps/web/dist`, then Wrangler uploads those assets with `apps/worker/src/platform/index.ts` as one Worker deployment. `[env.production.assets]` in `apps/worker/wrangler.toml` serves static files and falls back to `index.html` for SPA navigation. `/api` and `/api/*` run the Worker script first. The Vite build defaults to `/api/v1`, so browser requests stay on the same origin and need no separate API host. `pnpm dev -- --host` continues to run the Cloudflare Vite plugin with the Worker and local D1/R2 on port 5173 for LAN use.
 
-The Worker uses production D1, private R2, Workers AI, and Hyperdrive. Its five-minute cron delivers the feedback outbox and refreshes due official sources. The product exposes source provenance and sample state; a practice record never represents a real municipal or employer submission. Pages, Worker, D1, and Workers AI should remain on no-charge allocations. Do not enable a paid plan or provider overage to work around a quota failure.
+Production bindings attach D1, private R2, Workers AI, Vectorize, and Hyperdrive to that Worker. The five-minute cron delivers feedback events and refreshes due official sources. The existing `envoy-web` Pages deployment is a temporary rollback path while the combined Worker is verified; it is not part of the production architecture. The production CORS allowlist temporarily includes both origins during that transition.
 
 ## How to change it
 
-Update `apps/worker/wrangler.toml` when the public Pages origin changes. Update the Auth0 SPA callback, logout, and web-origin allowlists to the same HTTPS host. Set `VITE_API_BASE_URL` for each web build; never bake secrets into Vite variables. Apply D1 migrations with `wrangler d1 migrations apply civicresolve-prod --remote --env production` before deploying Worker code that reads new tables. Deploy the Worker with `wrangler deploy --env production`, and Pages with `wrangler pages deploy apps/web/dist --project-name envoy-web --branch main`.
+Apply pending D1 migrations before deploying code that reads new tables: from `apps/worker`, run `./node_modules/.bin/wrangler d1 migrations apply civicresolve-prod --remote --env production`. Run `pnpm deploy:production` at the repo root. Check `/`, a deep SPA route such as `/callback`, `/api/healthz`, a representative `/api/v1/` read, and an asset URL on the Worker origin. Confirm the Auth0 SPA's callback, logout, and web-origin allowlists contain this Worker origin before using login there. Update the native iOS Release API URL to the same origin when publishing a new build.
 
-Keep the previous Cloudflare Worker version and Pages deployment available for rollback through their dashboards or Wrangler deployment tooling. Check `wrangler tail --env production` and D1 source/outbox state when a live route fails. Do not treat a local development principal as evidence of a real Auth0 role token.
+Keep `VITE_API_BASE_URL` unset for a same-origin web build; set it only to intentionally target another API. If the Worker URL changes, update the Auth0 allowlists, native Release configuration, and `ALLOWED_ORIGINS`. Never place service secrets in a `VITE_` variable or the repository. Retire the old Pages project only after the combined Worker and sign-in flows work; Wrangler/Cloudflare deployment history remains the rollback for the Worker itself.
 
 ## Configuration
 
-`apps/worker/wrangler.toml` holds public binding IDs, Auth0 domain/audience, cron, and allowed origin. `FEEDBACK_ABUSE_HMAC_KEY` is a Worker secret. The web build uses public `VITE_API_BASE_URL`, `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, `VITE_AUTH0_AUDIENCE`, and `VITE_AUTH0_STAFF_ORGANIZATION_ID`. The exact Auth0 SPA and organization setup is in [Web sign-in](auth/web-sign-in.md). `pnpm-workspace.yaml` enforces a strict two-week minimum package release age.
+`apps/worker/wrangler.toml` defines the asset directory, SPA and API routing, public binding IDs, Auth0 audience/domain, cron, and CORS origins. `FEEDBACK_ABUSE_HMAC_KEY` and `ELEVENLABS_API_KEY` are existing Worker secrets. The web build uses the public `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, `VITE_AUTH0_AUDIENCE`, and `VITE_AUTH0_STAFF_ORGANIZATION_ID` settings, with defaults in `apps/web/src/platform/auth0.ts`. `pnpm-workspace.yaml` enforces a strict two-week minimum package release age.
 
 ## Dependencies
 
-Cloudflare Pages, Workers, D1, R2, Workers AI, and Hyperdrive host the web/API stack. Auth0 provides login; Tiger receives feedback outbox analytics when connected. ElevenLabs voice and native Presage have separate acceptance requirements documented in their feature pages.
+Cloudflare Workers Static Assets, D1, R2, Workers AI, Vectorize, and Hyperdrive host the web/API stack. Auth0 provides login; Tiger receives feedback outbox analytics through Hyperdrive. ElevenLabs voice and native Presage have separate acceptance requirements documented in their feature pages. Keep the Cloudflare plan and provider use within free or already available credits.

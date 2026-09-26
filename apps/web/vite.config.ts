@@ -28,7 +28,7 @@ export default defineConfig(({ command, mode }) => {
   const apiBaseUrl =
     process.env.VITE_API_BASE_URL ??
     environment.VITE_API_BASE_URL ??
-    (command === "serve" ? "/api/v1" : undefined);
+    "/api/v1";
 
   return {
     plugins:
