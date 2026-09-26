@@ -51,6 +51,7 @@ interface Env {
   HYPERDRIVE?: { connectionString: string };
   ELEVENLABS_API_KEY?: string;
   ELEVENLABS_AGENT_ID?: string;
+  ELEVENLABS_WEBHOOK_SECRET?: string;
 }
 
 interface SmokeInput {

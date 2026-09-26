@@ -179,10 +179,18 @@ export const api = {
       },
     ),
   createVoiceSession: (locale: Locale) =>
-    request<{ signedUrl: string; expiresInSeconds: number; locale: Locale }>(
+    request<{ signedUrl: string; expiresInSeconds: number; locale: Locale; voiceSessionToken: string }>(
       "/voice/session",
       { method: "POST", body: { locale } },
     ),
+  getVoiceSessionStatus: (voiceSessionToken: string) =>
+    request<{
+      status: "pending" | "not_submitted" | "duplicate" | "submitted";
+      submissionId?: string;
+      receiptToken?: string;
+    }>("/voice/session/status", {
+      headers: { "X-Voice-Session-Token": voiceSessionToken },
+    }),
   createConversation: (
     mode: "resident" | "employee",
     locale: Locale,
