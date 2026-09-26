@@ -20,6 +20,9 @@ const copy = {
     destination: "Destination",
     municipality: "Municipality",
     department: "Department",
+    envoyTeam: "Envoy review team",
+    practiceNotice:
+      "This report stays in Envoy. It was not sent to a government office.",
     outcome: "Outcome",
     original: "Your report",
     improvement: "What would improve this",
@@ -51,6 +54,9 @@ const copy = {
     destination: "Destination",
     municipality: "Municipalité",
     department: "Service",
+    envoyTeam: "Équipe de suivi d’Envoy",
+    practiceNotice:
+      "Ce signalement reste dans Envoy. Il n’a pas été envoyé à un organisme gouvernemental.",
     outcome: "Résultat",
     original: "Votre signalement",
     improvement: "Ce qui améliorerait la situation",
@@ -183,11 +189,17 @@ export function createResidentFeedbackCase(options: Options): HTMLElement {
     "resident-case-status",
     text.statuses[receipt.status],
   );
-  properties.append(element("h3", "resident-case-properties-title", text.status), status);
+  properties.append(
+    element("h3", "resident-case-properties-title", text.status),
+    status,
+  );
   const facts: Array<[string, string | null | undefined]> = [
-    [text.destination, receipt.destinationLabel],
+    [
+      text.destination,
+      receipt.sample ? text.envoyTeam : receipt.destinationLabel,
+    ],
     [text.municipality, receipt.municipality?.name],
-    [text.department, receipt.departmentName],
+    [text.department, receipt.sample ? null : receipt.departmentName],
   ];
   for (const [labelText, value] of facts) {
     if (!value) continue;
@@ -203,6 +215,8 @@ export function createResidentFeedbackCase(options: Options): HTMLElement {
     );
     properties.append(outcome);
   }
+  if (receipt.sample)
+    properties.append(element("p", "resident-case-muted", text.practiceNotice));
   properties.append(element("p", "resident-case-muted", text.private));
   const again = element("button", "resident-case-quiet", text.newReport);
   again.type = "button";
