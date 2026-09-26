@@ -14,7 +14,7 @@ The staff workspace uses a restrained left rail for agent threads and manual tab
 
 Use an original civic identity informed by the clarity of Stripe, the quiet workspace feel of ChatGPT/Notion, and the editorial restraint of Anthropic without copying any one site. Prefer modest type scale, strong hierarchy, neutral surfaces, restrained accents, semantic status colors, visible focus and ample but not wasteful spacing. Avoid nested cards, ubiquitous oversized headings, repetitive three-column feature grids, filler paragraphs and inert controls. Every page needs real loading, error, empty, stale and permission-denied states. Test at phone, tablet and desktop widths and with long French text.
 
-The Expo app is a native-feeling public client of the same Worker API, not a Remotion-only mock or a webview. Its core search, application, feedback and status flows must actually work. Employer and platform administration are web-first. Text alternatives exist for voice; map results also have an accessible list; autofill never commits an answer without review.
+The iOS app is a native SwiftUI public client of the same Worker API, not a webview or a presentation-only mock. Its core search, application, feedback and status flows must use real API responses. Employer and platform administration are web-first. Text alternatives exist for voice; map results also have an accessible list; autofill never commits an answer without review.
 
 ## How to change it
 
@@ -26,4 +26,4 @@ Shared design tokens control colors, type, spacing, radii and breakpoints. Local
 
 ## Dependencies
 
-Shared contracts and i18n catalogue, design tokens, public/staff APIs, Expo/React Native and web UI. Optional Presage adaptations require explicit consent and cannot affect priority, eligibility or hiring decisions.
+Shared contracts and i18n catalogue, design tokens, public/staff APIs, SwiftUI for iOS, and web UI. Optional Presage adaptations require explicit consent and cannot affect priority, eligibility or hiring decisions.

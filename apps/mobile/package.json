@@ -1,0 +1,6 @@
+{
+  "name": "@civicresolve/mobile",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Native SwiftUI iOS client for the CivicResolve Worker API"
+}

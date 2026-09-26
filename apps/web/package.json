@@ -1,0 +1,19 @@
+{
+  "name": "@civicresolve/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@civicresolve/contracts": "workspace:*",
+    "@civicresolve/design-tokens": "workspace:*",
+    "@civicresolve/i18n": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "7.1.5"
+  }
+}

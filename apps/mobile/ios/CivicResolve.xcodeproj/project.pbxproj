@@ -1,0 +1,119 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* CivicResolveApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* CivicResolveApp.swift */; };
+		A10000000000000000000002 /* CivicResolveTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* CivicResolveTabs.swift */; };
+		A10000000000000000000003 /* CivicResolveModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* CivicResolveModel.swift */; };
+		A10000000000000000000004 /* CivicTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* CivicTheme.swift */; };
+		A10000000000000000000005 /* AppCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* AppCopy.swift */; };
+		A10000000000000000000006 /* LocalIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* LocalIdentity.swift */; };
+		A10000000000000000000007 /* KeychainReceiptStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* KeychainReceiptStore.swift */; };
+		A10000000000000000000008 /* WorkerAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* WorkerAPI.swift */; };
+		A10000000000000000000009 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* FeedbackView.swift */; };
+		A1000000000000000000000A /* ApplicationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* ApplicationsView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B10000000000000000000001 /* CivicResolveApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CivicResolveApp.swift; sourceTree = "<group>"; };
+		B10000000000000000000002 /* CivicResolveTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CivicResolveTabs.swift; sourceTree = "<group>"; };
+		B10000000000000000000003 /* CivicResolveModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CivicResolveModel.swift; sourceTree = "<group>"; };
+		B10000000000000000000004 /* CivicTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CivicTheme.swift; sourceTree = "<group>"; };
+		B10000000000000000000005 /* AppCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCopy.swift; sourceTree = "<group>"; };
+		B10000000000000000000006 /* LocalIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalIdentity.swift; sourceTree = "<group>"; };
+		B10000000000000000000007 /* KeychainReceiptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainReceiptStore.swift; sourceTree = "<group>"; };
+		B10000000000000000000008 /* WorkerAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerAPI.swift; sourceTree = "<group>"; };
+		B10000000000000000000009 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
+		B1000000000000000000000A /* ApplicationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationsView.swift; sourceTree = "<group>"; };
+		B1000000000000000000000B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B1000000000000000000000C /* CivicResolve.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CivicResolve.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C10000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D10000000000000000000001 = {
+			isa = PBXGroup;
+			children = (D10000000000000000000002 /* CivicResolve */, D10000000000000000000003 /* Products */);
+			sourceTree = "<group>";
+		};
+		D10000000000000000000002 /* CivicResolve */ = {
+			isa = PBXGroup;
+			path = CivicResolve;
+			sourceTree = "<group>";
+			children = (
+				D10000000000000000000004 /* App */,
+				D10000000000000000000005 /* Design */,
+				D10000000000000000000006 /* Platform */,
+				D10000000000000000000007 /* Features */,
+				B1000000000000000000000B /* Info.plist */,
+			);
+		};
+		D10000000000000000000003 /* Products */ = {isa = PBXGroup; children = (B1000000000000000000000C /* CivicResolve.app */); name = Products; sourceTree = "<group>"; };
+		D10000000000000000000004 /* App */ = {isa = PBXGroup; path = App; sourceTree = "<group>"; children = (B10000000000000000000001 /* CivicResolveApp.swift */, B10000000000000000000002 /* CivicResolveTabs.swift */, B10000000000000000000003 /* CivicResolveModel.swift */); };
+		D10000000000000000000005 /* Design */ = {isa = PBXGroup; path = Design; sourceTree = "<group>"; children = (B10000000000000000000004 /* CivicTheme.swift */); };
+		D10000000000000000000006 /* Platform */ = {isa = PBXGroup; path = Platform; sourceTree = "<group>"; children = (B10000000000000000000005 /* AppCopy.swift */, B10000000000000000000006 /* LocalIdentity.swift */, B10000000000000000000007 /* KeychainReceiptStore.swift */, B10000000000000000000008 /* WorkerAPI.swift */); };
+		D10000000000000000000007 /* Features */ = {isa = PBXGroup; children = (D10000000000000000000008 /* Feedback */, D10000000000000000000009 /* Applications */); sourceTree = "<group>"; };
+		D10000000000000000000008 /* Feedback */ = {isa = PBXGroup; path = Features/Feedback; sourceTree = "<group>"; children = (B10000000000000000000009 /* FeedbackView.swift */); };
+		D10000000000000000000009 /* Applications */ = {isa = PBXGroup; path = Features/Applications; sourceTree = "<group>"; children = (B1000000000000000000000A /* ApplicationsView.swift */); };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E10000000000000000000001 /* CivicResolve */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F10000000000000000000006 /* Build configuration list for PBXNativeTarget "CivicResolve" */;
+			buildPhases = (C10000000000000000000002 /* Sources */, C10000000000000000000001 /* Frameworks */, C10000000000000000000003 /* Resources */);
+			buildRules = ();
+			dependencies = ();
+			name = CivicResolve;
+			productName = CivicResolve;
+			productReference = B1000000000000000000000C /* CivicResolve.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* CivicResolveApp.swift in Sources */, A10000000000000000000002 /* CivicResolveTabs.swift in Sources */, A10000000000000000000003 /* CivicResolveModel.swift in Sources */, A10000000000000000000004 /* CivicTheme.swift in Sources */, A10000000000000000000005 /* AppCopy.swift in Sources */, A10000000000000000000006 /* LocalIdentity.swift in Sources */, A10000000000000000000007 /* KeychainReceiptStore.swift in Sources */, A10000000000000000000008 /* WorkerAPI.swift in Sources */, A10000000000000000000009 /* FeedbackView.swift in Sources */, A1000000000000000000000A /* ApplicationsView.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C10000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F10000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 6.0; }; name = Debug; };
+		F10000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 6.0; }; name = Release; };
+		F10000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = CivicResolve/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = example.civicresolve.ios; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+		F10000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = CivicResolve/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = example.civicresolve.ios; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F10000000000000000000005 /* Build configuration list for PBXProject "CivicResolve" */ = {isa = XCConfigurationList; buildConfigurations = (F10000000000000000000001 /* Debug */, F10000000000000000000002 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		F10000000000000000000006 /* Build configuration list for PBXNativeTarget "CivicResolve" */ = {isa = XCConfigurationList; buildConfigurations = (F10000000000000000000003 /* Debug */, F10000000000000000000004 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+
+/* Begin PBXProject section */
+		E10000000000000000000002 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {BuildIndependentTargetsInParallel = 1; LastUpgradeCheck = 2700; TargetAttributes = {E10000000000000000000001 = {CreatedOnToolsVersion = 27.0; }; }; };
+			buildConfigurationList = F10000000000000000000005 /* Build configuration list for PBXProject "CivicResolve" */;
+			compatibilityVersion = "Xcode 16.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, fr, Base);
+			mainGroup = D10000000000000000000001;
+			productRefGroup = D10000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (E10000000000000000000001 /* CivicResolve */);
+		};
+/* End PBXProject section */
+	};
+	rootObject = E10000000000000000000002 /* Project object */;
+}
