@@ -14,21 +14,25 @@ The callback returns to `/` after the SDK consumes `code` and `state`. The app c
 
 Update the `webAuth` module if the SDK lifecycle changes; keep UI controls in `apps/web/src/platform/main.ts` and API resource calls in `api.ts`. Add a new staff organization only after its Auth0 organization, D1 organization row, and membership records agree. Keep the SDK cache in memory. When moving the web app to a new origin, add that origin's exact `/callback`, web origin, and logout URL to the Auth0 SPA application's allowed callbacks, web origins, and logout URLs respectively.
 
+The hosted Universal Login theme is in `docs/auth/universal-login-theme.json`. Change that file, then use `auth0 api patch branding/themes/koQyvDM37rCzjRXszvJysFeosnfecvzP --data @docs/auth/universal-login-theme.json` from the repository root. The tenant branding and staff organization colors are separate settings; update both when changing the palette. The theme hides Auth0's generated letter badge with `widget.logo_position: "none"`.
+
 ## Configuration
 
 See `apps/web/.env.example`. Vite reads the following build-time public values:
 
 | Variable                           | Purpose                                                                             |
 | ---------------------------------- | ----------------------------------------------------------------------------------- |
-| `VITE_AUTH0_CLIENT_ID`             | Public SPA client ID; defaults to the existing Envoy web application.             |
+| `VITE_AUTH0_CLIENT_ID`             | Public SPA client ID; defaults to the existing Envoy web application.               |
 | `VITE_AUTH0_DOMAIN`                | Auth0 issuer host; defaults to the current development tenant.                      |
 | `VITE_AUTH0_AUDIENCE`              | Worker API audience; defaults to `https://civicresolve.example/api`.                |
 | `VITE_AUTH0_STAFF_ORGANIZATION_ID` | Auth0 organization for employee login; defaults to the seeded sandbox organization. |
 | `VITE_API_BASE_URL`                | Worker HTTP base URL used by the API client.                                        |
 
-Local callback: `http://localhost:5173/callback`. Local logout return and web origin: `http://localhost:5173`. These exact URLs are allowlisted on the existing SPA application. The production equivalents depend on the deployed web origin and must be added to Auth0 before a production build is published. No client secret belongs in Vite variables or the repository.
+The SPA allowlists contain `http://localhost:5173/callback` and `https://envoy-web.pages.dev/callback` as callbacks; `http://localhost:5173` and `https://envoy-web.pages.dev` are both allowed logout returns and web origins. The Pages project belongs to the authorized matteopolak Cloudflare account. No client secret belongs in Vite variables or the repository.
 
-The hosted Auth0 SPA display name is `envoy`. The existing staff organization retains its stable Auth0 ID and slug; its login display name is `Envoy Staff Workspace`. Those labels are tenant settings, so changing the product name again requires an Auth0 CLI update as well as repository copy edits.
+The hosted Auth0 SPA display name is `envoy`. The existing staff organization retains its stable Auth0 ID and slug; its login display name is `Envoy Staff Workspace`. Tenant branding and staff organization branding both use primary `#111111` and page background `#FAFAFA`; the default theme controls the remaining widget colors, borders, and logo visibility. These settings are in Auth0, so changing the product name or palette again requires an Auth0 CLI update as well as repository copy edits.
+
+The current Google social connection shows Auth0's development-key warning. Use the email/password connection for the showcase until a dedicated Google OAuth client is configured and a real login is verified. Neither login path has yet completed an end-to-end Worker token acceptance check.
 
 ## Dependencies
 
