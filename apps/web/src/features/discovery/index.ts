@@ -1,4 +1,6 @@
 import type { Locale } from "@civicresolve/contracts/v1";
+import { Building2, BusFront, HandHeart, LibraryBig, MapPin } from "lucide-static";
+import { createDiscoveryAreaStructure } from "./area-structures.js";
 import "./styles.css";
 
 export type DiscoveryArea =
@@ -9,6 +11,28 @@ export type DiscoveryArea =
   | "nearby"
   | "participation"
   | "saved";
+
+type ServiceCategory = "government" | "library" | "community" | "transit" | "other";
+
+interface ServiceFact {
+  status: "verified" | "stale" | "unknown";
+  summary: string;
+  verifiedAt: string | null;
+  sourceUrl: string;
+}
+
+interface PublicService {
+  category: ServiceCategory;
+  address: string | null;
+  coordinatesSourceUrl: string | null;
+  publicAccess: ServiceFact;
+  services: ServiceFact;
+  hours: ServiceFact;
+  accessibility: ServiceFact;
+  pinEligible: boolean;
+  pinKind: "official" | "sample" | null;
+  locationPrecision: "site" | "station";
+}
 
 interface DiscoveryItem {
   id: string;
@@ -42,6 +66,7 @@ interface DiscoveryItem {
     verifyOnPublisherSite: true;
     externalSubmissionRecorded: false;
   } | null;
+  service?: PublicService;
 }
 
 interface ChecklistEntry {
@@ -80,14 +105,36 @@ const copy = {
     finder: "Official finder",
     verifiedListing: "Verified listing",
     locationRecord: "Service location",
+    serviceCategory: "Service type",
+    allServices: "All services",
+    serviceGovernment: "Government",
+    serviceLibrary: "Libraries",
+    serviceCommunity: "Community",
+    serviceTransit: "Transit",
+    serviceOther: "Other",
+    serviceDetails: "Service details",
+    serviceAddress: "Address",
+    servicePublicAccess: "Public access",
+    serviceServices: "Services",
+    serviceHours: "Hours",
+    serviceAccessibility: "Accessibility",
+    serviceVerified: "Source checked",
+    serviceStale: "Check again before visiting",
+    serviceUnknown: "Not verified",
+    serviceSource: "Source",
+    serviceNoAddress: "Address not verified",
+    serviceNoSummary: "No verified details available.",
+    serviceStationPin: "Approximate station location; check the source for the counter entrance.",
     consultationFinder: "Consultation finder",
     sourceRecord: "Official source",
     chooseResult: "Choose a result to view details.",
     list: "List",
     map: "Map",
     mapNote:
-      "Positions come from official source coordinates. This is a schematic map.",
-    mapUnavailable: "No verified coordinates are available for these results.",
+      "Pins use source-backed coordinates. Nearby pins may be spaced for readability; this is not a street map.",
+    mapUnavailable: "These services have no source-backed map pins. See the full list.",
+    mappedLocations: "Mapped locations",
+    listOnly: "Other services remain available in the list.",
     jurisdiction: "Jurisdiction",
     allJurisdictions: "All jurisdictions",
     currentOnly: "Current only",
@@ -97,7 +144,7 @@ const copy = {
     emptyJobs: "No reviewed job sources match",
     emptySupport: "No matching support sources",
     emptyFunding: "No matching funding sources",
-    emptyNearby: "No matching service locations",
+    emptyNearby: "No matching public services",
     emptyParticipation: "No matching participation sources",
     emptyAll: "No matching sources",
     emptyFiltered: "Try another keyword or city, or clear your search.",
@@ -145,7 +192,7 @@ const copy = {
     resultCount: "results",
     nearbyNoLocation: "Location not set.",
     nearbyBrowse:
-      "Enter a city above to narrow these service locations. Without a city, results are sorted by jurisdiction and name, not distance.",
+      "Enter a city above to narrow public services. Without a city, results are sorted by jurisdiction and name, not distance.",
     all: "All",
     jobs: "Jobs",
     support: "Support",
@@ -165,15 +212,37 @@ const copy = {
     finder: "Moteur de recherche officiel",
     verifiedListing: "Annonce vérifiée",
     locationRecord: "Point de service",
+    serviceCategory: "Type de service",
+    allServices: "Tous les services",
+    serviceGovernment: "Gouvernement",
+    serviceLibrary: "Bibliothèques",
+    serviceCommunity: "Communauté",
+    serviceTransit: "Transport",
+    serviceOther: "Autres",
+    serviceDetails: "Détails du service",
+    serviceAddress: "Adresse",
+    servicePublicAccess: "Accès public",
+    serviceServices: "Services",
+    serviceHours: "Heures",
+    serviceAccessibility: "Accessibilité",
+    serviceVerified: "Source vérifiée",
+    serviceStale: "Vérifiez avant de vous déplacer",
+    serviceUnknown: "Non vérifié",
+    serviceSource: "Source",
+    serviceNoAddress: "Adresse non vérifiée",
+    serviceNoSummary: "Aucun détail vérifié disponible.",
+    serviceStationPin: "Emplacement approximatif de la station; vérifiez l’entrée du comptoir à la source.",
     consultationFinder: "Recherche de consultations",
     sourceRecord: "Source officielle",
     chooseResult: "Choisissez un résultat pour voir les détails.",
     list: "Liste",
     map: "Carte",
     mapNote:
-      "Les positions viennent des coordonnées de la source officielle. Cette carte est schématique.",
+      "Les repères utilisent les coordonnées des sources. Les repères proches peuvent être espacés pour la lisibilité; ce n’est pas un plan de rues.",
     mapUnavailable:
-      "Aucune coordonnée vérifiée n’est disponible pour ces résultats.",
+      "Ces services n’ont aucun repère cartographique provenant d’une source. Consultez la liste complète.",
+    mappedLocations: "Lieux sur la carte",
+    listOnly: "Les autres services restent dans la liste.",
     jurisdiction: "Territoire",
     allJurisdictions: "Tous les territoires",
     currentOnly: "Actuels seulement",
@@ -184,7 +253,7 @@ const copy = {
     emptyJobs: "Aucune source d’emplois examinée ne correspond",
     emptySupport: "Aucune source d’aide correspondante",
     emptyFunding: "Aucune source de financement correspondante",
-    emptyNearby: "Aucun point de service correspondant",
+    emptyNearby: "Aucun service public correspondant",
     emptyParticipation: "Aucune source de participation correspondante",
     emptyAll: "Aucune source correspondante",
     emptyFiltered:
@@ -238,7 +307,7 @@ const copy = {
     resultCount: "résultats",
     nearbyNoLocation: "Lieu non défini.",
     nearbyBrowse:
-      "Entrez une ville ci-dessus pour préciser les points de service. Sans ville, les résultats sont triés par territoire et par nom, pas par distance.",
+      "Entrez une ville ci-dessus pour limiter les services publics. Sans ville, les résultats sont triés par territoire et par nom, pas par distance.",
     all: "Tout",
     jobs: "Emplois",
     support: "Aide",
@@ -262,6 +331,7 @@ export function createDiscoveryPage({
   let location = "";
   let locationDraft = "";
   let currentOnly = false;
+  let serviceCategory: ServiceCategory | "all" = "all";
   let includeSamples = false;
   let display: "list" | "map" = "list";
   let mobileDetail = false;
@@ -294,13 +364,14 @@ export function createDiscoveryPage({
           limit: "30",
           offset: String(offset),
         });
-        if (area !== "all") params.set("area", area);
+        if (area !== "all" && area !== "nearby") params.set("area", area);
+        if (area === "nearby" && serviceCategory !== "all") params.set("category", serviceCategory);
         if (query) params.set("q", query);
         if (location) params.set("location", location);
         if (currentOnly) params.set("freshness", "current");
         if (includeSamples) params.set("includeSamples", "true");
         const result = await request<{ items: DiscoveryItem[]; total: number }>(
-          `/discovery?${params}`,
+          `/${area === "nearby" ? "nearby" : "discovery"}?${params}`,
         );
         records = append ? records.concat(result.items) : result.items;
         total = result.total;
@@ -330,6 +401,31 @@ export function createDiscoveryPage({
       render();
     }
   };
+
+  function serviceCategoryName(category: ServiceCategory): string {
+    const names = {
+      government: text.serviceGovernment,
+      library: text.serviceLibrary,
+      community: text.serviceCommunity,
+      transit: text.serviceTransit,
+      other: text.serviceOther,
+    };
+    return names[category];
+  }
+
+  function serviceIcon(category: ServiceCategory): HTMLElement {
+    const icons = {
+      government: Building2,
+      library: LibraryBig,
+      community: HandHeart,
+      transit: BusFront,
+      other: MapPin,
+    };
+    const icon = node("span", `discovery-service-icon category-${category}`);
+    icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML = icons[category];
+    return icon;
+  }
 
   function render(): void {
     root.replaceChildren();
@@ -366,7 +462,7 @@ export function createDiscoveryPage({
     });
     practice.append(practiceInput, node("span", "", text.practice));
     tools.append(practice);
-    if (area === "nearby" && displayed.some((item) => item.coordinates)) {
+    if (area === "nearby" && displayed.length > 0) {
       const switcher = node("div", "discovery-view-switch");
       for (const mode of ["list", "map"] as const) {
         const choice = action(
@@ -442,7 +538,7 @@ export function createDiscoveryPage({
       section.append(node("p", "", text.emptySaved));
       return section;
     }
-    const hasFilters = Boolean(query || location || currentOnly);
+    const hasFilters = Boolean(query || location || currentOnly || serviceCategory !== "all");
     section.append(
       node("p", "", hasFilters ? text.emptyFiltered : text.emptyUnfiltered),
     );
@@ -467,6 +563,7 @@ export function createDiscoveryPage({
           location = "";
           locationDraft = "";
           currentOnly = false;
+          serviceCategory = "all";
           offset = 0;
           void refresh();
         }),
@@ -482,6 +579,25 @@ export function createDiscoveryPage({
 
   function filters(): HTMLElement {
     const form = node("form", "discovery-search");
+    if (area === "jobs" || area === "support" || area === "funding") {
+      form.append(createDiscoveryAreaStructure({
+        area,
+        locale,
+        onBrowse: () => {
+          const search = root.querySelector<HTMLInputElement>(".discovery-input");
+          search?.scrollIntoView({ block: "center", behavior: "smooth" });
+          search?.focus();
+        },
+        onSearchLocation: (nextLocation) => {
+          location = nextLocation;
+          locationDraft = nextLocation;
+          query = queryDraft.trim();
+          offset = 0;
+          mobileDetail = false;
+          void refresh();
+        },
+      }));
+    }
     const fields = node("div", "discovery-search-fields");
     const keywordField = node("label", "discovery-search-field");
     keywordField.append(node("span", "", text.keywords));
@@ -535,34 +651,64 @@ export function createDiscoveryPage({
     });
     const bottom = node("div", "discovery-search-actions");
     bottom.append(current, submit);
-    form.append(fields, bottom);
+    form.append(fields);
+    if (area === "nearby") {
+      const categories = node("div", "discovery-service-filters");
+      categories.setAttribute("role", "group");
+      categories.setAttribute("aria-label", text.serviceCategory);
+      for (const category of ["all", "government", "library", "community", "transit", "other"] as const) {
+        const label = category === "all" ? text.allServices : serviceCategoryName(category);
+        const filter = action(label, `discovery-service-filter ${serviceCategory === category ? "is-active" : ""}`, () => {
+          serviceCategory = category;
+          query = queryDraft.trim();
+          location = locationDraft.trim();
+          offset = 0;
+          mobileDetail = false;
+          void refresh();
+        });
+        filter.setAttribute("aria-pressed", String(serviceCategory === category));
+        categories.append(filter);
+      }
+      form.append(categories);
+    }
+    form.append(bottom);
     return form;
   }
 
   function row(item: DiscoveryItem): HTMLElement {
     const entry = node(
-      "article",
+      "button",
       `discovery-row ${selected?.id === item.id ? "is-selected" : ""}`,
-    );
-    entry.append(node("span", "discovery-type", itemType(item)));
-    const title = action(item.title, "discovery-row-title", () => {
+    ) as HTMLButtonElement;
+    entry.type = "button";
+    entry.setAttribute("aria-pressed", String(selected?.id === item.id));
+    entry.addEventListener("click", () => {
       selected = item;
       mobileDetail = true;
       notice = "";
       render();
     });
+    entry.append(node("span", "discovery-type", itemType(item)));
+    const title = node("span", "discovery-row-title", item.title);
     const compactSummary =
       item.type === "service_location"
         ? item.summary
             .replace(/^Service BC office at /, "")
             .replace(/\. Confirm hours.*$/i, "")
         : item.summary;
-    entry.append(title, node("p", "discovery-summary", compactSummary));
-    const meta = node("div", "discovery-meta");
+    if (area === "nearby" && item.service) {
+      const heading = node("span", "discovery-service-row-heading");
+      heading.append(serviceIcon(item.service.category), title);
+      entry.append(heading);
+    } else entry.append(title);
+    entry.append(node("span", "discovery-summary", compactSummary));
+    const meta = node("span", "discovery-meta");
     meta.append(
       node("span", "", item.publisher),
       node("span", "", item.jurisdiction.name),
     );
+    if (area === "nearby" && item.service?.address)
+      meta.append(node("span", "", item.service.address));
     if (item.origin === "sample")
       meta.append(node("span", "discovery-practice", text.practiceLabel));
     else if (item.freshness !== "current")
@@ -577,10 +723,19 @@ export function createDiscoveryPage({
         item,
       ): item is DiscoveryItem & {
         coordinates: { latitude: number; longitude: number };
-      } => !!item.coordinates && item.origin !== "sample",
+      } => !!item.coordinates && item.service?.pinEligible === true,
     );
-    if (!points.length)
-      return node("p", "discovery-empty", text.mapUnavailable);
+    if (!points.length) {
+      const empty = node("div", "discovery-map-empty");
+      empty.append(
+        node("p", "", text.mapUnavailable),
+        action(text.list, "discovery-button", () => {
+          display = "list";
+          render();
+        }),
+      );
+      return empty;
+    }
     const latitudes = points.map((item) => item.coordinates.latitude);
     const longitudes = points.map((item) => item.coordinates.longitude);
     const minLat = Math.min(...latitudes) - 0.3;
@@ -589,27 +744,55 @@ export function createDiscoveryPage({
     const maxLon = Math.max(...longitudes) + 0.3;
     const view = node("div", "discovery-map");
     view.append(node("span", "discovery-map-north", "N"));
-    for (const item of points) {
-      const marker = action(item.title, "discovery-map-pin", () => {
+    const key = node("div", "discovery-map-key");
+    key.append(node("strong", "discovery-map-key-heading", `${points.length} ${text.mappedLocations}`));
+    const placed: Array<{ x: number; y: number }> = [];
+    for (const [index, item] of points.entries()) {
+      const rawX = 7 + ((item.coordinates.longitude - minLon) / (maxLon - minLon)) * 86;
+      const rawY = 7 + (1 - (item.coordinates.latitude - minLat) / (maxLat - minLat)) * 86;
+      const offsets: Array<[number, number]> = [[0, 0], [0, 9], [9, 0], [-9, 0], [0, -9], [9, 9], [-9, 9], [9, -9], [-9, -9]];
+      const place = offsets.map(([dx, dy]) => ({
+        x: Math.max(7, Math.min(93, rawX + dx)),
+        y: Math.max(7, Math.min(93, rawY + dy)),
+      })).find(({ x, y }) => placed.every((point) => Math.hypot(point.x - x, point.y - y) >= 8)) ?? { x: rawX, y: rawY };
+      placed.push(place);
+      const marker = action(item.title, `discovery-map-pin category-${item.service?.category ?? "other"} ${item.service?.pinKind === "sample" ? "is-sample" : ""}`, () => {
         selected = item;
         mobileDetail = true;
         render();
       });
-      marker.textContent = "";
-      marker.setAttribute("aria-label", item.title);
-      marker.title = item.title;
-      marker.style.left = `${7 + ((item.coordinates.longitude - minLon) / (maxLon - minLon)) * 86}%`;
-      marker.style.top = `${7 + (1 - (item.coordinates.latitude - minLat) / (maxLat - minLat)) * 86}%`;
+      marker.textContent = String(index + 1);
+      const label = `${item.title} · ${item.service ? serviceCategoryName(item.service.category) : text.locationRecord}${item.service?.locationPrecision === "station" ? ` · ${text.serviceStationPin}` : ""}${item.origin === "sample" ? ` · ${text.practiceLabel}` : ""}`;
+      marker.setAttribute("aria-label", label);
+      marker.title = label;
+      marker.style.left = `${place.x}%`;
+      marker.style.top = `${place.y}%`;
       if (selected?.id === item.id) marker.classList.add("is-selected");
       view.append(marker);
+      const keyRow = action(item.title, "discovery-map-key-row", () => {
+        selected = item;
+        mobileDetail = true;
+        render();
+      });
+      keyRow.replaceChildren(
+        node("span", `discovery-map-key-number category-${item.service?.category ?? "other"}`, String(index + 1)),
+        node("span", "discovery-map-key-copy",
+          item.title,
+        ),
+      );
+      keyRow.append(node("small", "", item.service ? serviceCategoryName(item.service.category) : text.locationRecord));
+      if (selected?.id === item.id) keyRow.classList.add("is-selected");
+      key.append(keyRow);
     }
     const container = node("div", "discovery-map-wrap");
-    container.append(view, node("p", "discovery-muted", text.mapNote));
+    container.append(view, key, node("p", "discovery-muted", text.mapNote));
+    if (points.length < items.length) container.append(node("p", "discovery-muted", text.listOnly));
     return container;
   }
 
   function itemType(item: DiscoveryItem): string {
     if (item.origin === "sample") return text.practiceLabel;
+    if (area === "nearby" && item.service) return serviceCategoryName(item.service.category);
     if (item.origin === "participating_org") return text.verifiedListing;
     if (item.type === "service_location") return text.locationRecord;
     if (item.type === "consultation_finder") return text.consultationFinder;
@@ -680,6 +863,7 @@ export function createDiscoveryPage({
     else view.append(node("p", "discovery-muted", text.noHandoff));
     if (!token) view.append(node("p", "discovery-muted", text.signIn));
     if (notice) view.append(node("p", "discovery-notice", notice));
+    if (area === "nearby" && item.service) view.append(serviceDetails(item.service));
     const facts = node("dl", "discovery-facts");
     for (const [label, value] of [
       [text.freshness, item.freshness],
@@ -698,6 +882,8 @@ export function createDiscoveryPage({
       [text.evidence, item.evidenceUrl],
       [text.terms, item.termsUrl],
       [item.licence.name ?? text.licence, item.licence.url],
+      ...(area === "nearby" && item.service?.coordinatesSourceUrl
+        ? [[text.map, item.service.coordinatesSourceUrl] as [string, string]] : []),
     ] as Array<[string, string | null]>) {
       if (!url || !isHttps(url)) continue;
       const link = node("a", "discovery-link", label);
@@ -710,6 +896,48 @@ export function createDiscoveryPage({
     const savedEntry = saved.find((entry) => entry.item.id === item.id);
     if (savedEntry) view.append(checklist(item, savedEntry.checklist));
     return view;
+  }
+
+  function serviceDetails(service: PublicService): HTMLElement {
+    const section = node("section", "discovery-service-details");
+    section.append(node("h4", "", text.serviceDetails));
+    const address = node("div", "discovery-service-address");
+    address.append(
+      node("span", "", text.serviceAddress),
+      node("strong", "", service.address ?? text.serviceNoAddress),
+    );
+    section.append(address);
+    if (service.locationPrecision === "station")
+      section.append(node("p", "discovery-service-precision", text.serviceStationPin));
+    const facts = node("div", "discovery-service-facts");
+    for (const [label, fact] of [
+      [text.servicePublicAccess, service.publicAccess],
+      [text.serviceServices, service.services],
+      [text.serviceHours, service.hours],
+      [text.serviceAccessibility, service.accessibility],
+    ] as Array<[string, ServiceFact]>) {
+      const entry = node("div", "discovery-service-fact");
+      entry.append(node("strong", "", label));
+      entry.append(node("p", "", fact.summary || text.serviceNoSummary));
+      const meta = node("div", "discovery-service-fact-meta");
+      const status = fact.status === "verified" ? text.serviceVerified
+        : fact.status === "stale" ? text.serviceStale : text.serviceUnknown;
+      const date = fact.verifiedAt ? new Date(fact.verifiedAt) : null;
+      const validDate = date && !Number.isNaN(date.getTime())
+        ? date.toLocaleDateString(locale) : null;
+      meta.append(node("span", "", validDate ? `${status} · ${validDate}` : status));
+      if (isHttps(fact.sourceUrl)) {
+        const link = node("a", "discovery-link", text.serviceSource);
+        link.href = fact.sourceUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        meta.append(link);
+      }
+      entry.append(meta);
+      facts.append(entry);
+    }
+    section.append(facts);
+    return section;
   }
 
   function checklist(

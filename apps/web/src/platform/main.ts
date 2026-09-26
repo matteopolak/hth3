@@ -8,6 +8,9 @@ import { translate, type MessageKey } from "@civicresolve/i18n";
 import { createDiscoveryPage, type DiscoveryArea } from "../features/discovery/index.js";
 import { createProfilePage } from "../features/profile/index.js";
 import { createProgramIntakePage } from "../features/program-intake/index.js";
+import { createParticipationPage } from "../features/participation/index.js";
+import { createPublicApplicationsPage } from "../features/applications/index.js";
+import { createPublicProgramsPage } from "../features/programs/index.js";
 import { createExternalPreparationPage } from "../features/external-preparation/index.js";
 import { staffFeedbackOperations, staffWorkspace } from "../features/staff/index.js";
 import { webAuth } from "./auth0.js";
@@ -15,7 +18,8 @@ import {
   Activity, ArrowUp, Blocks, BriefcaseBusiness, ChartNoAxesColumn,
   ChevronDown, ChevronRight, FileText, Inbox, ListTree, LogIn, LogOut,
   MapPin, Menu, MessageSquare, Mic, PanelLeftClose, Plus, Search,
-  Tags, UserRound, Users, Building2, BookOpen,
+  Tags, UserRound, Users, Building2, BookOpen, Bookmark, ClipboardList,
+  Coins, HeartHandshake, Landmark, MessagesSquare, LayoutDashboard, Check,
 } from "lucide-static";
 import {
   api,
@@ -64,6 +68,9 @@ interface ChatState {
   historyLoaded: boolean;
   contextArea: string | null;
   savedResume: string | null;
+  modelOpen: boolean;
+  thinkingOpen: boolean;
+  modelChoice: "fast" | "balanced";
 }
 
 function newChatState(): ChatState {
@@ -85,6 +92,9 @@ function newChatState(): ChatState {
     historyLoaded: false,
     contextArea: null,
     savedResume: null,
+    modelOpen: false,
+    thinkingOpen: false,
+    modelChoice: "balanced",
   };
 }
 
@@ -142,7 +152,6 @@ interface AppState {
   chats: Record<ChatMode, ChatState>;
   sidebarOpen: boolean;
   sidebarCollapsed: boolean;
-  exploreOpen: boolean;
   historyOpen: boolean;
   historySearch: string;
   searchOpen: boolean;
@@ -208,7 +217,6 @@ const state: AppState = {
   chats: { resident: newChatState(), employee: newChatState() },
   sidebarOpen: false,
   sidebarCollapsed: false,
-  exploreOpen: true,
   historyOpen: true,
   historySearch: "",
   searchOpen: false,
@@ -408,47 +416,34 @@ function navigation(): HTMLElement {
       sidebarHeading(t("sidebar.workspace")),
       staffViewAction("issues", "inbox", "sidebar.inbox"),
       staffSidebarAction("assistant", "chat", "nav.assistant"),
-      staffViewAction("overview", "activity", "sidebar.overview"),
+      staffViewAction("overview", "dashboard", "sidebar.overview"),
       staffViewAction("themes", "tags", "sidebar.themes"),
       staffViewAction("hiring", "briefcase", "sidebar.hiring"),
       staffViewAction("applicants", "users", "sidebar.applicants"),
       staffViewAction("analytics", "chart", "sidebar.analytics"),
-      programButton("sponsor", "sidebar.programSponsor", "building"),
+      programButton("sponsor", "sidebar.programSponsor", "landmark"),
       sidebarAction("files", t("sidebar.sources"), () => void openPluginTool("employee", "list_sources")),
       staffViewAction("taxonomy", "taxonomy", "sidebar.taxonomy"),
     );
   } else {
     nav.append(
-      sidebarHeading(t("sidebar.myActivity")),
-      navButton("applications", "sidebar.myApplications", "briefcase"),
-      navButton("profile", "sidebar.profile", "user"),
-      discoveryButton("saved", "sidebar.saved"),
-      programButton("mine", "sidebar.programRequests", "files"),
-    );
-    if (state.receiptCredentials) nav.append(navButton("feedback", "sidebar.myFeedback", "feedback"));
-    nav.append(
       sidebarHeading(t("sidebar.agent")),
       navButton("assistant", "nav.assistant", "chat"),
+      sidebarHeading(t("sidebar.explore")),
+      discoveryButton("jobs", "sidebar.jobs"),
+      discoveryButton("support", "sidebar.support"),
+      discoveryButton("funding", "sidebar.funding"),
+      programButton("discover", "sidebar.programs", "landmark"),
+      discoveryButton("nearby", "sidebar.nearby"),
+      discoveryButton("participation", "sidebar.participation"),
+      navButton("feedback", "nav.feedback", "feedback"),
+      sidebarHeading(t("sidebar.myActivity")),
+      navButton("applications", "sidebar.myApplications", "clipboard"),
+      discoveryButton("saved", "sidebar.saved"),
+      programButton("mine", "sidebar.programRequests", "files"),
+      navButton("profile", "sidebar.profile", "user"),
     );
-    const explore = sidebarAction(state.exploreOpen ? "chevron-down" : "chevron-right", t("sidebar.explore"), () => {
-      state.exploreOpen = !state.exploreOpen;
-      render();
-    });
-    explore.setAttribute("aria-expanded", String(state.exploreOpen));
-    nav.append(explore);
-    if (state.exploreOpen) {
-      const nested = el("div", "sidebar-nested");
-      nested.append(
-        discoveryButton("jobs", "sidebar.jobs"),
-        discoveryButton("support", "sidebar.support"),
-        discoveryButton("funding", "sidebar.funding"),
-        programButton("discover", "sidebar.programs", "files"),
-        discoveryButton("nearby", "sidebar.nearby"),
-        discoveryButton("participation", "sidebar.participation"),
-        navButton("feedback", "nav.feedback", "feedback"),
-      );
-      nav.append(nested);
-    }
+    if (state.receiptCredentials) nav.append(navButton("feedback", "sidebar.myFeedback", "feedback"));
   }
   sidebar.append(nav);
 
@@ -584,7 +579,11 @@ function staffViewAction(view: StaffView, icon: string, key: MessageKey): HTMLBu
 }
 
 function discoveryButton(area: DiscoveryArea, labelKey: MessageKey): HTMLButtonElement {
-  const result = sidebarAction("map", t(labelKey), () => {
+  const icons: Record<DiscoveryArea, string> = {
+    all: "search", jobs: "briefcase", support: "support", funding: "funding",
+    nearby: "map", participation: "participation", saved: "bookmark",
+  };
+  const result = sidebarAction(icons[area], t(labelKey), () => {
     state.page = "discovery";
     state.discoveryArea = area;
     state.sidebarOpen = false;
@@ -687,24 +686,31 @@ function mainPage(): HTMLElement {
   if (state.page === "assistant") main.append(chatPage("resident"));
   else if (state.page === "signin") main.append(signInPage());
   else if (state.page === "feedback") main.append(feedbackPage());
-  else if (state.page === "applications") main.append(applicationsPage());
+  else if (state.page === "applications") main.append(createPublicApplicationsPage({
+    view: "mine",
+    locale: state.locale,
+    token: currentToken() || null,
+    onSignIn: () => openSignIn("applications"),
+    onProfile: () => { state.page = "profile"; render(); },
+    onPrepareExternal: openExternalPreparation,
+  }));
+  else if (state.page === "discovery" && state.discoveryArea === "participation") main.append(createParticipationPage({
+    locale: state.locale,
+    token: currentToken() || null,
+  }));
   else if (state.page === "discovery") main.append(createDiscoveryPage({
     area: state.discoveryArea,
     locale: state.locale,
     token: currentToken() || null,
-    onPrepare: (recordId) => {
-      state.externalRecordId = recordId;
-      sessionStorage.setItem(EXTERNAL_RECORD_KEY, recordId);
-      state.page = "external-preparation";
-      render();
-    },
+    onPrepare: openExternalPreparation,
   }));
-  else if (state.page === "programs") main.append(createProgramIntakePage({
+  else if (state.page === "programs") main.append(createPublicProgramsPage({
     view: state.programView,
     locale: state.locale,
     token: currentToken() || null,
     organizationId: state.programView === "sponsor" ? currentOrgId() : null,
     onSignIn: () => openSignIn("programs"),
+    onPrepareExternal: openExternalPreparation,
   }));
   else if (state.page === "external-preparation") main.append(createExternalPreparationPage({
     recordId: state.externalRecordId,
@@ -716,6 +722,13 @@ function mainPage(): HTMLElement {
   else if (state.page === "profile") main.append(createProfilePage({ locale: state.locale, token: currentToken() || null }));
   else main.append(employeePage());
   return main;
+}
+
+function openExternalPreparation(recordId: string): void {
+  state.externalRecordId = recordId;
+  sessionStorage.setItem(EXTERNAL_RECORD_KEY, recordId);
+  state.page = "external-preparation";
+  render();
 }
 
 function signInPage(): HTMLElement {
@@ -827,7 +840,15 @@ function chatPage(mode: ChatMode): HTMLElement {
   const add = button("", "chat-round-button chat-add-button", () => void openChatTray(mode, "actions"));
   add.append(iconNode("plus"));
   add.setAttribute("aria-label", t("assistant.addToChat"));
-  const model = el("span", "chat-model", t("assistant.model"));
+  const model = button("", "chat-model-button", () => {
+    chat.modelOpen = !chat.modelOpen;
+    if (!chat.modelOpen) chat.thinkingOpen = false;
+    chat.tray = null;
+    render();
+  });
+  model.append(el("span", "", t(chat.modelChoice === "fast" ? "assistant.modelFast" : "assistant.modelBalanced")), iconNode("chevron-down"));
+  model.setAttribute("aria-haspopup", "dialog");
+  model.setAttribute("aria-expanded", String(chat.modelOpen));
   const mic = button("", "chat-round-button chat-mic-button", () => {
     if (state.voiceStatus === "idle") void startVoice(mode);
     else void stopVoice();
@@ -839,9 +860,10 @@ function chatPage(mode: ChatMode): HTMLElement {
   send.append(iconNode("arrow-up"));
   send.setAttribute("aria-label", t("assistant.send"));
   send.disabled = chat.pending;
-  controls.append(add, model, mic, send);
+  controls.append(add, el("span", "chat-controls-spacer"), model, mic, send);
   composer.append(input, controls);
   if (chat.tray === "actions") composer.append(chatActionMenu(mode));
+  if (chat.modelOpen) composer.append(chatModelMenu(mode));
   composer.addEventListener("dragover", (event) => {
     if (event.dataTransfer?.types.includes("Files")) {
       event.preventDefault();
@@ -890,15 +912,15 @@ function chatPromptCards(mode: ChatMode): HTMLElement {
     ? [
         { icon: "briefcase", color: "blue", title: "assistant.cardJobsTitle", detail: "assistant.cardJobsDetail", prompt: "assistant.cardJobsPrompt" },
         { icon: "map", color: "green", title: "assistant.cardSupportTitle", detail: "assistant.cardSupportDetail", prompt: "assistant.cardSupportPrompt" },
-        { icon: "files", color: "violet", title: "assistant.cardProgramsTitle", detail: "assistant.cardProgramsDetail", prompt: "assistant.cardProgramsPrompt" },
         { icon: "feedback", color: "orange", title: "assistant.cardIssueTitle", detail: "assistant.cardIssueDetail", prompt: "assistant.cardIssuePrompt" },
       ]
     : [
         { icon: "inbox", color: "blue", title: "assistant.cardInboxTitle", detail: "assistant.cardInboxDetail", prompt: "assistant.cardInboxPrompt" },
         { icon: "tags", color: "violet", title: "assistant.cardThemesTitle", detail: "assistant.cardThemesDetail", prompt: "assistant.cardThemesPrompt" },
         { icon: "users", color: "orange", title: "assistant.cardApplicantsTitle", detail: "assistant.cardApplicantsDetail", prompt: "assistant.cardApplicantsPrompt" },
-        { icon: "files", color: "green", title: "assistant.cardRequestsTitle", detail: "assistant.cardRequestsDetail", prompt: "assistant.cardRequestsPrompt" },
       ];
+  const section = el("section", "chat-prompt-section");
+  section.append(el("h3", "", t("assistant.suggestionsHeading")));
   const grid = el("div", "chat-prompt-cards");
   for (const suggestion of suggestions) {
     const card = button("", `chat-prompt-card accent-${suggestion.color}`, () => {
@@ -911,38 +933,102 @@ function chatPromptCards(mode: ChatMode): HTMLElement {
     });
     card.setAttribute("aria-label", `${t("assistant.tryPrompt")}: ${t(suggestion.title)}`);
     card.append(
-      el("span", "chat-prompt-icon", iconNode(suggestion.icon)),
+      el("span", "chat-prompt-top",
+        el("span", "chat-prompt-icon", iconNode(suggestion.icon)),
+        el("span", "chat-prompt-try", t("assistant.tryPrompt")),
+      ),
       el("span", "chat-prompt-copy",
         el("strong", "", t(suggestion.title)),
         el("small", "", t(suggestion.detail)),
       ),
-      el("span", "chat-prompt-try", t("assistant.tryPrompt")),
     );
     grid.append(card);
   }
-  return grid;
+  section.append(grid);
+  return section;
 }
 
 function chatActionMenu(mode: ChatMode): HTMLElement {
   const menu = el("div", "chat-action-menu");
   menu.setAttribute("role", "menu");
-  if (canUploadResume()) menu.append(resumeUploadControl(mode, "chat-action-item"));
+  if (canUploadResume()) menu.append(resumeUploadControl(mode, "chat-action-item action-upload"));
   else {
-    const upload = button(t("assistant.uploadResume"), "chat-action-item", () => openSignIn("resume"));
+    const upload = button(t("assistant.uploadResume"), "chat-action-item action-upload", () => openSignIn("resume"));
     upload.prepend(iconNode("files"));
     menu.append(upload);
   }
-  const area = button(t("assistant.chooseArea"), "chat-action-item", () => void openChatTray(mode, "area"));
+  const area = button(t("assistant.chooseArea"), "chat-action-item action-area", () => void openChatTray(mode, "area"));
   area.prepend(iconNode("map"));
-  const plugins = button(t("assistant.plugins"), "chat-action-item", () => void openChatTray(mode, "plugins"));
+  const plugins = button(t("assistant.plugins"), "chat-action-item action-tools", () => void openChatTray(mode, "plugins"));
   plugins.prepend(iconNode("plugins"));
-  const feedback = button(t("nav.feedback"), "chat-action-item", () => {
+  const feedback = button(t("nav.feedback"), "chat-action-item action-feedback", () => {
     state.page = "feedback";
     state.chats[mode].tray = null;
     render();
   });
   feedback.prepend(iconNode("feedback"));
   menu.append(area, plugins, feedback);
+  return menu;
+}
+
+function chatModelMenu(mode: ChatMode): HTMLElement {
+  const chat = state.chats[mode];
+  const menu = el("div", "chat-model-menu");
+  menu.setAttribute("role", "dialog");
+  menu.setAttribute("aria-label", t("assistant.modelSettings"));
+  menu.append(el("span", "chat-model-menu-label", t("assistant.modelSettings")));
+  for (const choice of ["balanced", "fast"] as const) {
+    const selected = chat.modelChoice === choice;
+    const option = button("", `chat-model-option ${selected ? "is-selected" : ""}`, () => {
+      chat.modelChoice = choice;
+      chat.modelOpen = false;
+      chat.thinkingOpen = false;
+      render();
+    });
+    option.append(
+      el("span", "chat-model-option-copy",
+        el("strong", "", t(choice === "fast" ? "assistant.modelFast" : "assistant.modelBalanced")),
+        el("small", "", t(choice === "fast" ? "assistant.modelFastDetail" : "assistant.modelBalancedDetail")),
+      ),
+    );
+    if (selected) option.append(iconNode("check"));
+    menu.append(option);
+  }
+  menu.append(el("p", "chat-model-note", t("assistant.modelDisplayOnly")));
+  const thinking = button("", "chat-thinking-trigger", () => {
+    chat.thinkingOpen = !chat.thinkingOpen;
+    render();
+  });
+  thinking.append(
+    el("span", "", t("assistant.thinking")),
+    el("span", "chat-thinking-value", t("assistant.thinkingStandard")),
+    iconNode("chevron-right"),
+  );
+  thinking.setAttribute("aria-expanded", String(chat.thinkingOpen));
+  menu.append(thinking);
+  if (chat.thinkingOpen) {
+    const panel = el("div", "chat-thinking-panel");
+    const track = el("div", "chat-thinking-track",
+      el("span", "chat-thinking-dot"),
+      el("span", "chat-thinking-dot is-current"),
+      el("span", "chat-thinking-dot"),
+    );
+    const slider = el("input", "chat-thinking-range") as HTMLInputElement;
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = "2";
+    slider.value = "1";
+    slider.disabled = true;
+    slider.setAttribute("aria-label", t("assistant.thinking"));
+    track.append(slider);
+    panel.append(
+      el("strong", "", t("assistant.thinking")),
+      track,
+      el("span", "chat-thinking-setting", t("assistant.thinkingStandard")),
+      el("p", "", t("assistant.thinkingFixed")),
+    );
+    menu.append(panel);
+  }
   return menu;
 }
 
@@ -980,7 +1066,10 @@ function chatTray(mode: ChatMode): HTMLElement {
       }),
     );
   } else if (chat.tray === "files") {
-    if (canUploadResume()) tray.append(resumeUploadControl(mode, "chat-file-label"));
+    if (canUploadResume()) {
+      tray.append(el("p", "chat-tray-note", t("assistant.resumeUploadReady")));
+      tray.append(resumeUploadControl(mode, "chat-file-label"));
+    }
     else tray.append(button(t("assistant.signInForResume"), "chat-tray-choice", () => openSignIn("resume")));
   } else if (chat.tray === "plugins") {
     const search = el("input", "chat-tool-search") as HTMLInputElement;
@@ -1369,6 +1458,8 @@ async function openChatTray(mode: ChatMode, tray: ChatState["tray"]): Promise<vo
   }
   const chat = state.chats[mode];
   chat.tray = chat.tray === tray ? null : tray;
+  chat.modelOpen = false;
+  chat.thinkingOpen = false;
   state.sidebarOpen = false;
   render();
   if (chat.tray === "plugins" && chat.tools.length === 0) {
@@ -1388,7 +1479,7 @@ async function openChatTray(mode: ChatMode, tray: ChatState["tray"]): Promise<vo
 const DIRECT_READ_TOOLS = new Set([
   "list_postings", "list_sources", "list_source_records", "read_profile", "list_resumes",
   "list_my_applications", "list_staff_feedback", "read_feedback_analytics",
-  "list_staff_applications", "read_taxonomy", "list_taxonomy_versions",
+  "list_staff_applications", "read_taxonomy", "list_taxonomy_versions", "prepare_resume_upload",
 ]);
 
 async function openPluginTool(mode: ChatMode, name: string): Promise<void> {
@@ -1415,7 +1506,10 @@ async function openPluginTool(mode: ChatMode, name: string): Promise<void> {
     await ensureConversation(mode);
     const response = await api.invokeConversationTool(chat.id, chatCredentials(mode), name);
     if (response.result !== undefined) {
-      chat.messages.push({ role: "tool", content: visibleToolResult(response.result) });
+      if (isResumeUploadHandoff(response.result)) {
+        chat.messages.push({ role: "assistant", content: t("assistant.resumeUploadReady") });
+        chat.tray = "files";
+      } else chat.messages.push({ role: "tool", content: visibleToolResult(response.result) });
     }
     if (response.proposal) chat.proposals.push(response.proposal);
   } catch (error) {
@@ -1423,6 +1517,7 @@ async function openPluginTool(mode: ChatMode, name: string): Promise<void> {
   } finally {
     chat.pending = false;
     render();
+    if (chat.tray === "files") focusResumeUpload();
   }
 }
 
@@ -1496,10 +1591,11 @@ async function sendChat(mode: ChatMode): Promise<void> {
     );
     chat.messages.push({ role: "assistant", content: response.message });
     if (response.toolResult !== undefined && !feedbackDuplicateStatusFromResult(response.toolResult)) {
-      chat.messages.push({
-        role: "tool",
-        content: visibleToolResult(response.toolResult),
-      });
+      if (isResumeUploadHandoff(response.toolResult)) chat.tray = "files";
+      else chat.messages.push({
+          role: "tool",
+          content: visibleToolResult(response.toolResult),
+        });
     }
     if (response.proposal) chat.proposals.push(response.proposal);
     rememberConversation(mode, message);
@@ -1510,6 +1606,7 @@ async function sendChat(mode: ChatMode): Promise<void> {
   } finally {
     chat.pending = false;
     render();
+    if (chat.tray === "files") focusResumeUpload();
   }
 }
 
@@ -1658,6 +1755,26 @@ function saveApprovedChatReceipt(result: unknown): void {
   };
   storeReceiptCredentials(state.receiptCredentials);
   void refreshReceipt(false);
+}
+
+function isResumeUploadHandoff(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const result = value as { status?: unknown; data?: unknown };
+  if (result.status !== 200 || !result.data || typeof result.data !== "object") return false;
+  const upload = (result.data as { upload?: unknown }).upload;
+  if (!upload || typeof upload !== "object") return false;
+  const details = upload as Record<string, unknown>;
+  return details.path === "/api/v1/profile/resumes" &&
+    details.method === "POST" && details.field === "file" &&
+    details.requiresFileChooser === true && details.submitted === false;
+}
+
+function focusResumeUpload(): void {
+  requestAnimationFrame(() => {
+    const input = document.querySelector<HTMLInputElement>(".chat-file-label input[type=file]");
+    input?.focus();
+    input?.closest(".chat-tray")?.scrollIntoView({ block: "nearest" });
+  });
 }
 
 function visibleToolResult(value: unknown): string {
@@ -2491,11 +2608,15 @@ function iconNode(kind: string): HTMLElement {
   const icons: Record<string, string> = {
     activity: Activity, "arrow-up": ArrowUp, briefcase: BriefcaseBusiness,
     building: Building2, chart: ChartNoAxesColumn, "chevron-down": ChevronDown,
-    "chevron-right": ChevronRight, chat: MessageSquare, feedback: FileText,
+    "chevron-right": ChevronRight,
+    chat: MessageSquare, feedback: FileText,
     files: BookOpen, inbox: Inbox, login: LogIn, logout: LogOut,
     map: MapPin, menu: Menu, mic: Mic, panel: PanelLeftClose,
     plus: Plus, plugins: Blocks, search: Search, tags: Tags,
     taxonomy: ListTree, user: UserRound, users: Users,
+    bookmark: Bookmark, clipboard: ClipboardList, funding: Coins,
+    support: HeartHandshake, landmark: Landmark, participation: MessagesSquare,
+    dashboard: LayoutDashboard, check: Check,
   };
   const wrapper = el("span", "nav-icon");
   wrapper.innerHTML = icons[kind] ?? Activity;
