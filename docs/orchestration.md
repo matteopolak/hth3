@@ -1,6 +1,6 @@
 # Orchestration and GitHub work breakdown
 
-Planning status: this document and the linked GitHub issues are a delivery plan. No application implementation is authorized by the tracker itself.
+Execution status: the user authorized implementation, commits, pushes, deployment, and provider setup. The tracker records acceptance and blockers; a closed local implementation issue does not by itself prove live provider acceptance.
 
 ## What it is
 
@@ -8,23 +8,23 @@ This is the execution protocol for building the bilingual CivicResolve web/mobil
 
 ## Tracker structure
 
-The [repository issue tracker](https://github.com/matteopolak/hth3/issues) has five milestones, seven parent epics, and 39 native sub-issues. Dependencies are recorded as GitHub blocking relationships, not just prose. Do not assign an issue to an agent until its blockers have passed acceptance.
+The [repository issue tracker](https://github.com/matteopolak/hth3/issues) has five milestones, seven parent epics, and 40 native sub-issues. Dependencies are recorded as GitHub blocking relationships, not just prose. Do not assign an issue to an agent until its blockers have passed acceptance.
 
 | Gate | Milestone | Parent epic | Issue range and purpose |
 | --- | --- | --- | --- |
 | A | [Foundation and civic loop](https://github.com/matteopolak/hth3/milestone/1) | [#1 Shared foundation and security](https://github.com/matteopolak/hth3/issues/1) | [#8–#13](https://github.com/matteopolak/hth3/issues/8): workspace, contracts/i18n, Worker/D1/R2, roles, two vertical slices, web/mobile shells. |
 | B | [Discovery and applications](https://github.com/matteopolak/hth3/milestone/2) | [#2 Real-source catalog](https://github.com/matteopolak/hth3/issues/2), [#3 Applications](https://github.com/matteopolak/hth3/issues/3), [#5 Experiences](https://github.com/matteopolak/hth3/issues/5) | [#14–#23](https://github.com/matteopolak/hth3/issues/14) and [#29–#33](https://github.com/matteopolak/hth3/issues/29): adapters, search/map, résumé, native/external applications, public web/mobile UI. |
-| C | [Categorization and staff agent](https://github.com/matteopolak/hth3/milestone/3) | [#4 Civic feedback](https://github.com/matteopolak/hth3/issues/4), [#5 Experiences](https://github.com/matteopolak/hth3/issues/5), [#6 Integrations](https://github.com/matteopolak/hth3/issues/6) | [#24–#28](https://github.com/matteopolak/hth3/issues/24), [#34–#35](https://github.com/matteopolak/hth3/issues/34), [#37](https://github.com/matteopolak/hth3/issues/37): feedback depth, taxonomy, themes, staff tools/UI and Workers AI. |
-| D | [Sponsor integrations](https://github.com/matteopolak/hth3/milestone/4) | [#6 Sponsor and AI integrations](https://github.com/matteopolak/hth3/issues/6) | [#36](https://github.com/matteopolak/hth3/issues/36), [#38–#41](https://github.com/matteopolak/hth3/issues/38): Tiger, ElevenLabs, Presage, Auth0 and Jev live acceptance. |
+| C | [Categorization and conversational agents](https://github.com/matteopolak/hth3/milestone/3) | [#4 Civic feedback](https://github.com/matteopolak/hth3/issues/4), [#5 Experiences](https://github.com/matteopolak/hth3/issues/5), [#6 Integrations](https://github.com/matteopolak/hth3/issues/6) | [#24–#28](https://github.com/matteopolak/hth3/issues/24), [#34–#35](https://github.com/matteopolak/hth3/issues/34), [#37](https://github.com/matteopolak/hth3/issues/37), [#47](https://github.com/matteopolak/hth3/issues/47): feedback depth, taxonomy, themes, resident/staff agents with tool parity, and Workers AI. |
+| D | [Sponsor integrations](https://github.com/matteopolak/hth3/milestone/4) | [#6 Sponsor and AI integrations](https://github.com/matteopolak/hth3/issues/6) | [#36](https://github.com/matteopolak/hth3/issues/36), [#38–#41](https://github.com/matteopolak/hth3/issues/38): Tiger, ElevenLabs, Presage, Auth0 and no-charge Workers AI live acceptance. |
 | E | [Delivery and judging](https://github.com/matteopolak/hth3/milestone/5) | [#7 Quality and presentation](https://github.com/matteopolak/hth3/issues/7) | [#42–#46](https://github.com/matteopolak/hth3/issues/42): E2E, security audit, deployment, Remotion video and in-person/Devpost evidence. |
 
 Milestones indicate the principal acceptance gate; cross-gate dependencies are authoritative. A feature can be coded with a fixture while its provider is unavailable, but its live-integration issue and prize claim remain open until real acceptance.
 
 ## How it works
 
-### Stage 0: preflight, no implementation yet
+### Stage 0: preflight
 
-The orchestrator confirms explicit authorization to start implementation, credentials and provider access, the current `main` state, issue blockers, and the documentation requirements. Missing external credentials are recorded as blockers on the relevant integration issues, not concealed with a mock. The plan and tracker alone do not start agents.
+The orchestrator confirms credentials and provider access, the current `main` state, issue blockers, and the documentation requirements. Missing external credentials are recorded as blockers on the relevant integration issues, not concealed with a mock. The user's authorization starts implementation; the plan and tracker define the sequence.
 
 ### Stage 1: one sequential foundation agent
 
@@ -44,14 +44,14 @@ Assign one agent to one issue-sized feature or tightly related pair. The issue p
 | Public web | `apps/web/src/features/discovery/**`, `nearby/**`, `applications/**`, `feedback/**` | #30–#31 |
 | Public mobile | `apps/mobile/src/features/discovery/**`, `nearby/**`, `applications/**`, `feedback/**` | #32–#33 |
 | Staff web | `apps/web/src/features/staff/**`, `employer/**`, `agent/**` | #34–#35 |
-| Integrations | Provider-specific paths named in #36–#41 | Tiger, Workers AI, ElevenLabs, Presage, Auth0, Jev |
+| Integrations | Provider-specific paths named in #36–#41 | Tiger, Workers AI, ElevenLabs, Presage, Auth0 |
 | Release/media | `tests/**`, deployment/runbooks, `apps/remotion/**`, presentation docs | #42–#46 |
 
 The design-system agent owns only `packages/ui/**`, web styles, and mobile theme as in #29; it does not rewrite feature screens while UI agents work. Provider agents own their integration folders, not the feature route that consumes them. An issue's explicit path list wins over this summary when narrower.
 
 ### Stage 3: integration and release waves
 
-At the end of each small wave, the orchestrator reviews diffs, runs `pnpm check`, exercises one real cross-feature flow, updates blockers/epics, and records gaps. Important joins are: source record → search/detail → truthful application destination; applicant submission → employer queue → status; resident feedback → Jev/theme/Tiger → staff response → receipt; and web/mobile locale parity. Live provider checks are separate from fixture-backed tests. Only after those joins pass should #42–#46 close.
+At the end of each small wave, the orchestrator reviews diffs, runs `pnpm check`, exercises one real cross-feature flow, updates blockers/epics, and records gaps. Important joins are: source record → search/detail → truthful application destination; applicant submission → employer queue → status; resident feedback → Workers AI/theme/Tiger → staff response → receipt; and web/mobile locale parity. Live provider checks are separate from fixture-backed tests. Only after those joins pass should #42–#46 close.
 
 ## Shared-main Git and issue protocol
 
@@ -60,6 +60,9 @@ At the end of each small wave, the orchestrator reviews diffs, runs `pnpm check`
 - Use a subject-only Conventional Commit: `type(scope): imperative summary`. No body, description, or co-author attribution. An issue closes only after its acceptance criteria, relevant docs and tests, and commit/deployed evidence are recorded. If a provider credential is missing, leave that issue open and explain the verified boundary.
 - Concurrent agents create a **feature-specific** doc such as `docs/data/federal-jobs.md` or `docs/applications/resume-extraction.md`. They do not all edit `docs/README.md` or shared overview docs; the orchestrator updates those after a wave. Every doc covers what, how, how to change, configuration, and dependencies per the repository documentation rule.
 - Never describe sample content, an external link click, a fixture model response, or a local-only smoke test as a live government/provider submission. Prize evidence requires the actual provider and API-backed user flow.
+- Agents inspect every page or surface they change in the running product at desktop, narrow, and mobile widths. They also inspect French text lengths, empty/error/loading states, and role-specific views. They fix visible defects and report exact routes, widths/devices, and screenshots. Static checks alone do not satisfy visual acceptance.
+- The resident and employee conversational agents each maintain a parity inventory against their audience’s website actions. Resident chat works for guests and offers a reviewed complaint draft when a service problem appears. Both agents use the same Worker commands and authorization as manual controls. Any write requires an editable preview and explicit confirmation.
+- AI inference stays within verified no-charge allocation. Do not upgrade Cloudflare Workers or purchase credits. Workers Free stops at its daily limit; a Workers Paid account may bill overage, so check plan and usage before a live call and leave provider acceptance open if that cannot be established.
 
 ## How to change it
 

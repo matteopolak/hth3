@@ -19,7 +19,7 @@ The product has two complete loops:
 Discovery → verified source or participating employer → application preparation
 → in-app submission only to participating employer → employer review → applicant update
 
-Resident feedback → clarification → Jev categorization → aggregate themes
+Resident feedback → clarification → Workers AI categorization → aggregate themes
 → authorized government-team review and response → resident outcome
 ```
 
@@ -48,8 +48,8 @@ Every feature presented as working must execute against the deployed application
 - Submitted feedback, messages, taxonomy versions, theme memberships, assignments, and audit events survive refresh and sign-in.
 - Role restrictions are enforced by the Worker, not only hidden in the UI.
 - Voice intake submits real feedback through the same API as text intake.
-- The admin agent uses the same authorized commands as manual controls.
-- Published taxonomy changes affect later Jev classifications without code changes.
+- Resident and employee agents expose the same actions as their respective website controls, within the caller's permissions.
+- Published taxonomy changes affect later Workers AI classifications without code changes.
 - The dashboard queries Tiger Data events written by actual feedback activity.
 - Staff can see accurate category counts, trends, grouped themes, and evidence-linked summaries built from persisted feedback.
 - A resident can see an assigned department, status changes, messages, and an outcome using an authenticated account or secure guest receipt link.
@@ -81,7 +81,7 @@ Civic and General use the same **45-point** rubric:
 
 | Criterion | Points | Product evidence |
 | --- | ---: | --- |
-| Technical execution | 15 | Working web/mobile discovery, résumé-assisted applications, employer review, feedback intake, Jev taxonomy decisions, aggregate staff view, authorization, persistence, and audit trail. |
+| Technical execution | 15 | Working web/mobile discovery, résumé-assisted applications, employer review, feedback intake, Workers AI taxonomy decisions, aggregate staff view, authorization, persistence, and audit trail. |
 | Idea and impact | 10 | A simpler route from a person's need to the right public opportunity, service, or civic team. |
 | Design and usability | 10 | Distinct task-focused journeys, bilingual plain language, reviewable autofill, accessible alternatives, honest source labels, and useful staff overviews. |
 | Learning and technical decisions | 5 | Explain model boundaries, workflow safety, provider failures, and trade-offs made during the event. |
@@ -99,7 +99,7 @@ Judges assess what actually works in the normal in-person session. Mini-challeng
 | MLH Best Use of Presage | A consented mobile interaction uses a real Presage SDK output to offer an accessibility adjustment, without changing feedback priority or eligibility. |
 | Best UI/UX | A low-friction resident journey and evidence-linked aggregate staff workspace with clear states and accessible controls. |
 
-Cloudflare Workers AI and Jev are product technologies rather than prize entries. Do not enter Gemini, Solana, Vultr, or GoDaddy. The planned proprietary services make Best FOSS inapplicable. The current product does not qualify for Best Hardware Hack or MathemaTech; do not add token features just to enter them.
+Cloudflare Workers AI is a product technology rather than a prize entry. Do not enter Gemini, Solana, Vultr, or GoDaddy. The planned proprietary services make Best FOSS inapplicable. The current product does not qualify for Best Hardware Hack or MathemaTech; do not add token features just to enter them.
 
 Only select a side challenge on Devpost after its working evidence exists. If a provider cannot be integrated, remove that claim and its prize selection rather than showing a simulation.
 
@@ -166,6 +166,12 @@ Publishing validates unique IDs, nonempty descriptions, a valid group, a real de
 
 The intake must work without a microphone, camera, address, or sign-in. Ask for contact details only if needed for follow-up, explain their use, and permit anonymous feedback. Protect guest receipt access with a high-entropy token stored hashed server-side; do not use the public case number as an access credential. Apply rate limits and an abuse-review path without putting an unnecessary form in front of every resident. Urgent emergencies must be directed to the appropriate emergency channel rather than treated as ordinary feedback.
 
+### Resident agent journey
+
+The public site and mobile app provide a persistent, ChatGPT-like conversation that works for guests. Its typed tools cover every resident action offered elsewhere in the product: search and filter sourced jobs, support, funding, offices and consultations; inspect details and provenance; save items and checklists; prepare and review profile, résumé, and application drafts; submit first-party applications; open official external handoffs; draft and submit feedback; and read or reply to a case through an authenticated account or secure guest receipt. Account-only actions ask the resident to sign in at execution time, while public discovery and guest feedback remain available without sign-in.
+
+When a resident describes an unresolved service problem, the agent proactively offers to prepare a complaint or suggestion. It asks only for missing details needed for a useful submission, shows the original words and an editable proposed report, and submits only after explicit confirmation. It distinguishes CivicResolve's fictional sandbox from official government channels and never claims that an external application or report was submitted because a link was opened. Conversation history and pending drafts persist; tool results link to the same records and controls as the manual website.
+
 ### Government staff and employer journey
 
 1. Sign in through Auth0 and see only authorized organization/department data.
@@ -181,6 +187,8 @@ An organization administrator can verify an employer profile, publish a job or g
 The manual UI must support these operations even when the admin agent is unavailable.
 
 Do not expose a button, tab, or action as available unless it has a working API path and an honest loading, success, and failure state. Hide unfinished settings or policy features rather than leaving inert controls.
+
+Each UI implementer must regularly inspect the running website visually, not only rely on static checks. Inspect every changed route and surface at desktop, narrow, and mobile widths, with French text, empty/loading/error states, and the relevant role. Fix visible defects before claiming acceptance and report the exact route, width/device, and screenshot evidence. Inspect the native app on a real simulator or device when available; report an unavailable simulator separately from a completed visual check.
 
 ### Agentic staff journey
 
@@ -256,8 +264,8 @@ Public web + React Native app          Government staff/employer web
                   ├─ source registry / scheduled import adapters
                   ├─ search, profiles, resume drafts, applications
                   ├─ domain commands and agent tools
-                  ├─ Workers AI extraction, theme summaries, staff agent
-                  ├─ Jev intent and category decisions
+                  ├─ Workers AI extraction, categorization, summaries
+                  ├─ resident and staff conversational agents
                   ├─ D1 transactional records and outbox
                   ├─ Tiger Cloud feedback-event analytics
                   ├─ R2 resumes, attachments and transcripts
@@ -272,8 +280,7 @@ The product can run for a fictional municipality/employer without an external go
 
 ### AI responsibilities
 
-- **Workers AI:** extract structured details, generate aggregate theme summaries from redacted source submissions, and power the staff conversation.
-- **Jev:** make bounded intent, category, and routing choices from the currently published taxonomy. It is not the summarizer or the staff chat model.
+- **Workers AI:** use an inexpensive standard model for structured extraction, published-taxonomy intent/category decisions, redacted theme summaries, and both resident and staff conversations. Model outputs are proposals validated by domain rules and permissions.
 - **Vectorize and Tiger:** find semantically similar feedback as candidate theme members, then store reviewed membership and exact counts in Tiger.
 - **Application rules:** validate all model output, keep original submissions, enforce authorization and state transitions, and send uncertain or sensitive reports to staff review.
 
@@ -298,12 +305,12 @@ type ClassificationResult = {
   categoryId: string
   confidence: number
   alternatives: string[]
-  provider: 'jev' | 'workers-ai'
+  provider: 'workers-ai'
   modelVersion: string
 }
 ```
 
-Build Jev `choice` questions dynamically from the current published category descriptions and examples. First choose a broad group, then a category in that group; keep an `other_or_unsure` path at each step. This keeps a growing taxonomy and Jev's compact request within the documented 32 KiB body limit. The selected ID must exist in the published taxonomy. Store the intent, category, provider, confidence, model version, taxonomy version, and review outcome. A production Workers AI fallback may be used when Jev is unavailable; it must perform a real classification and disclose degraded provider status to staff. Tests may use a fixture provider. Neither the video nor the live product should present a fixture result as a live model result. See the [Jev native Decisions API](https://www.jevai.org/docs).
+Construct a bounded classification prompt from the current published category descriptions and examples. Select a broad group and then a category in that group; retain an `other_or_unsure` route. Validate the model's selected ID against the published taxonomy and store intent, category, confidence, model ID, taxonomy version, and review outcome. Uncertain output goes to staff review. Tests may use a fixture provider, but neither the video nor the live product should present fixture output as a live model result. Use only verified no-charge Workers AI allocation; never upgrade a plan or incur usage-based charges. Workers Free inference fails after its 10,000 Neurons/day allocation; Workers Paid can bill beyond that allocation, so verify the actual account plan and usage before live calls. If the free boundary cannot be verified, leave live inference acceptance open.
 
 ### Aggregation and summaries
 
@@ -357,7 +364,7 @@ An outcome can be action taken, planned action, referral, or no action with an e
 - **ElevenLabs:** actual conversational agent that invites constructive detail (“What happened?” and “What would improve it?”), asks relevant follow-ups, confirms the summary, and submits feedback through a signed Worker webhook. Handle retries and duplicate webhooks.
 - **Tiger Data:** real PostgreSQL connection, schema migrations, feedback-event hypertable, continuous aggregates, and dashboard queries. Verify Worker connectivity early.
 - **Presage:** real SDK integration in the mobile app, explicit consent, one measurable interaction adaptation (for example, shorter prompts or a pause offer), and no service decision based on biometric output. Validate SDK/device feasibility early.
-- **Jev:** real bounded decision call through an adapter; validate probabilities and category IDs; use Workers AI as a production fallback.
+- **Workers AI categorization:** validate model output and category IDs against the published taxonomy; route uncertainty for human review.
 
 External calls need timeouts, request IDs, idempotency where relevant, retry/error states, and audit visibility. A provider outage may degrade that feature but must not silently create false success.
 
@@ -393,7 +400,7 @@ packages/
   contracts/    # bilingual request/response, events, tool and card schemas
   domain/       # application/feedback states, permissions, provenance rules
   db/           # D1 transactional migrations; Tiger analytics schema and queries
-  ai/           # Workers AI, Jev, resume extraction adapters
+  ai/           # Workers AI, classification, agent, resume extraction adapters
   sources/      # approved feeds, normalizers, registry and freshness rules
   i18n/         # English/French message catalogues
   ui/           # shared web components
@@ -422,7 +429,7 @@ Use only Luna subagents at `high` or `xhigh` reasoning. All agents may work in t
 
 One core subagent first builds a working vertical slice: pnpm workspace, contracts, English/French catalogues, Worker/API, D1 persistence/outbox, scoped organization/applicant roles, source/sample provenance, one participating-employer posting and in-app application, secure guest feedback/receipt, a seeded taxonomy, manual staff queues, status mutations, and public web/mobile shells. It runs relevant checks, commits, and pushes before feature agents begin. External credentials are required for live provider acceptance; a local fixture may support tests but must be clearly marked and never represented as the live integration.
 
-The orchestrator verifies the local vertical slices, role boundaries, shared contracts, and CI. Only then does it delegate feature-sized units from the [native GitHub blocker queue](https://github.com/matteopolak/hth3/issues) with explicit package/file ownership, dependencies, acceptance behavior, and test commands. Deployed provider acceptance remains a separate gate when credentials are available. Suggested later units: source adapters/search, résumé extraction/application UX, benefits and funding guidance, map/locations, ElevenLabs intake, Workers AI/Jev decisions, theme grouping and summaries, staff agent and rich cards, Tiger dashboard, mobile/Presage, design polish, and Remotion capture/render.
+The orchestrator verifies the local vertical slices, role boundaries, shared contracts, and CI. Only then does it delegate feature-sized units from the [native GitHub blocker queue](https://github.com/matteopolak/hth3/issues) with explicit package/file ownership, dependencies, acceptance behavior, and test commands. Deployed provider acceptance remains a separate gate when credentials are available. Suggested later units: source adapters/search, résumé extraction/application UX, benefits and funding guidance, map/locations, ElevenLabs intake, Workers AI decisions, theme grouping and summaries, both resident and staff agents with full website tool parity, Tiger dashboard, mobile/Presage, design polish, and Remotion capture/render.
 
 For shared interface changes, commit a contract update first, then release dependent units. The orchestrator owns root/entrypoint and overview-doc edits after foundation. Agents stage only their owned paths; commits and pushes use a short serialized Git lane in the shared checkout. Do not pull/rebase while another agent has uncommitted work. Resolve cross-owner conflicts through the orchestrator; never discard another agent’s work. Run `pnpm check` after each integration wave.
 
@@ -432,7 +439,7 @@ Each completed unit is committed and pushed to `main` with a Conventional Commit
 
 ### In-person Civic presentation
 
-Five minutes to present and show the working product, followed by three minutes of questions. Lead with one person's path across a real sourced job/support search, a résumé-assisted application to a clearly fictional participating employer, and constructive feedback. Switch to the government workspace: the employer sees the application; civic staff see Jev categorization and recurring themes, respond, and the resident sees the response. Demonstrate an agent approval card and manual edit if complete. Say explicitly which opportunities are official external links and which are fictional sandbox records. Use real service integrations for any sponsor claim made during judging.
+Five minutes to present and show the working product, followed by three minutes of questions. Lead with one person's path across a real sourced job/support search, a résumé-assisted application to a clearly fictional participating employer, and constructive feedback. Switch to the government workspace: the employer sees the application; civic staff see Workers AI categorization and recurring themes, respond, and the resident sees the response. Demonstrate both conversational agents, an approval card, and manual edit if complete. Say explicitly which opportunities are official external links and which are fictional sandbox records. Use real service integrations for any sponsor claim made during judging.
 
 ### Remotion Devpost video
 
@@ -443,7 +450,7 @@ Suggested timing (adjust to what is implemented and legible):
 1. 0:00–0:40 — the fragmented Canadian service journey and the location-aware entry point.
 2. 0:40–1:45 — verified jobs/support/funding and nearby offices; clear source and sample labels.
 3. 1:45–2:35 — résumé-assisted native application and employer review in the working fictional sandbox.
-4. 2:35–3:25 — guest web/mobile feedback, ElevenLabs follow-up and Jev categorization.
+4. 2:35–3:25 — guest web/mobile feedback, proactive resident-agent complaint draft, ElevenLabs follow-up and Workers AI categorization.
 5. 3:25–4:25 — aggregate civic dashboard, agent approval card, Tiger trends, staff response and resident status.
 6. 4:25–5:00 — real Presage interaction if working, architecture, bilingual experience, and honest limitations.
 
@@ -475,7 +482,7 @@ Keep captions readable and the recorded UI legible at normal playback size. If a
 ### Gate C — categorization, aggregation, and configuration
 
 - Workers AI extracts useful fields from a real submission without replacing the resident's original words.
-- Jev chooses intent and a published category; low confidence reaches human review.
+- Workers AI chooses intent and a published category; low confidence reaches human review.
 - The database ships with the full starter taxonomy described above.
 - Admin adds, edits, and retires categories; the next submission uses the newly published version, while history remains readable.
 - Two related submissions appear in one theme with an exact count; the summary links back to both source records.
@@ -502,7 +509,7 @@ The end-state scope includes every module listed in Section 3; gates order imple
 
 ## 10. Configuration and source references
 
-Expected configuration includes Auth0 domain/audience/client ID, D1 database binding, Tiger connection settings, Cloudflare AI/R2/Vectorize bindings, source adapter URLs/keys and refresh schedules, ElevenLabs agent ID and webhook secret, Jev API credentials, and Presage SDK configuration. Use environment-specific secrets; never commit credentials, `.dev.vars`, real applicant résumés, or recordings containing real personal information. A deployment needs an explicitly configured application origin and permitted CORS origins for web/mobile.
+Expected configuration includes Auth0 domain/audience/client ID, D1 database binding, Tiger connection settings, Cloudflare AI/R2/Vectorize bindings and selected model IDs, source adapter URLs/keys and refresh schedules, ElevenLabs agent ID and webhook secret, and Presage SDK configuration. Use environment-specific secrets; never commit credentials, `.dev.vars`, real applicant résumés, or recordings containing real personal information. A deployment needs an explicitly configured application origin and permitted CORS origins for web/mobile.
 
 - [Hack the Hill III competition guide](https://tracker.hackthehill.com/resources)
 - [MLH Hack the Hill prize categories](https://www.mlh.com/events/hack-the-hill-30/prizes)
