@@ -220,6 +220,9 @@ importers:
       '@civicresolve/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@civicresolve/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@elevenlabs/client':
         specifier: ^1.25.0
         version: 1.25.0(@types/dom-mediacapture-record@1.0.22)
@@ -282,6 +285,8 @@ importers:
         version: link:../contracts
 
   packages/sources: {}
+
+  packages/ui: {}
 
 packages:
 

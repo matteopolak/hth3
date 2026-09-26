@@ -20,6 +20,8 @@ Use an original civic identity informed by the clarity of Stripe, the quiet work
 
 The current web interaction baseline is documented in [Web interaction accessibility](web/interaction-accessibility.md). Mobile controls use a larger touch target, muted text remains readable, temporary navigation retains and restores keyboard focus, and the dense schematic map always has a list alternative. These are shared shell rules; feature components should preserve them rather than replacing focus rings with hover-only styling.
 
+Common web buttons, cards, labeled fields, and text statuses use the small [Web UI primitives](design/web-ui-primitives.md) package. Feature modules retain distinct layouts and local styles rather than forcing the same card structure onto every screen.
+
 The iOS app is a native SwiftUI public client of the same Worker API. Explore groups jobs, support, funding, nearby services, consultations, and private saved checklists. The nearby map uses only source coordinates and always has a list. An official handoff confirms that the action continues on the publisher's site; it never marks an external application as submitted. Participating-employer applications require editable answers and applicant confirmation, with the private résumé shared separately. Practice postings and feedback are disclosed at the action. Employer and platform administration are web-first. Text alternatives exist for voice.
 
 ## How to change it

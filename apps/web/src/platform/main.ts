@@ -6,6 +6,7 @@ import {
 } from "@civicresolve/contracts/v1";
 import { tokens } from "@civicresolve/design-tokens";
 import { translate, type MessageKey } from "@civicresolve/i18n";
+import { uiButton, uiCard, uiField, uiStatus, type ButtonVariant } from "@civicresolve/ui";
 import { createDiscoveryPage, type DiscoveryArea } from "../features/discovery/index.js";
 import { createProfilePage } from "../features/profile/index.js";
 import { createProgramIntakePage } from "../features/program-intake/index.js";
@@ -35,6 +36,7 @@ import {
   type StaffFeedbackView,
   WorkerApiError,
 } from "./api.js";
+import "@civicresolve/ui/styles.css";
 import "./styles.css";
 import "../features/feedback/feedback.css";
 
@@ -811,14 +813,14 @@ function signInPage(): HTMLElement {
   if (state.signInIntent === "resume") intro.append(el("p", "signin-intent", t("auth.resumeIntent")));
   page.append(intro);
   const choices = el("div", "signin-choices");
-  const personal = el("section", "signin-choice");
+  const personal = uiCard([], { className: "signin-choice" });
   personal.append(
     iconNode("user"),
     el("h3", "", t("auth.personal")),
     el("p", "", t("auth.personalDetail")),
     button(t("auth.continuePersonal"), "button-primary", () => void beginAuth("applicant")),
   );
-  const staff = el("section", "signin-choice");
+  const staff = uiCard([], { className: "signin-choice" });
   staff.append(
     iconNode("building"),
     el("h3", "", t("auth.staff")),
@@ -2698,9 +2700,6 @@ function textArea(
   onInput: (value: string) => void,
   rows = 5,
 ): HTMLElement {
-  const wrapper = el("label", "field");
-  wrapper.htmlFor = id;
-  wrapper.append(el("span", "field-caption", label));
   const area = el("textarea", "textarea") as HTMLTextAreaElement;
   area.id = id;
   area.name = id;
@@ -2708,8 +2707,7 @@ function textArea(
   area.placeholder = placeholder;
   area.value = value;
   area.addEventListener("input", () => onInput(area.value));
-  wrapper.append(area);
-  return wrapper;
+  return uiField(label, area, { className: "field", captionClassName: "field-caption" });
 }
 
 function selectStatuses(
@@ -2730,7 +2728,7 @@ function selectStatuses(
 }
 
 function statusPill(status: string): HTMLElement {
-  return el("span", `status-pill status-${status}`, statusName(status));
+  return uiStatus(statusName(status), { className: `status-pill status-${status}` });
 }
 
 function option(
@@ -2750,6 +2748,8 @@ function button(
   className: string,
   action: () => void,
 ): HTMLButtonElement {
+  const variant = className.match(/(?:^|\s)button-(primary|secondary|quiet|link)(?:\s|$)/)?.[1] as ButtonVariant | undefined;
+  if (variant && label) return uiButton(label, action, { variant, className });
   const result = el("button", className, label) as HTMLButtonElement;
   result.type = "button";
   result.addEventListener("click", action);

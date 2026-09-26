@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter @civicresolve/worker migrations:apply:local && pnpm --filter @civicresolve/web dev",
-    "lint": "prettier --check .github/workflows/check.yml apps/worker apps/web packages/config packages/contracts packages/db packages/domain packages/i18n packages/sources packages/design-tokens package.json pnpm-workspace.yaml tsconfig.json docs",
+    "lint": "prettier --check .github/workflows/check.yml apps/worker apps/web packages/config packages/contracts packages/db packages/domain packages/i18n packages/sources packages/design-tokens packages/ui package.json pnpm-workspace.yaml tsconfig.json docs",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm exec vitest run",
     "build": "pnpm -r --if-present build",
