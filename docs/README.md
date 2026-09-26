@@ -9,6 +9,7 @@ This repository contains the product plan and the shared workspace/CI foundation
 | [Presentation run](presentation.md) | Honest live demo sequence and fallback paths. |
 | [Submission checklist](submission-checklist.md) | Required challenge evidence, links, roster, and final submission checks. |
 | [Video storyboard](video-storyboard.md) | Five-minute sequence using actual product captures and verified provider results. |
+| [Video production](video-production.md) | Remotion composition, evidence clip requirements, and guarded render workflow. |
 | [Source catalog and coverage](source-catalog.md)                             | Official starting sources, collection boundaries, freshness, and sample-data labeling.                                                                        |
 | [Source registry and provenance](data/source-registry.md)                    | D1 source metadata, honest sample visibility, terms review state, and public registry API.                                                                    |
 | [Official source ingestion](data/official-ingestion.md)                      | Federal finder links and Service BC locations, scheduled collection, provenance, and coverage limits.                                                         |
