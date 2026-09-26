@@ -109,14 +109,16 @@ export function insertMessage(
     createdAt: string;
     receiptHash?: string;
     organizationId?: string;
+    onlyIfPreviousChange?: boolean;
   },
 ): D1PreparedStatement {
+  const changeGate = input.onlyIfPreviousChange ? "changes() = 1 AND " : "";
   const visibility = input.receiptHash
-    ? `WHERE EXISTS (
+    ? `WHERE ${changeGate}EXISTS (
          SELECT 1 FROM feedback_submissions
          WHERE id = ? AND receipt_token_hash = ? AND status != 'closed'
        )`
-    : `WHERE EXISTS (
+    : `WHERE ${changeGate}EXISTS (
          SELECT 1 FROM feedback_submissions
          WHERE id = ? AND organization_id = ? AND status != 'closed'
        )`;

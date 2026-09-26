@@ -49,6 +49,14 @@ export function canResidentReopenFeedback(status: FeedbackStatus): boolean {
   return status === "outcome_recorded" || status === "closed";
 }
 
+export function canStaffRequestDetails(status: FeedbackStatus): boolean {
+  return canTransitionFeedback(status, "waiting_on_resident");
+}
+
+export function canStaffRecordOutcome(status: FeedbackStatus): boolean {
+  return canTransitionFeedback(status, "outcome_recorded");
+}
+
 /** Return the resident's exact text after checking that it is usable. */
 export function preserveFeedbackText(
   value: unknown,

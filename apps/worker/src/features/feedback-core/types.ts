@@ -30,6 +30,42 @@ export interface FeedbackStatusBody {
   outcome?: unknown;
 }
 
+export interface FeedbackAssignmentBody {
+  departmentId?: unknown;
+  assigneeSubject?: unknown;
+}
+
+export interface FeedbackRequestDetailsBody {
+  message?: unknown;
+}
+
+export interface FeedbackOutcomeBody {
+  summary?: unknown;
+}
+
+export interface FeedbackStaffAssignmentRow {
+  submission_id: string;
+  organization_id: string;
+  department_id: string;
+  department_name_en: string;
+  department_name_fr: string;
+  assignee_subject: string | null;
+  assigned_by: string;
+  updated_at: string;
+}
+
+export interface FeedbackDepartmentRow {
+  id: string;
+  name_en: string;
+  name_fr: string;
+  jurisdiction_level: string;
+}
+
+export interface FeedbackAssigneeRow {
+  user_subject: string;
+  role: "civic_staff" | "organization_admin";
+}
+
 export interface EvidenceInput {
   fileName: string;
   contentType: "application/pdf" | "image/jpeg" | "image/png";

@@ -12,7 +12,7 @@ export async function handleFeedbackRequest(
   if (guest) return guest;
 
   const staffMatch = url.pathname.match(
-    /^\/api\/v1\/staff\/organizations\/([A-Za-z0-9_-]+)\/feedback(?:\/(fb_[a-f0-9]{32})(?:\/(messages|status|attachments)(?:\/(asset_[a-f0-9]{32}))?)?)?$/,
+    /^\/api\/v1\/staff\/organizations\/([A-Za-z0-9_-]+)\/feedback(?:\/(?:(fb_[a-f0-9]{32})(?:\/(messages|status|attachments|assignment|request-details|outcome)(?:\/(asset_[a-f0-9]{32}))?)?|(assignment-options)))?$/,
   );
   if (staffMatch) return handleStaffFeedback(request, staffMatch, context);
   if (

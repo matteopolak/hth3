@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  canStaffRecordOutcome,
+  canStaffRequestDetails,
   canResidentReopenFeedback,
   canTransitionFeedback,
   isFeedbackCategory,
@@ -37,9 +39,236 @@ describe("feedback domain rules", () => {
     expect(canResidentReopenFeedback("in_review")).toBe(false);
   });
 
+  it("allows staff requests and outcomes only from in_review", () => {
+    expect(canStaffRequestDetails("in_review")).toBe(true);
+    expect(canStaffRequestDetails("submitted")).toBe(false);
+    expect(canStaffRequestDetails("reopened")).toBe(false);
+    expect(canStaffRecordOutcome("in_review")).toBe(true);
+    expect(canStaffRecordOutcome("waiting_on_resident")).toBe(false);
+    expect(canStaffRecordOutcome("closed")).toBe(false);
+  });
+
   it("accepts only the routed feedback categories", () => {
     expect(isFeedbackCategory("other_or_unsure")).toBe(true);
     expect(isFeedbackCategory("made_up_department")).toBe(false);
+  });
+});
+
+describe("staff feedback authorization", () => {
+  it("requires authentication for assignment options", async () => {
+    const unused = () => {
+      throw new Error("Unauthenticated requests must not access D1.");
+    };
+    const context: FeedbackContext = {
+      env: {
+        DB: { prepare: unused } as unknown as D1Database,
+        PRIVATE_ASSETS: {} as R2Bucket,
+        APP_ENV: "development",
+      },
+      requestId: "test-request",
+      cors: new Headers(),
+    };
+    const path =
+      "/api/v1/staff/organizations/org_43G1B1RhPwac7EjS/feedback/assignment-options";
+    const response = await handleFeedbackRequest(
+      new Request(`https://example.test${path}`),
+      new URL(`https://example.test${path}`),
+      context,
+    );
+    expect(response?.status).toBe(401);
+  });
+
+  it("denies hiring-only reviewers access to assignment options", async () => {
+    const database = authOnlyDatabase("hiring_reviewer");
+    const context: FeedbackContext = {
+      env: {
+        DB: database,
+        PRIVATE_ASSETS: {} as R2Bucket,
+        APP_ENV: "development",
+        DEV_AUTH_ENABLED: "true",
+      },
+      requestId: "test-request",
+      cors: new Headers(),
+    };
+    const path =
+      "/api/v1/staff/organizations/org_43G1B1RhPwac7EjS/feedback/assignment-options";
+    const response = await handleFeedbackRequest(
+      new Request(`https://example.test${path}`, {
+        headers: { Authorization: "Bearer dev-hiring-reviewer" },
+      }),
+      new URL(`https://example.test${path}`),
+      context,
+    );
+    expect(response?.status).toBe(403);
+  });
+});
+
+describe("scoped staff feedback workflow", () => {
+  it("assigns only active departments and same-organization staff", async () => {
+    const store = new StaffWorkflowStore("d1".repeat(32));
+    const context = store.context();
+    const optionsPath =
+      "/api/v1/staff/organizations/org_43G1B1RhPwac7EjS/feedback/assignment-options";
+    const optionsResponse = await handleFeedbackRequest(
+      new Request(`https://example.test${optionsPath}`, {
+        headers: { Authorization: "Bearer dev-civic-staff" },
+      }),
+      new URL(`https://example.test${optionsPath}`),
+      context,
+    );
+    const options = (await optionsResponse!.json()) as {
+      departments: Array<{ id: string }>;
+      assignees: Array<{ subject: string; displayLabel: string }>;
+    };
+    expect(optionsResponse?.status).toBe(200);
+    expect(options.departments.map(({ id }) => id)).toEqual(["general_review"]);
+    expect(options.assignees.map(({ subject }) => subject)).toEqual([
+      "local:civic-staff",
+      "local:organization-admin",
+    ]);
+    expect(options.assignees.map(({ displayLabel }) => displayLabel)).toEqual([
+      "Civic staff member 1",
+      "Organization admin 1",
+    ]);
+
+    const path = `${optionsPath.replace("/assignment-options", "")}/${store.submission.id}/assignment`;
+    const headers = {
+      Authorization: "Bearer dev-civic-staff",
+      "Content-Type": "application/json",
+      "Idempotency-Key": "assignment-local-test-1",
+    };
+    const response = await handleFeedbackRequest(
+      new Request(`https://example.test${path}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          departmentId: "general_review",
+          assigneeSubject: "local:organization-admin",
+        }),
+      }),
+      new URL(`https://example.test${path}`),
+      context,
+    );
+    const body = (await response!.json()) as {
+      assignment: { departmentId: string; assigneeSubject: string | null };
+    };
+    expect(response?.status).toBe(200);
+    expect(body.assignment).toMatchObject({
+      departmentId: "general_review",
+      assigneeSubject: "local:organization-admin",
+    });
+    expect(store.assignment?.assignee_subject).toBe("local:organization-admin");
+
+    const denied = await handleFeedbackRequest(
+      new Request(`https://example.test${path}`, {
+        method: "PATCH",
+        headers: { ...headers, "Idempotency-Key": "assignment-local-test-2" },
+        body: JSON.stringify({
+          departmentId: "general_review",
+          assigneeSubject: "local:hiring-reviewer",
+        }),
+      }),
+      new URL(`https://example.test${path}`),
+      context,
+    );
+    expect(denied?.status).toBe(422);
+    expect(store.assignment?.assignee_subject).toBe("local:organization-admin");
+  });
+
+  it("requests resident details and exposes the question in the private receipt", async () => {
+    const token = "e3".repeat(32);
+    const store = new StaffWorkflowStore(await sha256Hex(token));
+    const context = store.context();
+    const path = `/api/v1/staff/organizations/${store.organizationId}/feedback/${store.submission.id}/request-details`;
+    const response = await handleFeedbackRequest(
+      new Request(`https://example.test${path}`, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer dev-civic-staff",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "request-details-test-1",
+        },
+        body: JSON.stringify({ message: "Which corner is affected?" }),
+      }),
+      new URL(`https://example.test${path}`),
+      context,
+    );
+    const body = (await response!.json()) as {
+      message: { body: string };
+      submission: { status: string };
+    };
+    expect(response?.status).toBe(200);
+    expect(body.submission.status).toBe("waiting_on_resident");
+    expect(body.message.body).toBe("Which corner is affected?");
+
+    const receiptPath = `/api/v1/feedback/receipts/${store.submission.id}`;
+    const receiptResponse = await handleFeedbackRequest(
+      new Request(`https://example.test${receiptPath}`, {
+        headers: { "X-Receipt-Token": token },
+      }),
+      new URL(`https://example.test${receiptPath}`),
+      context,
+    );
+    const receipt = (await receiptResponse!.json()) as {
+      submission: { status: string; messages: Array<{ body: string }> };
+    };
+    expect(receipt.submission.status).toBe("waiting_on_resident");
+    expect(receipt.submission.messages.map(({ body }) => body)).toEqual([
+      "The crossing light is too short.",
+      "Which corner is affected?",
+    ]);
+  });
+
+  it("records outcomes only from review and exposes the summary to the receipt owner", async () => {
+    const token = "f4".repeat(32);
+    const store = new StaffWorkflowStore(await sha256Hex(token));
+    const context = store.context();
+    const path = `/api/v1/staff/organizations/${store.organizationId}/feedback/${store.submission.id}/outcome`;
+    const request = () =>
+      handleFeedbackRequest(
+        new Request(`https://example.test${path}`, {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer dev-civic-staff",
+            "Content-Type": "application/json",
+            "Idempotency-Key": "record-outcome-test-1",
+          },
+          body: JSON.stringify({ summary: "The light was repaired." }),
+        }),
+        new URL(`https://example.test${path}`),
+        context,
+      );
+    const response = await request();
+    const body = (await response!.json()) as {
+      submission: { status: string; outcome: string };
+    };
+    expect(response?.status).toBe(200);
+    expect(body.submission).toEqual({
+      id: store.submission.id,
+      status: "outcome_recorded",
+      outcome: "The light was repaired.",
+    });
+    expect(store.submission.status).toBe("outcome_recorded");
+
+    const receiptPath = `/api/v1/feedback/receipts/${store.submission.id}`;
+    const receiptResponse = await handleFeedbackRequest(
+      new Request(`https://example.test${receiptPath}`, {
+        headers: { "X-Receipt-Token": token },
+      }),
+      new URL(`https://example.test${receiptPath}`),
+      context,
+    );
+    const receipt = (await receiptResponse!.json()) as {
+      submission: { status: string; outcome: string };
+    };
+    expect(receipt.submission).toMatchObject({
+      status: "outcome_recorded",
+      outcome: "The light was repaired.",
+    });
+
+    const retry = await request();
+    expect(retry?.status).toBe(200);
+    expect(store.submission.status).toBe("outcome_recorded");
   });
 });
 
@@ -480,6 +709,301 @@ class FeedbackStore {
   }
 }
 
+class StaffWorkflowStore {
+  readonly organizationId = "org_43G1B1RhPwac7EjS";
+  readonly submission: FeedbackRow & { organization_id: string };
+  readonly messages: Array<{
+    id: string;
+    author_kind: "resident" | "staff";
+    body: string;
+    created_at: string;
+  }> = [
+    {
+      id: "fbm_initial",
+      author_kind: "resident" as const,
+      body: "The crossing light is too short.",
+      created_at: "2026-09-26T12:00:00.000Z",
+    },
+  ];
+  readonly idempotency = new Map<
+    string,
+    { request_hash: string; response_json: string }
+  >();
+  assignment: {
+    submission_id: string;
+    organization_id: string;
+    department_id: string;
+    department_name_en: string;
+    department_name_fr: string;
+    assignee_subject: string | null;
+    assigned_by: string;
+    updated_at: string;
+  } | null = null;
+  private updatedAt = "2026-09-26T12:00:00.000Z";
+  private readonly departments = [
+    {
+      id: "general_review",
+      name_en: "CivicResolve general review",
+      name_fr: "Examen général de CivicResolve",
+      active: 1,
+      jurisdiction_level: "review_only",
+      organization_id: "org_43G1B1RhPwac7EjS",
+    },
+    {
+      id: "inactive_department",
+      name_en: "Inactive department",
+      name_fr: "Service inactif",
+      active: 0,
+      jurisdiction_level: "review_only",
+      organization_id: "org_43G1B1RhPwac7EjS",
+    },
+  ];
+  private readonly memberships = [
+    {
+      user_subject: "local:civic-staff",
+      organization_id: "org_43G1B1RhPwac7EjS",
+      role: "civic_staff" as const,
+    },
+    {
+      user_subject: "local:organization-admin",
+      organization_id: "org_43G1B1RhPwac7EjS",
+      role: "organization_admin" as const,
+    },
+    {
+      user_subject: "local:hiring-reviewer",
+      organization_id: "org_43G1B1RhPwac7EjS",
+      role: "hiring_reviewer" as const,
+    },
+    {
+      user_subject: "local:other-civic-staff",
+      organization_id: "org_local_other",
+      role: "civic_staff" as const,
+    },
+  ];
+
+  constructor(receiptTokenHash: string) {
+    this.submission = {
+      id: "fb_0123456789abcdef0123456789abcdef",
+      original_text: "The crossing light is too short.",
+      constructive_follow_up: "Repair the signal timing.",
+      category: "roads_and_sidewalks",
+      municipality_csd_uid: "3520005",
+      municipality_name: "Toronto",
+      province_name: "Ontario",
+      status: "in_review",
+      receipt_token_hash: receiptTokenHash,
+      department_name: "General review (fictional Toronto sandbox)",
+      outcome: null,
+      sample: 1,
+      created_at: "2026-09-26T12:00:00.000Z",
+      updated_at: this.updatedAt,
+      organization_id: this.organizationId,
+    };
+  }
+
+  context(): FeedbackContext {
+    const store = this;
+    const database = {
+      prepare(query: string) {
+        let values: unknown[] = [];
+        const statement = {
+          query,
+          get values() {
+            return values;
+          },
+          bind(...bound: unknown[]) {
+            values = bound;
+            return statement;
+          },
+          async first<Row>() {
+            if (query.includes("FROM idempotency_records"))
+              return (store.idempotency.get(String(values[0])) ??
+                null) as Row | null;
+            if (query.includes("FROM feedback_submissions AS f")) {
+              const matches =
+                values[0] === store.submission.id &&
+                (query.includes("receipt_token_hash = ?")
+                  ? values[1] === store.submission.receipt_token_hash
+                  : values[1] === store.organizationId);
+              return matches ? ({ ...store.submission } as Row) : null;
+            }
+            if (query.includes("FROM taxonomy_departments")) {
+              return (store.departments.find(
+                (department) =>
+                  department.id === values[0] &&
+                  department.organization_id === values[1] &&
+                  department.active === 1,
+              ) ?? null) as Row | null;
+            }
+            if (query.includes("FROM organization_memberships")) {
+              return (store.memberships.find(
+                (member) =>
+                  member.user_subject === values[0] &&
+                  member.organization_id === values[1] &&
+                  (member.role === "civic_staff" ||
+                    member.role === "organization_admin"),
+              ) ?? null) as Row | null;
+            }
+            if (query.includes("FROM feedback_staff_assignments AS a"))
+              return (
+                store.assignment &&
+                store.assignment.submission_id === values[0] &&
+                store.assignment.organization_id === values[1]
+                  ? store.assignment
+                  : null
+              ) as Row | null;
+            if (query.includes("FROM feedback_messages"))
+              return (store.messages.find(
+                (message) =>
+                  message.id === values[1] && values[0] === store.submission.id,
+              ) ?? null) as Row | null;
+            return null;
+          },
+          async all<Row>() {
+            if (query.includes("JOIN organizations AS o")) {
+              const [subject, auth0OrganizationId, ...roles] =
+                values.map(String);
+              const orgId = auth0OrganizationId;
+              return {
+                results: store.memberships
+                  .filter(
+                    (member) =>
+                      member.user_subject === subject &&
+                      member.organization_id === orgId &&
+                      roles.includes(member.role),
+                  )
+                  .map(({ organization_id, role }) => ({
+                    organization_id,
+                    role,
+                  })) as Row[],
+                success: true,
+                meta: emptyMeta(),
+              };
+            }
+            if (query.includes("FROM taxonomy_departments"))
+              return {
+                results: store.departments.filter(
+                  (department) =>
+                    department.organization_id === values[0] &&
+                    department.active === 1,
+                ) as Row[],
+                success: true,
+                meta: emptyMeta(),
+              };
+            if (query.includes("FROM organization_memberships"))
+              return {
+                results: store.memberships.filter(
+                  (member) =>
+                    member.organization_id === values[0] &&
+                    (member.role === "civic_staff" ||
+                      member.role === "organization_admin"),
+                ) as Row[],
+                success: true,
+                meta: emptyMeta(),
+              };
+            if (query.includes("FROM feedback_messages"))
+              return {
+                results: store.messages as Row[],
+                success: true,
+                meta: emptyMeta(),
+              };
+            return { results: [] as Row[], success: true, meta: emptyMeta() };
+          },
+          async run() {
+            return { success: true, meta: emptyMeta() };
+          },
+        };
+        return statement as unknown as D1PreparedStatement;
+      },
+      async batch(statements: D1PreparedStatement[]) {
+        for (const statement of statements) {
+          const { query, values } = statement as unknown as {
+            query: string;
+            values: unknown[];
+          };
+          if (query.startsWith("UPDATE feedback_submissions")) {
+            if (query.includes("outcome = ?")) {
+              if (
+                values[3] === store.submission.id &&
+                values[4] === store.organizationId &&
+                values[5] === store.submission.status
+              ) {
+                store.submission.status = String(
+                  values[0],
+                ) as FeedbackRow["status"];
+                store.submission.outcome = String(values[1]);
+                store.updatedAt = String(values[2]);
+                store.submission.updated_at = store.updatedAt;
+              }
+            } else if (query.includes("SET status = ?")) {
+              if (
+                values[2] === store.submission.id &&
+                values[3] === store.organizationId &&
+                values[4] === store.submission.status
+              ) {
+                store.submission.status = String(
+                  values[0],
+                ) as FeedbackRow["status"];
+                store.updatedAt = String(values[1]);
+                store.submission.updated_at = store.updatedAt;
+              }
+            } else if (
+              values[1] === store.submission.id &&
+              values[2] === store.organizationId
+            ) {
+              store.updatedAt = String(values[0]);
+              store.submission.updated_at = store.updatedAt;
+            }
+          } else if (
+            query.startsWith("INSERT INTO feedback_staff_assignments")
+          ) {
+            const department = store.departments.find(
+              (item) => item.id === values[2],
+            )!;
+            store.assignment = {
+              submission_id: String(values[0]),
+              organization_id: String(values[1]),
+              department_id: String(values[2]),
+              department_name_en: department.name_en,
+              department_name_fr: department.name_fr,
+              assignee_subject: values[3] as string | null,
+              assigned_by: String(values[4]),
+              updated_at: String(values[5]),
+            };
+          } else if (
+            query.includes("INSERT OR IGNORE INTO feedback_messages")
+          ) {
+            store.messages.push({
+              id: String(values[0]),
+              author_kind: String(values[2]) as "resident" | "staff",
+              body: String(values[4]),
+              created_at: String(values[5]),
+            });
+          } else if (
+            query.includes("INSERT OR IGNORE INTO idempotency_records")
+          ) {
+            store.idempotency.set(String(values[0]), {
+              request_hash: String(values[1]),
+              response_json: String(values[4]),
+            });
+          }
+        }
+        return [];
+      },
+    };
+    return {
+      env: {
+        DB: database as unknown as D1Database,
+        PRIVATE_ASSETS: {} as R2Bucket,
+        APP_ENV: "development",
+        DEV_AUTH_ENABLED: "true",
+      },
+      requestId: "test-request",
+      cors: new Headers(),
+    };
+  }
+}
+
 function evidenceContext(options: {
   first: () => Promise<unknown | null>;
   get: () => Promise<null>;
@@ -543,4 +1067,37 @@ function emptyMeta() {
     rows_read: 0,
     rows_written: 0,
   };
+}
+
+function authOnlyDatabase(role: string): D1Database {
+  return {
+    prepare(query: string) {
+      const statement = {
+        bind() {
+          return statement;
+        },
+        async all() {
+          return {
+            results: query.includes("JOIN organizations AS o")
+              ? [
+                  {
+                    organization_id: "org_43G1B1RhPwac7EjS",
+                    role,
+                  },
+                ]
+              : [],
+            success: true,
+            meta: emptyMeta(),
+          };
+        },
+        async first() {
+          return null;
+        },
+        async run() {
+          return { success: true, meta: emptyMeta() };
+        },
+      };
+      return statement as unknown as D1PreparedStatement;
+    },
+  } as unknown as D1Database;
 }
