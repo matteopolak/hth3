@@ -28,7 +28,7 @@ See `apps/web/.env.example`. Vite reads the following build-time public values:
 | `VITE_AUTH0_STAFF_ORGANIZATION_ID` | Auth0 organization for employee login; defaults to the seeded sandbox organization. |
 | `VITE_API_BASE_URL`                | Worker HTTP base URL used by the API client.                                        |
 
-The SPA allowlists contain `http://localhost:5173/callback` and `https://envoy-web.pages.dev/callback` as callbacks; `http://localhost:5173` and `https://envoy-web.pages.dev` are both allowed logout returns and web origins. The Pages project belongs to the authorized matteopolak Cloudflare account. No client secret belongs in Vite variables or the repository.
+The SPA allowlists contain `http://localhost:5173/callback`, `http://192.168.2.63:5173/callback`, and `https://envoy-web.pages.dev/callback` as callbacks; the matching origins are allowed logout returns and web origins. The LAN entry lets collaborators sign in while the dev server is running with `--host`; update it in Auth0 if this machine's LAN IP changes. The Pages project belongs to the authorized matteopolak Cloudflare account. No client secret belongs in Vite variables or the repository.
 
 The hosted Auth0 SPA display name and tenant `friendly_name` are both `envoy`, so Universal Login does not show the tenant slug. The existing staff organization retains its stable Auth0 ID and slug; its login display name is `Envoy Staff Workspace`. Tenant branding and staff organization branding both use primary `#111111` and page background `#FAFAFA`; the default theme controls the remaining widget colors, borders, and logo visibility. These settings are in Auth0, so changing the product name or palette again requires an Auth0 CLI update as well as repository copy edits.
 
