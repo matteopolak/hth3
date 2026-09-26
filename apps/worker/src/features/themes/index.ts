@@ -1,14 +1,20 @@
 import { API_VERSION } from "@civicresolve/contracts/v1";
 import { canPerformOrganizationAction } from "@civicresolve/domain/permissions";
+import {
+  canDescribeThemeSources,
+  isSensitiveThemeCategory,
+  proposeThemeMembershipReviews,
+  type ThemeMembershipSuggestion,
+} from "@civicresolve/domain/themes";
 import { authenticateRequest } from "../../auth/identity.js";
 import {
   embedThemeSources,
+  redactThemeText,
   summarizeGroundedTheme,
   type ThemeAiBinding,
 } from "../../integrations/workers-ai/grounded-themes.js";
 import {
   findThemeCandidates,
-  type CandidatePair,
   type ThemeVectorIndex,
 } from "../../integrations/vectorize/themes.js";
 import {
@@ -20,7 +26,7 @@ import {
 } from "../shared.js";
 
 const THEMES_PATH =
-  /^\/api\/v1\/staff\/organizations\/([A-Za-z0-9_-]+)\/themes(?:\/(refresh|theme_[a-f0-9]{32})(?:\/(memberships))?)?$/;
+  /^\/api\/v1\/staff\/organizations\/([A-Za-z0-9_-]+)\/themes(?:\/(refresh|candidates|theme_[a-f0-9]{32})(?:\/(memberships))?)?$/;
 
 interface GroundedEnvironment {
   AI?: ThemeAiBinding;
@@ -111,14 +117,22 @@ export async function handleThemesRequest(
 
   if (request.method === "GET" && !action)
     return listThemes(url, organizationId, context);
-  if (request.method === "GET" && action?.startsWith("theme_"))
+  if (request.method === "GET" && action?.startsWith("theme_") && !subAction)
     return getTheme(url, organizationId, action, context);
+  if (request.method === "POST" && action === "candidates")
+    return listThemeCandidates(organizationId, context);
   if (
     request.method === "POST" &&
     action?.startsWith("theme_") &&
     subAction === "memberships"
   )
-    return reviewThemeMembership(request, organizationId, action, context);
+    return reviewThemeMembership(
+      request,
+      organizationId,
+      action,
+      actor.subject,
+      context,
+    );
   if (request.method === "POST" && action === "refresh") {
     const result = await refreshThemesForOrganization(organizationId, context);
     return featureJson(context, { apiVersion: API_VERSION, ...result });
@@ -149,11 +163,19 @@ async function listThemes(
   const filters = filterClause(category, department, status);
   const params = [organizationId, since, ...filters.values];
   const database = context.env.DB;
-  const [totals, previousTotals, categories, intents, statuses, daily, themes] =
-    await Promise.all([
-      database
-        .prepare(
-          `SELECT COUNT(*) AS total,
+  const [
+    totals,
+    previousTotals,
+    categories,
+    intents,
+    statuses,
+    daily,
+    themes,
+    analytics,
+  ] = await Promise.all([
+    database
+      .prepare(
+        `SELECT COUNT(*) AS total,
         SUM(CASE WHEN f.status NOT IN ('outcome_recorded', 'closed')
           AND NOT EXISTS (
             SELECT 1 FROM feedback_messages AS m
@@ -162,43 +184,43 @@ async function listThemes(
        FROM feedback_submissions AS f
        LEFT JOIN feedback_assignments AS a ON a.submission_id = f.id
        WHERE f.organization_id = ? AND f.created_at >= ? ${filters.sql}`,
-        )
-        .bind(...params)
-        .first<TotalRow>(),
-      database
-        .prepare(
-          `SELECT COUNT(*) AS total FROM feedback_submissions AS f
+      )
+      .bind(...params)
+      .first<TotalRow>(),
+    database
+      .prepare(
+        `SELECT COUNT(*) AS total FROM feedback_submissions AS f
        LEFT JOIN feedback_assignments AS a ON a.submission_id = f.id
        WHERE f.organization_id = ? AND f.created_at >= ? AND f.created_at < ? ${filters.sql}`,
-        )
-        .bind(organizationId, previousSince, since, ...filters.values)
-        .first<{ total: number }>(),
-      groupedCount(
-        database,
-        "COALESCE(f.category_id, f.category)",
-        params,
-        filters.sql,
-      ),
-      groupedCount(
-        database,
-        "COALESCE(f.intent, 'unclassified')",
-        params,
-        filters.sql,
-      ),
-      groupedCount(database, "f.status", params, filters.sql),
-      database
-        .prepare(
-          `SELECT substr(f.created_at, 1, 10) AS day, COUNT(*) AS count
+      )
+      .bind(organizationId, previousSince, since, ...filters.values)
+      .first<{ total: number }>(),
+    groupedCount(
+      database,
+      "COALESCE(f.category_id, f.category)",
+      params,
+      filters.sql,
+    ),
+    groupedCount(
+      database,
+      "COALESCE(f.intent, 'unclassified')",
+      params,
+      filters.sql,
+    ),
+    groupedCount(database, "f.status", params, filters.sql),
+    database
+      .prepare(
+        `SELECT substr(f.created_at, 1, 10) AS day, COUNT(*) AS count
        FROM feedback_submissions AS f
        LEFT JOIN feedback_assignments AS a ON a.submission_id = f.id
        WHERE f.organization_id = ? AND f.created_at >= ? ${filters.sql}
        GROUP BY day ORDER BY day`,
-        )
-        .bind(...params)
-        .all<{ day: string; count: number }>(),
-      database
-        .prepare(
-          `SELECT t.*,
+      )
+      .bind(...params)
+      .all<{ day: string; count: number }>(),
+    database
+      .prepare(
+        `SELECT t.*,
         COUNT(CASE WHEN f.created_at >= ? AND f.created_at < ? THEN 1 END) AS count,
         COUNT(CASE WHEN f.created_at >= ? AND f.created_at < ? THEN 1 END) AS previous_count,
         SUM(CASE WHEN f.sample = 0 THEN 1 ELSE 0 END) AS real_count,
@@ -213,27 +235,40 @@ async function listThemes(
          AND (? IS NULL OR f.status = ?)
        GROUP BY t.id HAVING count > 0 OR previous_count > 0
        ORDER BY count DESC, previous_count DESC, t.title_en ASC`,
-        )
-        .bind(
-          since,
-          now.toISOString(),
-          previousSince,
-          since,
-          organizationId,
-          category,
-          category,
-          department,
-          department,
-          status,
-          status,
-        )
-        .all<ThemeRow>(),
-    ]);
+      )
+      .bind(
+        since,
+        now.toISOString(),
+        previousSince,
+        since,
+        organizationId,
+        category,
+        category,
+        department,
+        department,
+        status,
+        status,
+      )
+      .all<ThemeRow>(),
+    database
+      .prepare(
+        `SELECT MAX(CASE WHEN delivered_at IS NOT NULL THEN occurred_at END) AS analytics_as_of,
+          SUM(CASE WHEN delivered_at IS NULL THEN 1 ELSE 0 END) AS pending_events
+         FROM outbox_events WHERE organization_id = ? AND event_type LIKE 'feedback.%'`,
+      )
+      .bind(organizationId)
+      .first<{
+        analytics_as_of: string | null;
+        pending_events: number | null;
+      }>(),
+  ]);
   return featureJson(context, {
     apiVersion: API_VERSION,
     metric: "submissions",
     windowDays: days,
     generatedAt: now.toISOString(),
+    analyticsAsOf: analytics?.analytics_as_of ?? null,
+    analyticsPendingEvents: analytics?.pending_events ?? 0,
     filters: { category, department, status },
     totalSubmissions: totals?.total ?? 0,
     previousTotalSubmissions: previousTotals?.total ?? 0,
@@ -328,22 +363,20 @@ export async function refreshThemesForOrganization(
   themes: number;
   membershipsAdded: number;
   membershipsMoved: number;
-  grounding: { status: GroundingStatus; manualReview: boolean };
+  grounding: {
+    status: GroundingStatus;
+    manualReview: true;
+    candidateSuggestions: ThemeMembershipSuggestion[];
+  };
 }> {
   const database = context.env.DB;
   const now = new Date().toISOString();
   const names = await categoryNames(database, organizationId);
-  const rows = await database
-    .prepare(
-      `SELECT f.id, COALESCE(f.category_id, f.category) AS category_id,
-      f.original_text, f.constructive_follow_up, f.status, f.intent, f.sample, f.created_at
-     FROM feedback_submissions AS f WHERE f.organization_id = ? ORDER BY f.created_at DESC`,
-    )
-    .bind(organizationId)
-    .all<SubmissionRow>();
-  const submissions = rows.results ?? [];
-  const grounded = await groundedGroups(submissions, organizationId, context);
-  const groups = grounded.groups;
+  const submissions = await loadOrganizationSubmissions(
+    organizationId,
+    context,
+  );
+  const groups = groupSubmissions(submissions);
   const existing = await database
     .prepare(
       `SELECT m.submission_id, m.theme_id, m.source, t.category_id AS theme_category_id
@@ -383,13 +416,18 @@ export async function refreshThemesForOrganization(
               en: `${humanize(topicKey)} · ${categoryName.en}`,
               fr: `${categoryName.fr} · ${topicKey}`,
             };
-    let sourceIds = submissions.slice(0, 5).map((row) => row.id);
-    let summary = summarize(title, submissions);
+    let sourceIds = canDescribeThemeSources(categoryId, submissions.length)
+      ? submissions.slice(0, 5).map((row) => row.id)
+      : [];
+    let summary = summarize(title, submissions, categoryId);
     let summaryMethod = "deterministic";
-    if (grounded.status === "grounded" && submissions.length >= 3) {
+    if (
+      aiEnabled(context) &&
+      canDescribeThemeSources(categoryId, submissions.length)
+    ) {
       try {
         const result = await summarizeGroundedTheme(
-          grounded.ai!,
+          context.env.AI!,
           submissions.slice(0, 5).map((row) => ({
             id: row.id,
             originalText: row.original_text,
@@ -400,7 +438,7 @@ export async function refreshThemesForOrganization(
         sourceIds = result.sourceIds;
         summaryMethod = "workers_ai_grounded";
       } catch {
-        grounded.status = "provider_unavailable";
+        summaryMethod = "deterministic";
       }
     }
     await database
@@ -501,42 +539,84 @@ export async function refreshThemesForOrganization(
     reviewedSummaryIds.add(row.theme_id);
   for (const themeId of reviewedSummaryIds)
     await refreshReviewedThemeSummary(database, organizationId, themeId, now);
+  const candidates = await buildThemeCandidates(
+    submissions,
+    organizationId,
+    context,
+  );
   return {
     refreshedAt: now,
     themes: groups.size,
     membershipsAdded: added,
     membershipsMoved: moved,
     grounding: {
-      status: grounded.status,
-      manualReview: grounded.status !== "grounded",
+      status: candidates.status,
+      manualReview: true,
+      candidateSuggestions: candidates.suggestions,
     },
   };
 }
 
-async function groundedGroups(
+async function loadOrganizationSubmissions(
+  organizationId: string,
+  context: FeatureContext,
+): Promise<SubmissionRow[]> {
+  const rows = await context.env.DB.prepare(
+    `SELECT f.id, COALESCE(f.category_id, f.category) AS category_id,
+      f.original_text, f.constructive_follow_up, f.status, f.intent, f.sample, f.created_at
+     FROM feedback_submissions AS f WHERE f.organization_id = ? ORDER BY f.created_at DESC`,
+  )
+    .bind(organizationId)
+    .all<SubmissionRow>();
+  return rows.results ?? [];
+}
+
+async function listThemeCandidates(
+  organizationId: string,
+  context: FeatureContext,
+): Promise<Response> {
+  await ensureThemesCurrent(organizationId, context);
+  const rows = await loadOrganizationSubmissions(organizationId, context);
+  const result = await buildThemeCandidates(rows, organizationId, context);
+  return featureJson(context, {
+    apiVersion: API_VERSION,
+    generatedAt: new Date().toISOString(),
+    metric: "submissions",
+    groundingStatus: result.status,
+    reviewRequired: true,
+    suggestions: result.suggestions,
+  });
+}
+
+function aiEnabled(context: FeatureContext): boolean {
+  const env = context.env as typeof context.env & GroundedEnvironment;
+  return (
+    env.THEME_AI_ENABLED === "true" &&
+    env.THEME_AI_NO_CHARGE_CONFIRMED === "true" &&
+    !!env.AI
+  );
+}
+
+async function buildThemeCandidates(
   rows: SubmissionRow[],
   organizationId: string,
   context: FeatureContext,
 ): Promise<{
-  groups: Map<string, SubmissionRow[]>;
   status: GroundingStatus;
-  ai?: ThemeAiBinding;
+  suggestions: ThemeMembershipSuggestion[];
 }> {
   const env = context.env as typeof context.env & GroundedEnvironment;
-  const fallback = groupSubmissions(rows);
-  if (
-    env.THEME_AI_ENABLED !== "true" ||
-    env.THEME_AI_NO_CHARGE_CONFIRMED !== "true" ||
-    !env.AI ||
-    !env.THEME_VECTORS
-  )
-    return { groups: fallback, status: "disabled" };
-  if (rows.length < 3 || rows.length > 24)
-    return { groups: fallback, status: "capacity_limit" };
+  if (!aiEnabled(context) || !env.THEME_VECTORS)
+    return { status: "disabled", suggestions: [] };
+  const eligible = rows.filter(
+    (row) => !isSensitiveThemeCategory(row.category_id),
+  );
+  if (eligible.length < 2 || eligible.length > 24)
+    return { status: "capacity_limit", suggestions: [] };
   try {
     const vectors = await embedThemeSources(
-      env.AI,
-      rows.map((row) => ({
+      env.AI!,
+      eligible.map((row) => ({
         id: row.id,
         originalText: row.original_text,
         constructiveFollowUp: row.constructive_follow_up,
@@ -545,61 +625,50 @@ async function groundedGroups(
     const pairs = await findThemeCandidates(
       env.THEME_VECTORS,
       organizationId,
-      rows.map((row, index) => ({
+      eligible.map((row, index) => ({
         id: row.id,
         categoryId: row.category_id,
         values: vectors[index]!,
       })),
     );
+    const memberships = await context.env.DB.prepare(
+      `SELECT m.submission_id, m.theme_id, m.source,
+        COALESCE(f.category_id, f.category) AS category_id, f.created_at
+       FROM feedback_theme_memberships AS m
+       JOIN feedback_submissions AS f ON f.id = m.submission_id
+       WHERE m.organization_id = ? AND f.organization_id = ?`,
+    )
+      .bind(organizationId, organizationId)
+      .all<{
+        submission_id: string;
+        theme_id: string;
+        source: "automatic" | "staff";
+        category_id: string;
+        created_at: string;
+      }>();
     return {
-      groups: groupByCandidates(rows, pairs),
       status: "grounded",
-      ai: env.AI,
+      suggestions: proposeThemeMembershipReviews(
+        pairs,
+        (memberships.results ?? []).map((row) => ({
+          submissionId: row.submission_id,
+          themeId: row.theme_id,
+          source: row.source,
+          categoryId: row.category_id,
+          createdAt: row.created_at,
+        })),
+      ),
     };
   } catch {
-    return { groups: fallback, status: "provider_unavailable" };
+    return { status: "provider_unavailable", suggestions: [] };
   }
-}
-
-function groupByCandidates(
-  rows: SubmissionRow[],
-  pairs: CandidatePair[],
-): Map<string, SubmissionRow[]> {
-  const parent = new Map(rows.map((row) => [row.id, row.id]));
-  const find = (id: string): string => {
-    let root = parent.get(id)!;
-    while (root !== parent.get(root)) root = parent.get(root)!;
-    return root;
-  };
-  for (const pair of pairs) {
-    const first = find(pair.firstId);
-    const second = find(pair.secondId);
-    if (first !== second)
-      parent.set(
-        first > second ? first : second,
-        first > second ? second : first,
-      );
-  }
-  const clusters = new Map<string, SubmissionRow[]>();
-  const sizes = new Map<string, number>();
-  for (const row of rows) {
-    const root = find(row.id);
-    sizes.set(root, (sizes.get(root) ?? 0) + 1);
-  }
-  for (const row of rows) {
-    const root = find(row.id);
-    const key = `${row.category_id}:${(sizes.get(root) ?? 0) > 1 ? `semantic_${root}` : "general"}`;
-    const group = clusters.get(key) ?? [];
-    group.push(row);
-    clusters.set(key, group);
-  }
-  return clusters;
 }
 
 async function reviewThemeMembership(
   request: Request,
   organizationId: string,
   themeId: string,
+  actorSubject: string,
   context: FeatureContext,
 ): Promise<Response> {
   const input = (await request.json().catch(() => null)) as {
@@ -632,10 +701,10 @@ async function reviewThemeMembership(
       .first<{ category_id: string }>(),
     database
       .prepare(
-        "SELECT theme_id FROM feedback_theme_memberships WHERE submission_id = ? AND organization_id = ?",
+        "SELECT theme_id, source FROM feedback_theme_memberships WHERE submission_id = ? AND organization_id = ?",
       )
       .bind(submissionId, organizationId)
-      .first<{ theme_id: string }>(),
+      .first<{ theme_id: string; source: string }>(),
   ]);
   if (!theme || !submission)
     return featureError(
@@ -651,6 +720,13 @@ async function reviewThemeMembership(
       "The submission and theme must share a category.",
       409,
     );
+  if (current?.theme_id === themeId && current.source === "staff")
+    return featureJson(context, {
+      apiVersion: API_VERSION,
+      submissionId,
+      themeId,
+      source: "staff",
+    });
   const now = new Date().toISOString();
   await database
     .prepare(
@@ -660,6 +736,23 @@ async function reviewThemeMembership(
        theme_id = excluded.theme_id, source = 'staff', created_at = excluded.created_at`,
     )
     .bind(submissionId, themeId, organizationId, now)
+    .run();
+  await database
+    .prepare(
+      `INSERT INTO audit_events (
+      id, actor_subject, organization_id, action, entity_type, entity_id,
+      details_json, created_at
+     ) VALUES (?, ?, ?, 'feedback_theme_membership_reviewed',
+       'feedback_submission', ?, ?, ?)`,
+    )
+    .bind(
+      `audit_${crypto.randomUUID().replaceAll("-", "")}`,
+      actorSubject,
+      organizationId,
+      submissionId,
+      JSON.stringify({ previousThemeId: current?.theme_id ?? null, themeId }),
+      now,
+    )
     .run();
   if (current?.theme_id !== themeId) {
     await refreshReviewedThemeSummary(database, organizationId, themeId, now);
@@ -677,7 +770,7 @@ async function reviewThemeMembership(
         : "feedback.theme_membership_added",
       occurredAt: now,
       actorKind: "staff",
-      actorSubject: null,
+      actorSubject,
       organizationId,
       aggregateType: "feedback_submission",
       aggregateId: submissionId,
@@ -706,10 +799,10 @@ async function refreshReviewedThemeSummary(
 ): Promise<void> {
   const theme = await database
     .prepare(
-      "SELECT title_en, title_fr FROM feedback_themes WHERE id = ? AND organization_id = ?",
+      "SELECT title_en, title_fr, category_id FROM feedback_themes WHERE id = ? AND organization_id = ?",
     )
     .bind(themeId, organizationId)
-    .first<{ title_en: string; title_fr: string }>();
+    .first<{ title_en: string; title_fr: string; category_id: string }>();
   if (!theme) return;
   const linked = await database
     .prepare(
@@ -723,7 +816,11 @@ async function refreshReviewedThemeSummary(
     .bind(themeId, organizationId, organizationId)
     .all<SubmissionRow>();
   const rows = linked.results ?? [];
-  const summary = summarize({ en: theme.title_en, fr: theme.title_fr }, rows);
+  const summary = summarize(
+    { en: theme.title_en, fr: theme.title_fr },
+    rows,
+    theme.category_id,
+  );
   await database
     .prepare(
       `UPDATE feedback_themes SET summary_en = ?, summary_fr = ?,
@@ -734,7 +831,11 @@ async function refreshReviewedThemeSummary(
     .bind(
       summary.en,
       summary.fr,
-      JSON.stringify(rows.slice(0, 5).map((row) => row.id)),
+      JSON.stringify(
+        canDescribeThemeSources(theme.category_id, rows.length)
+          ? rows.slice(0, 5).map((row) => row.id)
+          : [],
+      ),
       rows.length,
       now,
       now,
@@ -791,9 +892,10 @@ async function categoryNames(
 function summarize(
   title: { en: string; fr: string },
   rows: SubmissionRow[],
+  categoryId: string,
 ): { en: string; fr: string } {
   const count = rows.length;
-  if (count < 3)
+  if (!canDescribeThemeSources(categoryId, count))
     return {
       en: `${count} ${count === 1 ? "submission concerns" : "submissions concern"} ${title.en.toLowerCase()}. Open the linked feedback to review details and requested changes.`,
       fr: `${count} ${count === 1 ? "signalement concerne" : "signalements concernent"} ${title.fr.toLowerCase()}. Ouvrez les commentaires liés pour examiner les détails et les changements demandés.`,
@@ -911,6 +1013,10 @@ function groupSubmissions(rows: SubmissionRow[]): Map<string, SubmissionRow[]> {
   }
   const groups = new Map<string, SubmissionRow[]>();
   for (const [categoryId, submissions] of byCategory) {
+    if (isSensitiveThemeCategory(categoryId)) {
+      groups.set(`${categoryId}:general`, submissions);
+      continue;
+    }
     const frequencies = new Map<string, number>();
     for (const row of submissions) {
       for (const term of termsFor(row))
@@ -949,9 +1055,9 @@ function commonTerms(rows: SubmissionRow[]): string[] {
 }
 
 function termsFor(row: SubmissionRow): Set<string> {
-  const text = `${row.original_text} ${row.constructive_follow_up ?? ""}`
-    .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, " ")
-    .replace(/\+?\d[\d ().-]{7,}\d/g, " ");
+  const text = redactThemeText(
+    `${row.original_text} ${row.constructive_follow_up ?? ""}`,
+  ).replace(/\[(?:email|phone|link|postal code|address|name)\]/g, " ");
   return new Set(
     (text.toLocaleLowerCase("en-CA").match(/\p{L}{4,}/gu) ?? []).filter(
       (word) => !STOPWORDS.has(word),
@@ -974,6 +1080,10 @@ function themeView(row: ThemeRow, organizationId: string) {
     sample: row.real_count === 0,
     summaryMethod: row.summary_method,
     summarySourceCount: row.summary_source_count,
+    summaryEvidenceRestricted: !canDescribeThemeSources(
+      row.category_id,
+      row.summary_source_count,
+    ),
     summaryGeneratedAt: row.summary_generated_at,
     summaryStale:
       !row.summary_generated_at ||
