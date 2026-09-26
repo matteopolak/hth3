@@ -24,9 +24,10 @@ Each tool in `apps/worker/src/features/agents/tools.ts` builds a fixed `/api/v1`
 
 ### Remaining gaps
 
+- Proposal previews show the target route, submitted fields, destination, and captured record version. They do not yet compute a field-by-field before/after diff for every mutation. Keep issue #28 open until that review surface and its manual counterpart are complete.
 - The assistant cannot upload binary evidence or résumés by a JSON tool call. The web composer and profile controls use the existing protected multipart upload routes. A later attachment-aware composer can use those controls before referring to the uploaded asset in chat.
 - Browser-only actions such as opening an official site, dragging a file, and downloading a generated document stay in the client. A tool may return a protected download path or official handoff but cannot claim that a browser navigation or external submission occurred.
-- No personal or organization settings API exists yet. Language selection and session controls are client preferences rather than Worker data mutations.
+- No source administration or personal/organization settings API exists yet. The agents can inspect source provenance; language selection and session controls are client preferences rather than Worker data mutations.
 
 ## How to change it
 
