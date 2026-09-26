@@ -16,8 +16,8 @@ export interface OfficialIngestRecord {
   evidenceUrl: string;
   publisher: string;
   jurisdictionLevel: "federal" | "provincial";
-  jurisdictionCode: "CA" | "CA-BC";
-  jurisdictionName: "Canada" | "British Columbia";
+  jurisdictionCode: "CA" | "CA-BC" | "CA-ON";
+  jurisdictionName: "Canada" | "British Columbia" | "Ontario";
   licenceName: string | null;
   licenceUrl: string | null;
   termsUrl: string;
@@ -35,6 +35,7 @@ export interface OfficialIngestResult {
 }
 
 const CANADA_TERMS = "https://www.canada.ca/en/transparency/terms.html";
+const BC_TERMS = "https://www2.gov.bc.ca/gov/content/home/copyright";
 const BC_LICENCE =
   "https://www2.gov.bc.ca/gov/content/data/policy-standards/data-policies/open-data/open-government-licence-bc";
 const BC_CATALOGUE =
@@ -42,7 +43,7 @@ const BC_CATALOGUE =
 const BC_LAYER =
   "https://delivery.maps.gov.bc.ca/arcgis/rest/services/whse/bcgw_pub_whse_imagery_and_base_maps/MapServer/51";
 
-const FEDERAL_FINDERS = [
+const FINDERS = [
   {
     sourceId: "gc-jobs",
     kind: "jobs_finder",
@@ -52,6 +53,12 @@ const FEDERAL_FINDERS = [
     sourceUrl:
       "https://www.canada.ca/en/services/jobs/opportunities/government.html",
     expectedTitle: "Government of Canada jobs",
+    publisher: "Government of Canada",
+    jurisdictionCode: "CA",
+    jurisdictionName: "Canada",
+    jurisdictionLevel: "federal",
+    termsUrl: CANADA_TERMS,
+    maxBytes: 1_000_000,
   },
   {
     sourceId: "benefits-finder",
@@ -61,6 +68,12 @@ const FEDERAL_FINDERS = [
       "Find federal programs and benefits using the Government of Canada's own filters.",
     sourceUrl: "https://www.canada.ca/en/services/benefits/finder.html",
     expectedTitle: "Benefits Finder",
+    publisher: "Government of Canada",
+    jurisdictionCode: "CA",
+    jurisdictionName: "Canada",
+    jurisdictionLevel: "federal",
+    termsUrl: CANADA_TERMS,
+    maxBytes: 1_000_000,
   },
   {
     sourceId: "federal-grants-funding",
@@ -70,6 +83,54 @@ const FEDERAL_FINDERS = [
       "Choose a funding category and continue to the official program site.",
     sourceUrl: "https://www.canada.ca/en/government/grants-funding.html",
     expectedTitle: "Grants and funding",
+    publisher: "Government of Canada",
+    jurisdictionCode: "CA",
+    jurisdictionName: "Canada",
+    jurisdictionLevel: "federal",
+    termsUrl: CANADA_TERMS,
+    maxBytes: 1_000_000,
+  },
+  {
+    sourceId: "bc-public-service-jobs",
+    kind: "jobs_finder",
+    title: "Current B.C. Government job postings",
+    summary: "Search BC Public Service postings and apply through the official Career Centre.",
+    sourceUrl: "https://www2.gov.bc.ca/gov/content/careers-myhr/job-seekers/current-job-postings",
+    expectedTitle: "Current B.C. Government job postings",
+    publisher: "Government of British Columbia",
+    jurisdictionCode: "CA-BC",
+    jurisdictionName: "British Columbia",
+    jurisdictionLevel: "provincial",
+    termsUrl: BC_TERMS,
+    maxBytes: 1_000_000,
+  },
+  {
+    sourceId: "bc-benefits-connector",
+    kind: "benefits_finder",
+    title: "B.C. Benefits Connector",
+    summary: "Explore provincial support programs and follow each official program's application instructions.",
+    sourceUrl: "https://www2.gov.bc.ca/bcbenefitsconnector",
+    expectedTitle: "B.C. Benefits Connector",
+    publisher: "Government of British Columbia",
+    jurisdictionCode: "CA-BC",
+    jurisdictionName: "British Columbia",
+    jurisdictionLevel: "provincial",
+    termsUrl: BC_TERMS,
+    maxBytes: 3_000_000,
+  },
+  {
+    sourceId: "bc-funding-finder",
+    kind: "funding_finder",
+    title: "B.C. funding opportunities",
+    summary: "Find provincial grants, bursaries, and loans through the official funding search.",
+    sourceUrl: "https://www2.gov.bc.ca/gov/content/funding",
+    expectedTitle: "Funding Opportunities",
+    publisher: "Government of British Columbia",
+    jurisdictionCode: "CA-BC",
+    jurisdictionName: "British Columbia",
+    jurisdictionLevel: "provincial",
+    termsUrl: BC_TERMS,
+    maxBytes: 1_000_000,
   },
 ] as const;
 
@@ -81,13 +142,13 @@ export async function fetchOfficialRecords(
   const records: OfficialIngestRecord[] = [];
   const failedSources: OfficialIngestResult["failedSources"] = [];
   const fetchedAt = now.toISOString();
-  for (const finder of FEDERAL_FINDERS) {
+  for (const finder of FINDERS) {
     try {
       const html = await fetchText(
         fetcher,
         finder.sourceUrl,
         "text/html",
-        1_000_000,
+        finder.maxBytes,
       );
       if (!html.toLowerCase().includes(finder.expectedTitle.toLowerCase()))
         throw new SourceFetchError("PAGE_IDENTITY_CHANGED");
@@ -100,18 +161,18 @@ export async function fetchOfficialRecords(
         summary: finder.summary,
         sourceUrl: finder.sourceUrl,
         evidenceUrl: finder.sourceUrl,
-        publisher: "Government of Canada",
-        jurisdictionLevel: "federal",
-        jurisdictionCode: "CA",
-        jurisdictionName: "Canada",
+        publisher: finder.publisher,
+        jurisdictionLevel: finder.jurisdictionLevel,
+        jurisdictionCode: finder.jurisdictionCode,
+        jurisdictionName: finder.jurisdictionName,
         licenceName: null,
         licenceUrl: null,
-        termsUrl: CANADA_TERMS,
+        termsUrl: finder.termsUrl,
         language: "en",
         latitude: null,
         longitude: null,
         fetchedAt,
-        expiresAt: expiry(now, 14),
+        expiresAt: expiry(now, 7),
         payloadHash: await sha256(html),
       });
     } catch (error) {
@@ -134,7 +195,12 @@ export async function fetchOfficialRecords(
       "application/json",
       3_000_000,
     );
-    const parsed: unknown = JSON.parse(payload);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(payload);
+    } catch {
+      throw new SourceFetchError("DIRECTORY_INVALID_JSON");
+    }
     if (
       !isObject(parsed) ||
       !Array.isArray(parsed.features) ||
@@ -220,7 +286,8 @@ async function fetchText(
     headers: { Accept: type },
     signal: AbortSignal.timeout(12_000),
   });
-  if (!response.ok) throw new SourceFetchError("SOURCE_HTTP_ERROR");
+  if (!response.ok)
+    throw new SourceFetchError(`SOURCE_HTTP_${response.status}`);
   const length = Number(response.headers.get("content-length"));
   if (Number.isFinite(length) && length > maxBytes)
     throw new SourceFetchError("SOURCE_TOO_LARGE");
@@ -251,7 +318,11 @@ function expiry(now: Date, days: number): string {
 }
 
 function errorCode(error: unknown): string {
-  return error instanceof SourceFetchError ? error.code : "SOURCE_FETCH_FAILED";
+  if (error instanceof SourceFetchError) return error.code;
+  if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError"))
+    return "SOURCE_TIMEOUT";
+  if (error instanceof TypeError) return "SOURCE_NETWORK_ERROR";
+  return "SOURCE_FETCH_FAILED";
 }
 
 async function sha256(value: string): Promise<string> {
