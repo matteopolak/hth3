@@ -9,11 +9,14 @@ export interface StaffFeedbackOperationsOptions {
   submission: {
     id: string;
     status: FeedbackStatus;
-    assignment?: {
-      departmentId: string;
-      departmentName: string;
-      assigneeSubject: string | null;
-    } | null;
+    assignment?:
+      | {
+          departmentId: string;
+          departmentName: string;
+          assigneeSubject: string | null;
+        }
+      | null
+      | undefined;
   };
   onChanged: () => void | Promise<void>;
 }

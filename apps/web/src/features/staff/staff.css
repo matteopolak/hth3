@@ -390,7 +390,7 @@
 }
 .staff-detail {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 190px;
+  grid-template-columns: minmax(0, 1fr) 215px;
   gap: 30px;
   min-width: 0;
   padding: 24px 26px 32px;

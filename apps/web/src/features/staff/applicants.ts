@@ -79,7 +79,7 @@ export async function mountApplicants(
       node(
         "p",
         "staff-muted",
-        `${status(application.status, locale)} · ${date(application.submittedAt, locale)}`,
+        `${applicantLabel(application.applicantSubject, locale)} · ${status(application.status, locale)}`,
       ),
     );
     list.append(item);
@@ -175,9 +175,14 @@ export async function mountApplicants(
     properties.append(
       row(text(locale, "Status", "État"), status(application.status, locale)),
     );
-    properties.append(
-      row(text(locale, "Applicant", "Candidat"), application.applicantSubject),
+    const applicantProperty = row(
+      text(locale, "Applicant", "Candidat"),
+      applicantLabel(application.applicantSubject, locale),
     );
+    applicantProperty
+      .querySelector("strong")
+      ?.setAttribute("title", application.applicantSubject);
+    properties.append(applicantProperty);
     properties.append(
       row(
         text(locale, "Submitted", "Soumise"),
@@ -186,7 +191,7 @@ export async function mountApplicants(
     );
     properties.append(
       button(
-        text(locale, "Download shared résumé", "Télécharger le CV partagé"),
+        text(locale, "Download résumé", "Télécharger le CV"),
         () => void downloadResume(),
         "staff-button secondary",
       ),
@@ -306,4 +311,14 @@ export async function mountApplicants(
       }
     }
   }
+}
+
+function applicantLabel(
+  subject: string,
+  locale: StaffPageContext["locale"],
+): string {
+  if (subject === "local:applicant")
+    return text(locale, "Applicant account", "Compte candidat");
+  if (subject.includes("@")) return subject;
+  return `${text(locale, "Account", "Compte")} · ${subject.slice(-8)}`;
 }

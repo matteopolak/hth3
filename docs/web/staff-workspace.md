@@ -12,6 +12,8 @@ The overview and themes screens use `/staff/organizations/{id}/themes` for exact
 
 Practice records are labeled at the individual record or grouped theme, since the current organization is fictional. This label is derived from server `sample` fields. The UI does not claim the organization represents a real municipality or employer.
 
+Applicant subjects are account identifiers, not verified names. The list and properties use a short account label, with the full subject in the properties tooltip for staff who need the original identifier.
+
 ## How to change it
 
 The route client and response shapes live in `apps/web/src/features/staff/client.ts`; individual screens live beside it. `staff.css` owns only `.staff-*` selectors so the platform shell can change independently. Add a new view to `StaffWorkspaceView` and dispatch it from `staffWorkspace`, then wire its sidebar entry in `apps/web/src/platform/main.ts`. When adding a manual write action, add a matching employee agent tool in the Worker so the two staff interfaces retain tool parity. Application status transitions in the client mirror the Worker’s state machine; update both when changing that workflow.
