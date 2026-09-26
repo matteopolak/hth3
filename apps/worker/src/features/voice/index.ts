@@ -226,6 +226,7 @@ async function handlePostCallWebhook(
     data?: {
       agent_id?: unknown;
       conversation_id?: unknown;
+      user_id?: unknown;
       status?: unknown;
       transcript?: unknown;
       conversation_initiation_client_data?: {
@@ -257,7 +258,7 @@ async function handlePostCallWebhook(
     );
   const token =
     data.conversation_initiation_client_data?.dynamic_variables
-      ?.secret__envoy_voice_token;
+      ?.secret__envoy_voice_token ?? data.user_id;
   if (typeof token !== "string" || !/^[a-f0-9]{64}$/i.test(token))
     return featureError(
       context,
