@@ -1635,6 +1635,14 @@ body { min-width: 0; }
 }
 
 @media (max-width: 620px) {
+  .app-shell:not(.sidebar-is-open) .sidebar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .sidebar-is-open .sidebar {
+    visibility: visible;
+    pointer-events: auto;
+  }
   .chat-input { min-height: 94px; }
 }
 @media (max-width: 360px) {

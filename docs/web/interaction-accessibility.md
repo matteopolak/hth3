@@ -6,7 +6,7 @@ Envoy's web shell applies a common focus, contrast, and touch-target baseline to
 
 ## How it works
 
-The mobile rail and chat search dialog put focus on their first useful control when opened. `Tab` wraps inside each open surface; `Escape` closes it and returns focus to the menu or search trigger. The search dialog makes the underlying app shell inert while open. The chat plus and model menus move focus into their choices and return it to the composer button on dismissal. The plus list uses a named group of ordinary buttons and a native file control instead of a menu role that would require custom arrow-key navigation.
+The closed mobile rail is hidden from keyboard and screen-reader navigation. The mobile rail and chat search dialog put focus on their first useful control when opened. `Tab` wraps inside each open surface; `Escape` closes it and returns focus to the menu or search trigger. The search dialog makes the underlying app shell inert while open. The chat plus and model menus move focus into their choices and return it to the composer button on dismissal. The plus list uses a named group of ordinary buttons and a native file control instead of a menu role that would require custom arrow-key navigation.
 
 `apps/web/src/platform/styles.css` supplies a visible two-pixel keyboard focus ring, readable muted text, and 44-pixel control targets for coarse pointers. The compact desktop layout remains intact. The main map's dense numbered pins are exempt from the 44-pixel rule; the same sourced places remain available through the 44-pixel map key rows and full list. At narrow widths the chat textarea grows to show the longer French prompt without an internal scrollbar. The app also honors `prefers-reduced-motion` and `prefers-contrast: more`.
 
