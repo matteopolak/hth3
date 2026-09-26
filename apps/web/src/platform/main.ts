@@ -42,7 +42,7 @@ import "../features/feedback/feedback.css";
 
 type Page = "assistant" | "feedback" | "applications" | "employee" | "discovery" | "profile" | "signin" | "programs" | "external-preparation";
 type EmployeePage = "assistant" | "feedback" | "applications";
-type StaffView = "issues" | "overview" | "themes" | "taxonomy" | "hiring" | "applicants" | "analytics" | "audit";
+type StaffView = "issues" | "overview" | "themes" | "taxonomy" | "hiring" | "applicants" | "analytics" | "audit" | "views" | "reports" | "settings";
 type ChatMode = "resident" | "employee";
 
 interface ChatMessage {
@@ -454,6 +454,8 @@ function navigation(): HTMLElement {
       staffViewAction("overview", "dashboard", "sidebar.overview"),
       staffViewAction("themes", "tags", "sidebar.themes"),
       staffViewAction("analytics", "chart", "sidebar.analytics"),
+      staffViewAction("views", "bookmark", "sidebar.overview", state.locale === "fr" ? "Vues enregistrées" : "Saved views"),
+      staffViewAction("reports", "clipboard", "sidebar.analytics", state.locale === "fr" ? "Rapports" : "Reports"),
     );
     if (capabilities?.postingManage) nav.append(
       staffViewAction("hiring", "briefcase", "sidebar.hiring"),
@@ -465,6 +467,7 @@ function navigation(): HTMLElement {
     );
     if (capabilities?.taxonomyManage) nav.append(staffViewAction("taxonomy", "taxonomy", "sidebar.taxonomy"));
     if (capabilities?.auditRead) nav.append(staffViewAction("audit", "activity", "sidebar.analytics", state.locale === "fr" ? "Journal d’activité" : "Activity log"));
+    if (capabilities) nav.append(staffViewAction("settings", "user", "sidebar.profile", state.locale === "fr" ? "Paramètres" : "Settings"));
   } else {
     nav.append(
       sidebarHeading(t("sidebar.agent")),
@@ -2873,6 +2876,10 @@ async function ensureStaffSummary(): Promise<void> {
     const summary = await loadStaffWorkspaceSummary(token, organizationId);
     if (staffSummaryFor !== identity) return;
     staffSummary = summary;
+    if (state.employeePage === "assistant" && summary.settings.defaultView !== "assistant" && staffViewIsAllowed(summary.settings.defaultView as StaffView, summary)) {
+      state.employeePage = "feedback";
+      state.staffView = summary.settings.defaultView as StaffView;
+    }
     if (!staffViewIsAllowed(state.staffView, summary)) {
       state.staffView = firstStaffView(summary);
       state.selectedFeedbackId = "";

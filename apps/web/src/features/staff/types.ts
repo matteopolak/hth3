@@ -7,7 +7,10 @@ export type StaffWorkspaceView =
   | "hiring"
   | "applicants"
   | "analytics"
-  | "audit";
+  | "audit"
+  | "views"
+  | "reports"
+  | "settings";
 
 export interface StaffWorkspaceOptions {
   view: StaffWorkspaceView;

@@ -3,6 +3,12 @@ export type {
   StaffAuditEvent,
   StaffWorkspaceCapabilities,
   StaffWorkspaceSummary,
+  StaffDefaultView,
+  StaffWorkspaceSettings,
+  StaffSavedView,
+  StaffSavedReport,
+  StaffWorkspaceResult,
+  StaffSavedViewResult,
 } from "./staff-workspace.js";
 
 export type Locale = "en" | "fr";

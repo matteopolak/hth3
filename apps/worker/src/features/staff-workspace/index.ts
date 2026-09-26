@@ -9,6 +9,8 @@ import {
 } from "@civicresolve/domain/permissions";
 import { authenticateRequest } from "../../auth/identity.js";
 import { featureError, featureJson, type FeatureContext } from "../shared.js";
+import { handleSavedWorkspaceResource } from "./resources.js";
+import { handleWorkspaceSettings, loadSettings } from "./settings.js";
 
 interface AuditRow {
   id: string;
@@ -24,11 +26,9 @@ export async function handleStaffWorkspaceRequest(
   context: FeatureContext,
 ): Promise<Response | null> {
   const match = url.pathname.match(
-    /^\/api\/v1\/staff\/organizations\/([A-Za-z0-9_-]+)\/workspace$/,
+    /^\/api\/v1\/staff\/organizations\/([A-Za-z0-9_-]+)\/workspace(?:\/(views|reports|settings)(.*))?$/,
   );
   if (!match) return null;
-  if (request.method !== "GET")
-    return featureError(context, "METHOD_NOT_ALLOWED", "Use GET.", 405);
 
   const organizationId = match[1]!;
   const actor = await authenticateRequest(request, context.env);
@@ -76,6 +76,11 @@ export async function handleStaffWorkspaceRequest(
         organizationId,
       ),
     sourceManage: canPerformGlobalAction(actor, "source:manage"),
+    organizationManage: canPerformOrganizationAction(
+      actor,
+      "organization:manage_own",
+      organizationId,
+    ),
     auditRead:
       canPerformOrganizationAction(
         actor,
@@ -90,6 +95,44 @@ export async function handleStaffWorkspaceRequest(
       "No staff workspace access.",
       403,
     );
+
+  const section = match[2];
+  if (section === "settings") {
+    if (match[3])
+      return featureError(
+        context,
+        "NOT_FOUND",
+        "Settings path not found.",
+        404,
+      );
+    return handleWorkspaceSettings(
+      request,
+      context,
+      actor,
+      organizationId,
+      capabilities,
+    );
+  }
+  if (section === "views" || section === "reports") {
+    if (!capabilities.feedbackRead)
+      return featureError(
+        context,
+        "FORBIDDEN",
+        "Feedback access is required.",
+        403,
+      );
+    return handleSavedWorkspaceResource(
+      request,
+      url,
+      context,
+      actor,
+      organizationId,
+      section,
+      match[3] ?? "",
+    );
+  }
+  if (request.method !== "GET")
+    return featureError(context, "METHOD_NOT_ALLOWED", "Use GET.", 405);
 
   let auditEvents: StaffAuditEvent[] = [];
   if (capabilities.auditRead) {
@@ -114,5 +157,6 @@ export async function handleStaffWorkspaceRequest(
     organizationId,
     capabilities,
     auditEvents,
+    settings: await loadSettings(context, organizationId, actor.subject),
   } satisfies StaffWorkspaceSummary);
 }

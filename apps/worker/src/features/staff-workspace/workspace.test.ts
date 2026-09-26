@@ -41,6 +41,9 @@ function context(): FeatureContext {
           }
           return { results: [] };
         },
+        async first() {
+          return null;
+        },
       };
       return statement;
     },

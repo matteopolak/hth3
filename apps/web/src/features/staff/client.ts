@@ -172,7 +172,7 @@ export async function staffRequest<T>(
   token: string,
   organizationId: string,
   path: string,
-  method: "GET" | "POST" | "PATCH" = "GET",
+  method: "GET" | "POST" | "PATCH" | "DELETE" = "GET",
   body?: unknown,
   locale?: Locale,
 ): Promise<T> {

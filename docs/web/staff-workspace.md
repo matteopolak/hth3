@@ -2,13 +2,15 @@
 
 ## What it is
 
-The employee web workspace exposes the organization’s feedback overview, recurring themes, taxonomy, hiring postings, applicants, analytics, and an administrator activity log. Its monochrome dashboard emphasizes the next useful action, with compact record navigation and activity beside properties in detail views.
+The employee web workspace exposes the organization’s feedback overview, recurring themes, taxonomy, hiring postings, applicants, analytics, saved views and reports, settings, and an administrator activity log. Its monochrome dashboard emphasizes the next useful action, with compact record navigation and activity beside properties in detail views.
 
 ## How it works
 
 `staffWorkspace` in `apps/web/src/features/staff/index.ts` mounts a selected view in the employee page. The shell first loads `GET /api/v1/staff/organizations/{id}/workspace`, which returns role-specific capabilities and up to 50 organization-scoped audit events. Navigation includes only allowed views and selects the first allowed manual view for that account. The module checks capabilities again before mounting a view. It receives the active staff token, organization ID, locale, and an optional callback for opening a source feedback submission. Each view loads its own Worker route. The Worker remains responsible for Auth0 scope, role, membership, and organization checks. The web client never treats the local identity selector as authorization.
 
 The employee agent's starter cards use the same capability map. A reviewer sees applicant prompts; a civic staff member sees feedback prompts; a curator sees source and taxonomy prompts. The underlying agent tool still enforces its own permission. Taxonomy group tabs wrap on wide screens and scroll horizontally without a visible scrollbar on narrow screens.
+
+Saved views and reports appear only to employees who can read organization feedback. They store personal definitions and query current D1 data when opened; the settings tab is available to every authorized staff role, while organization reporting-window changes are restricted to its administrator. See [saved views and reports](staff-saved-views-and-reports.md) and [staff settings](staff-settings.md) for route contracts and migration details.
 
 The workspace response allows feedback read/respond, applicant review, posting management, taxonomy management, source management, and audit read independently. Taxonomy management follows the existing Worker rule: an organization admin can edit its own taxonomy, while a curator has global taxonomy access. Source management remains curator-only. Audit access requires organization administration or curator privileges. Audit rows contain only action, entity type, entity ID, and time; they never include a feedback body, applicant answer, actor subject, or event details. The endpoint returns `401` for guests, `403` for a different organization or a role without workspace access, and `Cache-Control: no-store`. Manual write controls expose a busy label and disabled state while awaiting the Worker; API `401` and `403` responses produce explicit permission messages.
 
