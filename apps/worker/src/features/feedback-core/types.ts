@@ -19,6 +19,7 @@ export interface GuestFeedbackCreateBody {
   locale?: unknown;
   category?: unknown;
   evidence?: unknown;
+  feedbackEvidenceAssetIds?: unknown;
   duplicateOverride?: unknown;
 }
 

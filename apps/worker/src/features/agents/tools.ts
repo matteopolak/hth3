@@ -1203,12 +1203,19 @@ export async function executeTool(
   prepared: ReturnType<typeof prepareTool>,
   receiptToken?: string,
   approvalKey?: string,
+  agentConversationId?: string,
 ): Promise<{ status: number; data: unknown }> {
   const url = new URL(prepared.path, request.url);
   const headers = new Headers();
   for (const key of ["Authorization", "Accept-Language", "CF-Connecting-IP"]) {
     const value = request.headers.get(key);
     if (value) headers.set(key, value);
+  }
+  if (agentConversationId) {
+    headers.set("X-Agent-Conversation-Id", agentConversationId);
+    const conversationToken = request.headers.get("X-Conversation-Token");
+    if (conversationToken)
+      headers.set("X-Conversation-Token", conversationToken);
   }
   if (receiptToken) headers.set("X-Receipt-Token", receiptToken);
   if (approvalKey) headers.set("Idempotency-Key", approvalKey);

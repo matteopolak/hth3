@@ -21,7 +21,7 @@ import {
   MAX_TOTAL_EVIDENCE_BYTES,
 } from "./types.js";
 
-interface ValidatedEvidence {
+export interface ValidatedEvidence {
   fileName: string;
   contentType: EvidenceInput["contentType"];
   data: Uint8Array;
@@ -32,6 +32,9 @@ interface StoredEvidence {
   metadata: EvidenceMetadata;
   row: PrivateAssetRow;
   scope: PrivateAssetScope;
+  sourceAssetId?: string;
+  sourceObjectKey?: string;
+  sourceRecordId?: string;
 }
 
 export class InvalidEvidenceError extends Error {
@@ -62,25 +65,42 @@ export async function validateEvidence(
   for (const input of value) {
     if (!isEvidenceInput(input)) throw new InvalidEvidenceError();
     const bytes = decodeBase64(input.data);
-    if (
-      bytes.byteLength === 0 ||
-      bytes.byteLength > MAX_EVIDENCE_BYTES ||
-      !matchesContentType(input.contentType, bytes)
-    ) {
-      throw new InvalidEvidenceError();
-    }
-    totalBytes += bytes.byteLength;
-    if (totalBytes > MAX_TOTAL_EVIDENCE_BYTES) throw new InvalidEvidenceError();
-    const fileName = safeFileName(input.fileName);
-    if (!fileName) throw new InvalidEvidenceError();
-    files.push({
-      fileName,
+    const validated = await validateEvidenceFile({
+      fileName: input.fileName,
       contentType: input.contentType,
       data: bytes,
-      digest: await digestHex(bytes),
     });
+    totalBytes += bytes.byteLength;
+    if (totalBytes > MAX_TOTAL_EVIDENCE_BYTES) throw new InvalidEvidenceError();
+    files.push(validated);
   }
   return files;
+}
+
+export async function validateEvidenceFile(input: {
+  fileName: string;
+  contentType: string;
+  data: Uint8Array;
+}): Promise<ValidatedEvidence> {
+  const contentType = input.contentType.toLowerCase().split(";", 1)[0]?.trim();
+  if (
+    input.data.byteLength === 0 ||
+    input.data.byteLength > MAX_EVIDENCE_BYTES ||
+    (contentType !== "application/pdf" &&
+      contentType !== "image/png" &&
+      contentType !== "image/jpeg") ||
+    !matchesContentType(contentType, input.data)
+  ) {
+    throw new InvalidEvidenceError();
+  }
+  const fileName = safeFileName(input.fileName);
+  if (!fileName) throw new InvalidEvidenceError();
+  return {
+    fileName,
+    contentType,
+    data: input.data,
+    digest: await digestHex(input.data),
+  };
 }
 
 export async function storeEvidence(
@@ -143,33 +163,206 @@ export async function storeEvidence(
   return stored;
 }
 
+export async function promoteStagedEvidence(
+  context: FeedbackContext,
+  input: {
+    conversationId: string;
+    stagedAssetIds: string[];
+    submissionId: string;
+    organizationId: string;
+    createdAt: string;
+  },
+): Promise<StoredEvidence[]> {
+  if (input.stagedAssetIds.length === 0) return [];
+  if (
+    input.stagedAssetIds.length > MAX_EVIDENCE_FILES ||
+    new Set(input.stagedAssetIds).size !== input.stagedAssetIds.length ||
+    input.stagedAssetIds.some((id) => !/^asset_[a-f0-9]{32}$/.test(id))
+  ) {
+    throw new InvalidEvidenceError();
+  }
+  const bucket = context.env.PRIVATE_ASSETS;
+  if (!bucket) throw new EvidenceStorageUnavailableError();
+  const placeholders = input.stagedAssetIds.map(() => "?").join(", ");
+  const result = await context.env.DB.prepare(
+    `SELECT id, organization_id, owner_subject, purpose, record_id,
+       object_key, filename, content_type, byte_size, created_at
+     FROM private_assets
+     WHERE id IN (${placeholders}) AND purpose = 'feedback_attachment'
+       AND organization_id IS NULL AND record_id = ? AND owner_subject = ?`,
+  )
+    .bind(
+      ...input.stagedAssetIds,
+      input.conversationId,
+      agentEvidenceOwner(input.conversationId),
+    )
+    .all<PrivateAssetRow>();
+  const staged = result.results ?? [];
+  if (staged.length !== input.stagedAssetIds.length)
+    throw new InvalidEvidenceError();
+
+  let totalBytes = 0;
+  const now = Date.now();
+  const stagedById = new Map(staged.map((row) => [row.id, row]));
+  const ordered = input.stagedAssetIds.map((id) => stagedById.get(id)!);
+  for (const row of ordered) {
+    const age = now - new Date(row.created_at).getTime();
+    if (
+      !Number.isFinite(age) ||
+      age < 0 ||
+      age > STAGED_EVIDENCE_RETENTION_MS ||
+      !Number.isInteger(row.byte_size) ||
+      row.byte_size <= 0 ||
+      row.byte_size > MAX_EVIDENCE_BYTES ||
+      !["application/pdf", "image/png", "image/jpeg"].includes(row.content_type)
+    ) {
+      throw new InvalidEvidenceError();
+    }
+    totalBytes += row.byte_size;
+  }
+  if (totalBytes > MAX_TOTAL_EVIDENCE_BYTES) throw new InvalidEvidenceError();
+
+  const promoted: StoredEvidence[] = [];
+  try {
+    for (const row of ordered) {
+      const sourceScope: PrivateAssetScope = {
+        purpose: row.purpose,
+        organizationId: row.organization_id,
+        ownerSubject: row.owner_subject,
+        recordId: row.record_id,
+      };
+      const sourceMetadata: PrivateAssetMetadata = {
+        purpose: row.purpose,
+        organizationId: row.organization_id,
+        ownerSubject: row.owner_subject,
+        recordId: row.record_id,
+        assetId: row.id,
+        objectKey: row.object_key,
+      };
+      if (!canReadPrivateAsset(sourceScope, sourceMetadata))
+        throw new InvalidEvidenceError();
+      const source = await readPrivateAsset(
+        bucket,
+        sourceScope,
+        sourceMetadata,
+      );
+      if (!source || source.size !== row.byte_size)
+        throw new EvidenceStorageUnavailableError();
+
+      const assetId = `asset_${randomHex(16)}`;
+      const scope: PrivateAssetScope = {
+        purpose: "feedback_attachment",
+        organizationId: input.organizationId,
+        ownerSubject: guestOwner(input.submissionId),
+        recordId: input.submissionId,
+      };
+      const objectKey = privateAssetKey(scope, assetId);
+      await bucket.put(objectKey, source.body, {
+        httpMetadata: { contentType: row.content_type },
+      });
+      const promotedRow: PrivateAssetRow = {
+        ...row,
+        id: assetId,
+        organization_id: input.organizationId,
+        owner_subject: scope.ownerSubject,
+        record_id: input.submissionId,
+        object_key: objectKey,
+        created_at: input.createdAt,
+      };
+      promoted.push({
+        row: promotedRow,
+        scope,
+        sourceAssetId: row.id,
+        sourceObjectKey: row.object_key,
+        sourceRecordId: input.conversationId,
+        metadata: {
+          id: assetId,
+          fileName: row.filename,
+          contentType: row.content_type,
+          byteSize: row.byte_size,
+        },
+      });
+    }
+  } catch (error) {
+    await deleteStoredEvidence(bucket, promoted);
+    throw error;
+  }
+  return promoted;
+}
+
+export async function deletePromotedSourceObjects(
+  bucket: R2Bucket,
+  evidence: StoredEvidence[],
+): Promise<void> {
+  await Promise.all(
+    evidence.map(async ({ sourceObjectKey }) => {
+      if (!sourceObjectKey) return;
+      try {
+        await bucket.delete(sourceObjectKey);
+      } catch {
+        // A stale private object is safer than exposing its key or contents.
+      }
+    }),
+  );
+}
+
 export function evidenceInsertStatements(
   database: D1Database,
   evidence: StoredEvidence[],
   onlyIfPreviousChange = false,
 ): D1PreparedStatement[] {
-  return evidence.map(({ row }) =>
-    database
-      .prepare(
-        `INSERT OR IGNORE INTO private_assets (
+  return evidence.map(
+    ({ row, sourceAssetId, sourceObjectKey, sourceRecordId }) => {
+      if (sourceAssetId && sourceObjectKey && sourceRecordId) {
+        return database
+          .prepare(
+            `UPDATE private_assets SET
+             id = ?, organization_id = ?, owner_subject = ?, purpose = ?,
+             record_id = ?, object_key = ?, filename = ?, content_type = ?,
+             byte_size = ?, created_at = ?
+           WHERE id = ? AND organization_id IS NULL AND purpose = 'feedback_attachment'
+             AND record_id = ? AND object_key = ? ${
+               onlyIfPreviousChange ? "AND changes() = 1" : ""
+             }`,
+          )
+          .bind(
+            row.id,
+            row.organization_id,
+            row.owner_subject,
+            row.purpose,
+            row.record_id,
+            row.object_key,
+            row.filename,
+            row.content_type,
+            row.byte_size,
+            row.created_at,
+            sourceAssetId,
+            sourceRecordId,
+            sourceObjectKey,
+          );
+      }
+      return database
+        .prepare(
+          `INSERT OR IGNORE INTO private_assets (
           id, organization_id, owner_subject, purpose, record_id, object_key,
           filename, content_type, byte_size, created_at
         ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ${
           onlyIfPreviousChange ? "WHERE changes() = 1" : ""
         }`,
-      )
-      .bind(
-        row.id,
-        row.organization_id,
-        row.owner_subject,
-        row.purpose,
-        row.record_id,
-        row.object_key,
-        row.filename,
-        row.content_type,
-        row.byte_size,
-        row.created_at,
-      ),
+        )
+        .bind(
+          row.id,
+          row.organization_id,
+          row.owner_subject,
+          row.purpose,
+          row.record_id,
+          row.object_key,
+          row.filename,
+          row.content_type,
+          row.byte_size,
+          row.created_at,
+        );
+    },
   );
 }
 
@@ -186,6 +379,12 @@ export async function deleteStoredEvidence(
       }
     }),
   );
+}
+
+export const STAGED_EVIDENCE_RETENTION_MS = 24 * 60 * 60 * 1_000;
+
+export function agentEvidenceOwner(conversationId: string): string {
+  return `agent:${conversationId}`;
 }
 
 export async function listEvidence(
@@ -343,6 +542,13 @@ function safeFileName(value: string): string | null {
 
 function disposition(fileName: string): string {
   return `attachment; filename="evidence"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
+}
+
+function randomHex(bytesLength: number): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(bytesLength));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 async function digestHex(bytes: Uint8Array): Promise<string> {

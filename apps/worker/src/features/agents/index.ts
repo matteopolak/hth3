@@ -8,6 +8,10 @@ import {
   type AuthenticatedActor,
 } from "../../auth/identity.js";
 import { featureError, featureJson, sha256Hex } from "../shared.js";
+import {
+  attachFeedbackEvidence,
+  uploadFeedbackEvidence,
+} from "./feedback-evidence.js";
 import { proposalChanges, type ProposalChange } from "./proposal-changes.js";
 import {
   executeTool,
@@ -69,6 +73,12 @@ export async function handleAgentRequest(
   const conversation = await loadConversation(request, id, context);
   if (conversation instanceof Response) return conversation;
 
+  if (
+    path.length === 2 &&
+    path[1] === "feedback-evidence" &&
+    request.method === "POST"
+  )
+    return uploadFeedbackEvidence(request, conversation, context);
   if (path.length === 1 && request.method === "GET")
     return conversationView(conversation, context);
   if (path.length === 2 && path[1] === "messages" && request.method === "POST")
@@ -80,6 +90,8 @@ export async function handleAgentRequest(
     path[1] === "proposals" &&
     PROPOSAL_ID.test(path[2] ?? "")
   ) {
+    if (path[3] === "feedback-evidence" && request.method === "POST")
+      return attachFeedbackEvidence(request, conversation, path[2]!, context);
     if (path[3] === "approve" && request.method === "POST")
       return approveProposal(request, conversation, path[2]!, context);
     if (path[3] === "reject" && request.method === "POST")
@@ -670,7 +682,7 @@ async function callTool(
       id,
       conversation.id,
       name,
-      JSON.stringify(args),
+      JSON.stringify(proposalArguments(name, args)),
       JSON.stringify(preview),
       now.toISOString(),
       expiresAt,
@@ -737,6 +749,15 @@ async function approveProposal(
       409,
     );
   const args = JSON.parse(proposal.args_json) as ToolArguments;
+  const feedbackEvidenceAssetIds =
+    proposal.tool_name === "create_feedback" ? proposalEvidenceIds(args) : [];
+  if (feedbackEvidenceAssetIds === null)
+    return featureError(
+      context,
+      "INVALID_PROPOSAL",
+      "This feedback proposal must be prepared again.",
+      409,
+    );
   let prepared: ReturnType<typeof prepareTool>;
   try {
     prepared = prepareTool(
@@ -839,6 +860,9 @@ async function approveProposal(
       duplicateOverride:
         preview.requiresDuplicateOverride === true &&
         body.duplicateOverride === true,
+      ...(feedbackEvidenceAssetIds.length > 0
+        ? { feedbackEvidenceAssetIds }
+        : {}),
     };
   if (
     proposal.tool_name === "submit_program_application" &&
@@ -867,6 +891,7 @@ async function approveProposal(
     prepared,
     receiptToken,
     `agent-proposal-${proposal.id}`,
+    proposal.tool_name === "create_feedback" ? conversation.id : undefined,
   );
   if (result.status >= 400)
     return featureJson(
@@ -1384,6 +1409,28 @@ function redactSecrets(message: string): string {
 
 function isArguments(value: unknown): value is ToolArguments {
   return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function proposalArguments(name: string, args: ToolArguments): ToolArguments {
+  if (name !== "create_feedback") return args;
+  const safe = { ...args };
+  delete safe.feedbackEvidenceAssetIds;
+  return safe;
+}
+
+function proposalEvidenceIds(args: ToolArguments): string[] | null {
+  const value = args.feedbackEvidenceAssetIds;
+  if (value === undefined) return [];
+  if (
+    !Array.isArray(value) ||
+    value.length > 3 ||
+    value.some(
+      (item) => typeof item !== "string" || !/^asset_[a-f0-9]{32}$/.test(item),
+    ) ||
+    new Set(value).size !== value.length
+  )
+    return null;
+  return value as string[];
 }
 
 function randomHex(length: number): string {

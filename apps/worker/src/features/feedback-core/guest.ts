@@ -8,6 +8,7 @@ import {
   normalizeFeedbackDuplicateText,
 } from "@civicresolve/domain/feedback";
 import type { FeedbackCategory } from "@civicresolve/domain/feedback";
+import { authenticateRequest } from "../../auth/identity.js";
 import { classifyFeedbackSubmission } from "../taxonomy/classification.js";
 import {
   featureError,
@@ -32,12 +33,15 @@ import {
   validLocale,
 } from "./common.js";
 import {
+  agentEvidenceOwner,
   deleteStoredEvidence,
   downloadEvidence,
   evidenceInsertStatements,
   evidenceView,
+  deletePromotedSourceObjects,
   InvalidEvidenceError,
   listEvidence,
+  promoteStagedEvidence,
   storeEvidence,
   validateEvidence,
 } from "./evidence.js";
@@ -59,6 +63,7 @@ import type {
 import {
   MAX_FOLLOW_UP_LENGTH,
   MAX_MESSAGE_LENGTH,
+  MAX_TOTAL_EVIDENCE_BYTES,
   RECEIPT_TOKEN_PATTERN,
   TORONTO_CSDUID,
 } from "./types.js";
@@ -294,6 +299,20 @@ async function createGuestFeedback(
     );
   }
 
+  const stagedAssetIds = parseStagedEvidenceIds(body.feedbackEvidenceAssetIds);
+  if (stagedAssetIds === null)
+    return featureError(
+      context,
+      "INVALID_EVIDENCE",
+      "Evidence must be attached to the resident's feedback proposal.",
+      400,
+    );
+  const evidenceConversationId = stagedAssetIds.length
+    ? await authorizedEvidenceConversation(request, context)
+    : null;
+  if (stagedAssetIds.length && !evidenceConversationId)
+    return featureError(context, "NOT_FOUND", "Evidence not found.", 404);
+
   let files;
   try {
     files = await validateEvidence(body.evidence);
@@ -318,6 +337,7 @@ async function createGuestFeedback(
     sandboxAcknowledged: body.sandboxAcknowledged,
     tokenHash,
     evidenceHashes,
+    stagedAssetIds,
     ...(duplicateOverride ? { duplicateOverride: true } : {}),
   };
   const requestHash = await sha256Hex(JSON.stringify(hashBody));
@@ -405,16 +425,88 @@ async function createGuestFeedback(
     );
   }
 
+  let stagedEvidence: Awaited<ReturnType<typeof promoteStagedEvidence>> = [];
+  if (stagedAssetIds.length && evidenceConversationId) {
+    try {
+      stagedEvidence = await promoteStagedEvidence(context, {
+        conversationId: evidenceConversationId,
+        stagedAssetIds,
+        submissionId,
+        organizationId: destination.organization_id,
+        createdAt: now,
+      });
+      evidence.push(...stagedEvidence);
+      const inlineBytes = files.reduce(
+        (total, file) => total + file.data.byteLength,
+        0,
+      );
+      const stagedBytes = stagedEvidence.reduce(
+        (total, item) => total + item.metadata.byteSize,
+        0,
+      );
+      if (inlineBytes + stagedBytes > MAX_TOTAL_EVIDENCE_BYTES) {
+        const bucket = context.env.PRIVATE_ASSETS;
+        if (bucket) await deleteStoredEvidence(bucket, evidence);
+        return featureError(
+          context,
+          "INVALID_EVIDENCE",
+          "Evidence must total 10 MiB or less.",
+          400,
+        );
+      }
+    } catch (error) {
+      const bucket = context.env.PRIVATE_ASSETS;
+      if (bucket) await deleteStoredEvidence(bucket, evidence);
+      if (error instanceof InvalidEvidenceError)
+        return featureError(context, "INVALID_EVIDENCE", error.message, 400);
+      if (
+        error instanceof Error &&
+        error.name === "EvidenceStorageUnavailableError"
+      )
+        return featureError(
+          context,
+          "EVIDENCE_STORAGE_UNAVAILABLE",
+          "Private evidence storage is unavailable.",
+          503,
+        );
+      throw error;
+    }
+  }
+
   try {
-    const duplicateGuard =
-      !duplicateOverride && normalizeFeedbackDuplicateText(message)
-        ? `WHERE NOT EXISTS (
-             SELECT 1 FROM feedback_submissions
-             WHERE organization_id = ? AND municipality_csd_uid = ?
-               AND category = ? AND created_at >= ?
-               AND lower(trim(original_text)) = lower(trim(?))
-           )`
-        : "";
+    const insertGuards: string[] = [];
+    const insertGuardValues: Array<string> = [];
+    if (!duplicateOverride && normalizeFeedbackDuplicateText(message)) {
+      insertGuards.push(`NOT EXISTS (
+        SELECT 1 FROM feedback_submissions
+        WHERE organization_id = ? AND municipality_csd_uid = ?
+          AND category = ? AND created_at >= ?
+          AND lower(trim(original_text)) = lower(trim(?))
+      )`);
+      insertGuardValues.push(
+        destination.organization_id,
+        destination.municipality_csd_uid,
+        category,
+        recentFeedbackCutoff(now),
+        message,
+      );
+    }
+    for (const assetId of stagedAssetIds) {
+      insertGuards.push(`EXISTS (
+        SELECT 1 FROM private_assets
+        WHERE id = ? AND organization_id IS NULL
+          AND purpose = 'feedback_attachment' AND record_id = ?
+          AND owner_subject = ?
+      )`);
+      insertGuardValues.push(
+        assetId,
+        evidenceConversationId!,
+        agentEvidenceOwner(evidenceConversationId!),
+      );
+    }
+    const insertGuard = insertGuards.length
+      ? `WHERE ${insertGuards.join(" AND ")}`
+      : "";
     const submissionInsert = database
       .prepare(
         `INSERT OR IGNORE INTO feedback_submissions (
@@ -422,7 +514,7 @@ async function createGuestFeedback(
           department_name, outcome, sample, created_at, updated_at,
           municipality_csd_uid, category, constructive_follow_up
         ) SELECT ?, ?, ?, 'submitted', ?, ?, NULL, ?, ?, ?, ?, ?, ?
-          ${duplicateGuard}`,
+          ${insertGuard}`,
       )
       .bind(
         submissionId,
@@ -436,15 +528,7 @@ async function createGuestFeedback(
         destination.municipality_csd_uid,
         category,
         followUp,
-        ...(duplicateGuard
-          ? [
-              destination.organization_id,
-              destination.municipality_csd_uid,
-              category,
-              recentFeedbackCutoff(now),
-              message,
-            ]
-          : []),
+        ...insertGuardValues,
       );
     const batchResults = await database.batch([
       submissionInsert,
@@ -531,6 +615,24 @@ async function createGuestFeedback(
           409,
         );
       }
+      if (stagedEvidence.length > 0) {
+        const bucket = context.env.PRIVATE_ASSETS;
+        if (bucket) await deleteStoredEvidence(bucket, stagedEvidence);
+        const id = (persisted as IdempotentFeedbackResponse).submissionId;
+        const receipt = id
+          ? await getReceiptByToken(database, id, tokenHash)
+          : null;
+        if (!receipt)
+          return featureError(context, "NOT_FOUND", "Receipt not found.", 404);
+        return featureJson(context, {
+          apiVersion: API_VERSION,
+          submission: receipt,
+          receiptToken: token,
+        });
+      }
+    } else if (stagedEvidence.length > 0) {
+      const bucket = context.env.PRIVATE_ASSETS;
+      if (bucket) await deletePromotedSourceObjects(bucket, stagedEvidence);
     }
   } catch (error) {
     const bucket = context.env.PRIVATE_ASSETS;
@@ -553,8 +655,6 @@ async function createGuestFeedback(
     ? await getReceiptByToken(database, savedId, tokenHash)
     : null;
   if (!receipt) {
-    const bucket = context.env.PRIVATE_ASSETS;
-    if (bucket) await deleteStoredEvidence(bucket, evidence);
     return featureError(
       context,
       "IDEMPOTENCY_CONFLICT",
@@ -567,6 +667,52 @@ async function createGuestFeedback(
     { apiVersion: API_VERSION, submission: receipt, receiptToken: token },
     201,
   );
+}
+
+function parseStagedEvidenceIds(value: unknown): string[] | null {
+  if (value === undefined) return [];
+  if (
+    !Array.isArray(value) ||
+    value.length > 3 ||
+    value.some(
+      (id) => typeof id !== "string" || !/^asset_[a-f0-9]{32}$/.test(id),
+    ) ||
+    new Set(value).size !== value.length
+  ) {
+    return null;
+  }
+  return value as string[];
+}
+
+async function authorizedEvidenceConversation(
+  request: Request,
+  context: FeedbackContext,
+): Promise<string | null> {
+  const id = request.headers.get("X-Agent-Conversation-Id");
+  if (!id || !/^conv_[a-f0-9]{32}$/.test(id)) return null;
+  const conversation = await context.env.DB.prepare(
+    `SELECT id, mode, owner_subject, guest_token_hash
+     FROM agent_conversations WHERE id = ?`,
+  )
+    .bind(id)
+    .first<{
+      id: string;
+      mode: string;
+      owner_subject: string | null;
+      guest_token_hash: string | null;
+    }>();
+  if (!conversation || conversation.mode !== "resident") return null;
+  if (conversation.owner_subject) {
+    try {
+      const actor = await authenticateRequest(request, context.env);
+      return actor?.subject === conversation.owner_subject ? id : null;
+    } catch {
+      return null;
+    }
+  }
+  const token = request.headers.get("X-Conversation-Token");
+  if (!token || !conversation.guest_token_hash) return null;
+  return (await sha256Hex(token)) === conversation.guest_token_hash ? id : null;
 }
 
 async function getGuestReceipt(
