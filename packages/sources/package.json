@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./geo": "./src/geo/index.ts",
+    "./adapters/consultations": "./src/adapters/consultations/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
