@@ -10,6 +10,8 @@ The closed mobile rail is hidden from keyboard and screen-reader navigation. The
 
 `apps/web/src/platform/styles.css` supplies a visible two-pixel keyboard focus ring, readable muted text, and 44-pixel control targets for coarse pointers. The compact desktop layout remains intact. The main map's dense numbered pins are exempt from the 44-pixel rule; the same sourced places remain available through the 44-pixel map key rows and full list. At narrow widths the chat textarea grows to show the longer French prompt without an internal scrollbar. The app also honors `prefers-reduced-motion` and `prefers-contrast: more`.
 
+The shell maps `@civicresolve/design-tokens` monochrome values into CSS variables; `CivicTheme` carries the same neutral design intent in SwiftUI. Status labels carry the meaning even where semantic token colors are identical.
+
 Native iOS uses SwiftUI controls and `CivicTheme` in `apps/mobile/ios/CivicResolve/Design/`. This web pass does not establish full VoiceOver or native touch-target acceptance.
 
 ## How to change it

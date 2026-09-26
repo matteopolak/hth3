@@ -3209,16 +3209,16 @@ function formatDate(value: string): string {
 
 function applyTokens(): void {
   const rootStyle = document.documentElement.style;
-  rootStyle.setProperty("--color-text", "#171717");
-  rootStyle.setProperty("--color-muted", "#696969");
-  rootStyle.setProperty("--color-surface", "#ffffff");
-  rootStyle.setProperty("--color-canvas", "#ffffff");
-  rootStyle.setProperty("--color-border", "#e6e6e6");
-  rootStyle.setProperty("--color-accent", "#171717");
-  rootStyle.setProperty("--color-accent-strong", "#171717");
-  rootStyle.setProperty("--color-success", "#171717");
-  rootStyle.setProperty("--color-warning", "#171717");
-  rootStyle.setProperty("--color-danger", "#171717");
-  rootStyle.setProperty("--color-focus", "#444444");
+  rootStyle.setProperty("--color-text", tokens.color.text);
+  rootStyle.setProperty("--color-muted", tokens.color.textMuted);
+  rootStyle.setProperty("--color-surface", tokens.color.surface);
+  rootStyle.setProperty("--color-canvas", tokens.color.canvas);
+  rootStyle.setProperty("--color-border", tokens.color.border);
+  rootStyle.setProperty("--color-accent", tokens.color.accent);
+  rootStyle.setProperty("--color-accent-strong", tokens.color.accentStrong);
+  rootStyle.setProperty("--color-success", tokens.color.success);
+  rootStyle.setProperty("--color-warning", tokens.color.warning);
+  rootStyle.setProperty("--color-danger", tokens.color.danger);
+  rootStyle.setProperty("--color-focus", tokens.color.focus);
   rootStyle.setProperty("--font-body", tokens.typography.body);
 }
