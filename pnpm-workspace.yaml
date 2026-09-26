@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+  - packages/*
+
+minimumReleaseAge: 20160
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
