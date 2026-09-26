@@ -141,7 +141,11 @@ const copy = {
     area: "Area",
     publisher: "Publisher",
     language: "Language",
+    resultSingular: "result",
     resultCount: "results",
+    nearbyNoLocation: "Location not set.",
+    nearbyBrowse:
+      "Enter a city above to narrow these service locations. Without a city, results are sorted by jurisdiction and name, not distance.",
     all: "All",
     jobs: "Jobs",
     support: "Support",
@@ -230,7 +234,11 @@ const copy = {
     area: "Domaine",
     publisher: "Éditeur",
     language: "Langue",
+    resultSingular: "résultat",
     resultCount: "résultats",
+    nearbyNoLocation: "Lieu non défini.",
+    nearbyBrowse:
+      "Entrez une ville ci-dessus pour préciser les points de service. Sans ville, les résultats sont triés par territoire et par nom, pas par distance.",
     all: "Tout",
     jobs: "Emplois",
     support: "Aide",
@@ -326,14 +334,23 @@ export function createDiscoveryPage({
   function render(): void {
     root.replaceChildren();
     if (area !== "saved") root.append(filters());
+    if (area === "nearby" && !location) {
+      const context = node("p", "discovery-nearby-context");
+      context.append(
+        node("strong", "", text.nearbyNoLocation),
+        document.createTextNode(` ${text.nearbyBrowse}`),
+      );
+      root.append(context);
+    }
     const tools = node("div", "discovery-toolbar");
     const displayed =
       area === "saved" ? saved.map((entry) => entry.item) : records;
+    const resultTotal = area === "saved" ? displayed.length : total;
     tools.append(
       node(
         "strong",
         "discovery-result-count",
-        `${area === "saved" ? displayed.length : total} ${text.resultCount}`,
+        `${resultTotal} ${resultTotal === 1 ? text.resultSingular : text.resultCount}`,
       ),
     );
     const practice = node("label", "discovery-check");

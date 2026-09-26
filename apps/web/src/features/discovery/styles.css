@@ -59,6 +59,18 @@
   margin-top: 13px;
 }
 
+.discovery-nearby-context {
+  margin: 16px 1px 0;
+  color: #626262;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.discovery-nearby-context strong {
+  color: #303030;
+  font-weight: 650;
+}
+
 .discovery-toolbar {
   min-height: 58px;
   padding: 10px 1px;
