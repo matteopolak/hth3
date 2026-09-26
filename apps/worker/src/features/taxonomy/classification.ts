@@ -55,8 +55,9 @@ export async function classifyText(
         .slice(0, 2)
         .map((example) => example.en.slice(0, 100)),
     }));
+  let output: unknown;
   try {
-    const output = await ai.run(modelId, {
+    output = await ai.run(modelId, {
       messages: [
         {
           role: "system",
@@ -74,24 +75,60 @@ export async function classifyText(
       max_tokens: 160,
       temperature: 0,
     });
-    const response =
-      typeof output === "object" && output !== null && "response" in output
-        ? (output as { response?: unknown }).response
-        : null;
-    if (typeof response !== "string") throw new Error("Missing model response");
-    const match = response.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("Missing JSON output");
+  } catch {
+    return {
+      ...fallback,
+      provider: "fallback",
+      modelId,
+      reason: "ai_provider_error",
+    };
+  }
+  const response = generatedText(output);
+  if (!response)
+    return {
+      ...fallback,
+      provider: "fallback",
+      modelId,
+      reason: "ai_missing_output",
+    };
+  const match = response.match(/\{[\s\S]*\}/);
+  if (!match)
+    return {
+      ...fallback,
+      provider: "fallback",
+      modelId,
+      reason: "ai_invalid_json",
+    };
+  try {
     const parsed = JSON.parse(match[0]) as unknown;
     const checked = validateClassificationProposal(parsed, document);
+    if (
+      checked.reason === "invalid_model_output" ||
+      checked.reason === "unknown_category"
+    )
+      return { ...checked, provider: "fallback", modelId };
     return { ...checked, provider: "workers-ai", modelId };
   } catch {
     return {
       ...fallback,
       provider: "fallback",
-      modelId: null,
-      reason: "ai_failed",
+      modelId,
+      reason: "ai_invalid_json",
     };
   }
+}
+
+function generatedText(output: unknown): string | null {
+  if (typeof output === "string") return output;
+  if (typeof output !== "object" || output === null) return null;
+  const result = output as {
+    response?: unknown;
+    choices?: Array<{ message?: { content?: unknown } }>;
+  };
+  if (typeof result.response === "string" && result.response.trim())
+    return result.response;
+  const content = result.choices?.[0]?.message?.content;
+  return typeof content === "string" && content.trim() ? content : null;
 }
 
 export async function classifyFeedbackSubmission(
