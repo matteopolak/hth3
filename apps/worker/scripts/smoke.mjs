@@ -235,8 +235,8 @@ try {
       body: {
         postingId: smokePostingId,
         answers: {
-          experience: "Fictional sample answer",
-          availability: "Sample schedule",
+          experience: "I have coordinated front-desk intake and helped residents find local services.",
+          availability: "Weekdays after 9 a.m.; available for evening shifts with notice.",
         },
         confirmedByApplicant: true,
       },

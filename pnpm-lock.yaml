@@ -189,6 +189,9 @@ importers:
       '@civicresolve/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
+      '@civicresolve/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@civicresolve/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n

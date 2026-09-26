@@ -12,6 +12,7 @@
     "@auth0/auth0-spa-js": "^2.25.0",
     "@civicresolve/contracts": "workspace:*",
     "@civicresolve/design-tokens": "workspace:*",
+    "@civicresolve/domain": "workspace:*",
     "@civicresolve/i18n": "workspace:*",
     "@elevenlabs/client": "^1.25.0",
     "lucide-static": "0.468.0"

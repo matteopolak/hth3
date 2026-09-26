@@ -32,6 +32,8 @@ import { ingestOfficialSources } from "../features/sources/ingest.js";
 import { handleEmployerRequest } from "../features/employer/index.js";
 import { handleThemesRequest } from "../features/themes/index.js";
 import { handleDiscoveryRequest } from "../features/discovery/index.js";
+import { handleProgramIntakeRequest } from "../features/program-intake/index.js";
+import { handleExternalPreparationRequest } from "../features/external-preparation/index.js";
 import type { FeatureContext } from "../features/shared.js";
 
 interface Env {
@@ -123,6 +125,18 @@ const worker = {
         featureContext,
       );
       if (discoveryResponse) return discoveryResponse;
+      const programIntakeResponse = await handleProgramIntakeRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (programIntakeResponse) return programIntakeResponse;
+      const externalPreparationResponse = await handleExternalPreparationRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (externalPreparationResponse) return externalPreparationResponse;
       const themesResponse = await handleThemesRequest(
         request,
         url,
