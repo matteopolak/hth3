@@ -9,6 +9,7 @@ import { staffRequest } from "./client.js";
 import { mountHiring } from "./hiring.js";
 import { mountSavedWorkspace } from "./saved-workspace.js";
 import { mountSettings } from "./settings.js";
+import { mountSources } from "./source-management.js";
 import { mountTaxonomy } from "./taxonomy.js";
 import { mountThemes } from "./themes.js";
 import type { StaffWorkspaceOptions, StaffWorkspaceView } from "./types.js";
@@ -107,6 +108,9 @@ export function staffWorkspace(options: StaffWorkspaceOptions): HTMLElement {
       case "settings":
         await mountSettings(context);
         break;
+      case "sources":
+        await mountSources(context);
+        break;
     }
   }
 }
@@ -130,6 +134,8 @@ export function viewAllowed(
       return capabilities.applicantReview;
     case "audit":
       return capabilities.auditRead;
+    case "sources":
+      return capabilities.sourceManage;
     case "settings":
       return Object.values(capabilities).some(Boolean);
   }

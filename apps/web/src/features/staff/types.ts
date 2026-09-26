@@ -10,7 +10,8 @@ export type StaffWorkspaceView =
   | "audit"
   | "views"
   | "reports"
-  | "settings";
+  | "settings"
+  | "sources";
 
 export interface StaffWorkspaceOptions {
   view: StaffWorkspaceView;

@@ -927,6 +927,172 @@
   margin: 0;
 }
 
+.staff-curator-queue {
+  border-top: 1px solid var(--staff-line);
+  border-bottom: 1px solid var(--staff-line);
+  padding: 14px 0;
+  margin-bottom: 16px;
+}
+.staff-curator-queue h3 {
+  margin: 0 0 9px;
+}
+.staff-curator-queue-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.staff-curator-queue-button {
+  border: 1px solid var(--staff-line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--staff-ink);
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+.staff-curator-queue-button:hover {
+  background: #f6f6f6;
+}
+.staff-curator-queue-button:focus-visible,
+.staff-curator-link:focus-visible,
+.staff-curator-proposal summary:focus-visible,
+.staff-curator-record-evidence summary:focus-visible {
+  outline: 2px solid var(--staff-ink);
+  outline-offset: 2px;
+}
+.staff-curator-collection .staff-list-row {
+  cursor: default;
+}
+.staff-curator-sample {
+  display: inline-block;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  color: #555;
+  font-size: 11px;
+  padding: 2px 6px;
+  margin-top: 7px;
+}
+.staff-curator-link {
+  color: #303030;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+.staff-curator-meta {
+  color: var(--staff-muted);
+  font-size: 12px;
+  margin: 4px 0 20px;
+}
+.staff-curator-section-title {
+  border-top: 1px solid var(--staff-line);
+  padding-top: 20px;
+  margin: 24px 0 12px;
+}
+.staff-curator-record,
+.staff-curator-change {
+  border-bottom: 1px solid var(--staff-line);
+  padding: 13px 0;
+}
+.staff-curator-record:first-child,
+.staff-curator-change:first-child {
+  padding-top: 0;
+}
+.staff-curator-record-title,
+.staff-curator-change-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.staff-curator-record-title strong {
+  font-weight: 600;
+}
+.staff-curator-record p {
+  margin: 5px 0 0;
+}
+.staff-curator-error {
+  color: #872f2f;
+  font-size: 12px;
+}
+.staff-curator-record-evidence {
+  margin-top: 8px;
+}
+.staff-curator-record-evidence summary,
+.staff-curator-proposal summary {
+  color: #555;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+.staff-curator-record-evidence .staff-property {
+  font-size: 12px;
+  padding: 6px 0;
+}
+.staff-curator-record-evidence .staff-curator-link {
+  display: inline-block;
+  margin-top: 8px;
+}
+.staff-curator-change-head strong {
+  font-size: 12px;
+}
+.staff-curator-reason {
+  line-height: 1.5;
+  margin: 7px 0;
+}
+.staff-curator-comparison {
+  margin: 12px 0 14px;
+  border-top: 1px solid var(--staff-line);
+}
+.staff-curator-compare-row {
+  display: grid;
+  grid-template-columns: 125px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--staff-line);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.staff-curator-compare-row span {
+  color: var(--staff-muted);
+}
+.staff-curator-compare-row del {
+  color: #777;
+}
+.staff-curator-compare-labels {
+  color: var(--staff-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.staff-curator-proposal {
+  border-top: 1px solid var(--staff-line);
+  padding-top: 20px;
+  margin-top: 24px;
+}
+.staff-curator-proposal summary {
+  color: var(--staff-ink);
+  font-size: 14px;
+}
+.staff-curator-proposal > .staff-muted {
+  margin: 12px 0;
+}
+.staff-curator-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 14px;
+}
+.staff-curator-form-grid .staff-field {
+  margin: 8px 0;
+}
+.staff-curator-detail .staff-heading {
+  align-items: baseline;
+}
+.staff-curator-detail .staff-detail-properties > .staff-curator-link {
+  display: block;
+  margin: 10px 0;
+}
+
 @media (max-width: 1000px) {
   .staff-collection {
     grid-template-columns: 230px minmax(0, 1fr);
@@ -953,6 +1119,15 @@
 }
 
 @media (max-width: 700px) {
+  .staff-curator-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .staff-curator-compare-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .staff-curator-compare-row span {
+    grid-column: 1 / -1;
+  }
   .staff-saved-layout {
     grid-template-columns: 1fr;
   }
