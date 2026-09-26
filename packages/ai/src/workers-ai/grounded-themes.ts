@@ -79,7 +79,7 @@ export async function summarizeGroundedTheme(
       {
         role: "system",
         content:
-          "Summarize only the provided civic feedback. Return compact JSON with en, fr, sourceIds. Each summary must describe the common concern and requested change in one sentence. Do not add a count, quote a person, infer identity, or invent a fact. sourceIds must be IDs from the input.",
+          "Summarize only the provided civic feedback. Return compact JSON with en and fr as single-sentence strings, plus sourceIds as an array. Each sentence must describe the common concern and requested change. Do not add a count, quote a person, infer identity, or invent a fact. sourceIds must be IDs from the input.",
       },
       { role: "user", content: JSON.stringify(evidence) },
     ],
@@ -94,22 +94,35 @@ export async function summarizeGroundedTheme(
     fr?: unknown;
     sourceIds?: unknown;
   };
+  const en = readSummaryLanguage(parsed.en);
+  const fr = readSummaryLanguage(parsed.fr);
   const allowed = new Set(evidence.map((item) => item.id));
   if (
-    typeof parsed.en !== "string" ||
-    typeof parsed.fr !== "string" ||
+    !en ||
+    !fr ||
     !Array.isArray(parsed.sourceIds) ||
     parsed.sourceIds.length === 0 ||
     parsed.sourceIds.some((id) => typeof id !== "string" || !allowed.has(id)) ||
-    parsed.en.length > 500 ||
-    parsed.fr.length > 500
+    en.length > 500 ||
+    fr.length > 500
   )
     throw new Error("Workers AI summary lacked valid source evidence.");
   return {
-    en: parsed.en.trim(),
-    fr: parsed.fr.trim(),
+    en,
+    fr,
     sourceIds: [...new Set(parsed.sourceIds as string[])],
   };
+}
+
+function readSummaryLanguage(value: unknown): string | null {
+  if (typeof value === "string") return value.trim() || null;
+  if (!value || typeof value !== "object") return null;
+  const { summary, requestedChange } = value as Record<string, unknown>;
+  if (typeof summary !== "string" || typeof requestedChange !== "string")
+    return null;
+  const concern = summary.trim().replace(/[.!?]+$/, "");
+  const change = requestedChange.trim().replace(/[.!?]+$/, "");
+  return concern && change ? `${concern}. ${change}.` : null;
 }
 
 function readGeneratedText(value: unknown): string {
