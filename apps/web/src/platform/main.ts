@@ -32,6 +32,7 @@ import {
   WorkerApiError,
 } from "./api.js";
 import "./styles.css";
+import "../features/feedback/feedback.css";
 
 type Page = "assistant" | "feedback" | "applications" | "employee" | "discovery" | "profile" | "signin" | "programs" | "external-preparation";
 type EmployeePage = "assistant" | "feedback" | "applications";
@@ -1797,8 +1798,8 @@ function feedbackPage(): HTMLElement {
     }));
     return detail;
   }
-  const layout = el("div", "two-column");
-  const left = el("section", "surface primary-surface");
+  const layout = el("div", "two-column feedback-flow");
+  const left = el("section", "surface primary-surface feedback-main");
   if (state.receipt && !state.showFeedbackForm) {
     left.append(
       receiptPanel(),
@@ -1808,12 +1809,25 @@ function feedbackPage(): HTMLElement {
       }),
     );
   } else {
+    const intro = el("div", "feedback-intro",
+      el("div", "feedback-intro-icon", iconNode("feedback")),
+      el("div", "", el("h2", "", t("feedback.heading")), el("p", "", t("feedback.shortIntro"))),
+    );
+    const steps = el("div", "feedback-steps",
+      el("span", state.feedbackReviewing ? "" : "is-current", t("feedback.stepWrite")),
+      el("span", "feedback-step-rule"),
+      el("span", state.feedbackReviewing ? "is-current" : "", t("feedback.stepReview")),
+    );
+    steps.querySelectorAll("span:not(.feedback-step-rule)").forEach((step, index) => {
+      (step as HTMLElement).dataset.step = String(index + 1);
+    });
+    left.append(intro, steps);
     if (state.feedbackReviewing) left.append(feedbackReview());
     else left.append(feedbackForm());
     if (state.receipt) left.append(receiptPanel());
   }
 
-  const aside = el("aside", "surface context-surface");
+  const aside = el("aside", "surface context-surface feedback-aside feedback-aside-card");
   const emergency = el("div", "emergency-note");
   emergency.append(
     el("strong", "", t("feedback.emergencyTitle")),
@@ -1960,7 +1974,7 @@ async function refreshStaffCase(id: string): Promise<void> {
 }
 
 function feedbackForm(): HTMLElement {
-  const form = el("form", "form-stack");
+  const form = el("form", "form-stack feedback-form feedback-panel");
   const voice = el("div", "voice-controls");
   if (state.voiceStatus === "idle") {
     voice.append(
@@ -1989,7 +2003,6 @@ function feedbackForm(): HTMLElement {
   if (state.voiceError)
     voice.append(el("span", "voice-error", state.voiceError));
   voice.append(el("p", "voice-prompt", state.voicePrompt));
-  form.append(voice);
   const message = textArea(
     "feedback-message",
     t("feedback.messageLabel"),
@@ -2005,13 +2018,23 @@ function feedbackForm(): HTMLElement {
     (value) => (state.feedbackImprovement = value),
     3,
   );
-  form.append(message, improvement);
+  form.append(el("div", "feedback-panel-head",
+    el("h3", "", t("feedback.formHeading")),
+    el("p", "", t("feedback.formHint")),
+  ));
+  form.append(message, el("div", "feedback-input-tools", voice));
+  const extra = el("details", "feedback-extra");
+  extra.open = Boolean(state.feedbackImprovement.trim());
+  extra.append(el("summary", "", t("feedback.addSuggestion")),
+    el("div", "feedback-extra-body", improvement));
+  form.append(extra);
   const actions = el("div", "form-actions");
   const review = button(t("feedback.review"), "button-primary", () => void checkFeedbackBeforeReview());
   review.disabled = state.pending === "feedback-check" || state.pending === "feedback";
   if (state.pending === "feedback-check") review.prepend(spinner());
   actions.append(review);
-  form.append(actions);
+  form.append(el("div", "feedback-form-footer",
+    el("p", "", t("feedback.reviewHint")), actions));
   form.addEventListener("submit", (event) => event.preventDefault());
   return form;
 }
@@ -2092,7 +2115,7 @@ async function stopVoice(): Promise<void> {
 }
 
 function feedbackReview(): HTMLElement {
-  const review = el("div", "review-sheet");
+  const review = el("div", "review-sheet feedback-review");
   review.append(
     el("h3", "review-title", t("feedback.reviewTitle")),
     labeledValue(t("feedback.originalMessage"), state.feedbackDraft),
