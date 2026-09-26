@@ -6,7 +6,7 @@ Each civic organization has a bilingual, versioned category taxonomy. Staff can 
 
 ## How it works
 
-Migration `0008_taxonomy.sql` seeds 31 Canada-oriented categories in six groups for the fictional Toronto sandbox organization. Categories describe possible _topics_, not verified government jurisdiction. Their destination is the fictional CivicResolve general review queue. Each version stores a complete JSON snapshot. Publishing marks the old version `superseded` and the draft `published`; old classifications retain their version ID and category ID.
+Migration `0008_taxonomy.sql` seeds 31 Canada-oriented categories in six groups for the fictional Toronto sandbox organization. Categories describe possible _topics_, not verified government jurisdiction. Their destination is the fictional Envoy general review queue. Each version stores a complete JSON snapshot. Publishing marks the old version `superseded` and the draft `published`; old classifications retain their version ID and category ID.
 
 `POST /api/v1/feedback` creates a resident submission. The Worker should call `classifyFeedbackSubmission(env.DB, env.AI, submissionId)` after the durable write. It sends bounded original text and published descriptions/examples to the configured Workers AI model. The model returns a proposal only; the domain validator rejects retired or unknown IDs and low confidence. The Worker saves a classification, current category/intent, assignment, audit event, and outbox event. AI failure saves a fallback `other_or_unsure` decision and marks it for review. The resident's original wording remains unchanged.
 

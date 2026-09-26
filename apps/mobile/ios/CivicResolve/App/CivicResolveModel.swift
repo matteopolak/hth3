@@ -143,13 +143,13 @@ final class CivicResolveModel: ObservableObject {
             guard profileLoadID == loadID, accessToken == token else { return }
             profile = loadedProfile
             profileSkillsText = profile.skills.joined(separator: "\n")
-            profileIsLoaded = true
             let loadedResumes = try await api.resumes(token: token)
             guard profileLoadID == loadID, accessToken == token else { return }
             resumes = loadedResumes
             let loadedApplications = try await api.applications(token: token)
             guard profileLoadID == loadID, accessToken == token else { return }
             applications = loadedApplications
+            profileIsLoaded = true
         } catch { if profileLoadID == loadID { profileError = localizedError(error) } }
     }
 

@@ -107,7 +107,7 @@ export interface ApplicationSubmissionResponse {
     id: string;
     postingId: string;
     status: ApplicationStatus;
-    sample: true;
+    sample: boolean;
     submittedAt: string;
   };
 }
@@ -210,7 +210,7 @@ export interface ApplicationSubmittedEvent extends OutboxEventBase {
   eventType: "application.submitted";
   applicationId: string;
   postingId: string;
-  payload: { status: "submitted"; sample: true };
+  payload: { status: "submitted"; sample: boolean };
 }
 
 export interface ApplicationStatusChangedEvent extends OutboxEventBase {
@@ -225,5 +225,5 @@ export interface PublicPostingView {
   organizationName: string;
   title: string;
   description: string;
-  sample: true;
+  sample: boolean;
 }

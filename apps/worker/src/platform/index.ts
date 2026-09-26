@@ -29,6 +29,9 @@ import { handleAgentRequest } from "../features/agents/index.js";
 import { handleTaxonomyRequest } from "../features/taxonomy/index.js";
 import { handleVoiceRequest } from "../features/voice/index.js";
 import { ingestOfficialSources } from "../features/sources/ingest.js";
+import { handleEmployerRequest } from "../features/employer/index.js";
+import { handleThemesRequest } from "../features/themes/index.js";
+import { handleDiscoveryRequest } from "../features/discovery/index.js";
 import type { FeatureContext } from "../features/shared.js";
 
 interface Env {
@@ -114,6 +117,24 @@ const worker = {
         featureContext,
       );
       if (voiceResponse) return voiceResponse;
+      const discoveryResponse = await handleDiscoveryRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (discoveryResponse) return discoveryResponse;
+      const themesResponse = await handleThemesRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (themesResponse) return themesResponse;
+      const employerResponse = await handleEmployerRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (employerResponse) return employerResponse;
       const sourcesResponse = await handleSourceRequest(
         request,
         url,
@@ -180,11 +201,21 @@ const worker = {
     context: { waitUntil(promise: Promise<unknown>): void },
   ): void {
     context.waitUntil(deliverFeedbackOutbox(env));
-    const now = new Date();
-    if (now.getUTCHours() === 2 && now.getUTCMinutes() === 0)
-      context.waitUntil(ingestOfficialSources(env.DB));
+    context.waitUntil(refreshOfficialSourcesWhenDue(env.DB));
   },
 };
+
+async function refreshOfficialSourcesWhenDue(database: D1Database): Promise<void> {
+  const state = await database
+    .prepare(
+      "SELECT fetched_at, updated_at, last_error FROM source_registry WHERE id = ?",
+    )
+    .bind("service-bc-office-locations")
+    .first<{ fetched_at: string | null; updated_at: string; last_error: string | null }>();
+  const lastAttempt = state?.fetched_at ?? (state?.last_error ? state.updated_at : null);
+  if (!lastAttempt || Date.now() - Date.parse(lastAttempt) >= 86_400_000)
+    await ingestOfficialSources(database);
+}
 
 async function handleLocalOutboxSmoke(
   request: Request,
@@ -360,7 +391,7 @@ function corsHeaders(request: Request, env: Env): Headers | Response {
   const headers = new Headers({
     "Access-Control-Allow-Headers":
       "Authorization, Content-Type, Idempotency-Key, X-Receipt-Token, X-Conversation-Token",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "Access-Control-Max-Age": "600",
     Vary: "Origin",
   });

@@ -5,6 +5,10 @@ import type {
   FeedbackEmergencyResponse,
   Locale,
   PublicPostingView,
+  ApplicantProfileView,
+  ProfileResponse,
+  ResumeView,
+  ResumeExtractionResponse,
 } from "@civicresolve/contracts/v1";
 
 export interface ApplicationView {
@@ -12,7 +16,7 @@ export interface ApplicationView {
   postingId: string;
   postingTitle: string;
   status: ApplicationStatus;
-  sample: true;
+  sample: boolean;
   submittedAt: string;
   updatedAt: string;
   answers: Record<string, string>;
@@ -105,6 +109,67 @@ const apiBaseUrl = (
 ).replace(/\/$/, "");
 
 export const api = {
+  listConversations: (accessToken: string) =>
+    request<{ conversations: AgentConversation[] }>("/agent/conversations", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
+  invokeConversationTool: (
+    id: string,
+    credentials: ConversationCredentials,
+    tool: string,
+    args: Record<string, unknown> = {},
+  ) =>
+    request<{ result?: unknown; proposal?: AgentProposal }>(
+      `/agent/conversations/${encodeURIComponent(id)}/tools`,
+      {
+        method: "POST",
+        headers: conversationHeaders(credentials),
+        body: { tool, args },
+      },
+    ),
+  getProfile: (token: string) =>
+    request<ProfileResponse>("/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  saveProfile: (token: string, profile: ApplicantProfileView) =>
+    request<ProfileResponse>("/profile", {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: { profile },
+    }),
+  listResumes: (token: string) =>
+    request<{ resumes: ResumeView[]; retentionDays: number }>(
+      "/profile/resumes",
+      { headers: { Authorization: `Bearer ${token}` } },
+    ),
+  uploadResume: (token: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request<{ resume: ResumeView }>("/profile/resumes", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      formData,
+    });
+  },
+  extractResume: (token: string, resumeId: string) =>
+    request<ResumeExtractionResponse>(
+      `/profile/resumes/${encodeURIComponent(resumeId)}/extract`,
+      { method: "POST", headers: { Authorization: `Bearer ${token}` } },
+    ),
+  deleteResume: (token: string, resumeId: string) =>
+    request<{ deleted: true }>(`/profile/resumes/${encodeURIComponent(resumeId)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  shareResume: (token: string, applicationId: string, resumeId: string) =>
+    request<{ resumeId: string }>(
+      `/applications/${encodeURIComponent(applicationId)}/resume`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: { resumeId },
+      },
+    ),
   createVoiceSession: (locale: Locale) =>
     request<{ signedUrl: string; expiresInSeconds: number; locale: Locale }>(
       "/voice/session",
@@ -254,6 +319,15 @@ export const api = {
       `/staff/organizations/${encodeURIComponent(organizationId)}/feedback`,
       { headers: { Authorization: `Bearer ${token}` } },
     ),
+  getStaffFeedbackDetail: (
+    token: string,
+    organizationId: string,
+    submissionId: string,
+  ) =>
+    request<{ submission: FeedbackClientReceipt }>(
+      `/staff/organizations/${encodeURIComponent(organizationId)}/feedback/${encodeURIComponent(submissionId)}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    ),
   replyToFeedback: (
     token: string,
     organizationId: string,
@@ -332,9 +406,10 @@ function conversationHeaders(
 async function request<T>(
   path: string,
   options: {
-    method?: "GET" | "POST" | "PATCH";
+    method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
     headers?: Record<string, string>;
     body?: unknown;
+    formData?: FormData;
     acceptedStatus?: number;
   } = {},
 ): Promise<T> {
@@ -349,9 +424,11 @@ async function request<T>(
           : { "Content-Type": "application/json" }),
         ...options.headers,
       },
-      ...(options.body === undefined
-        ? {}
-        : { body: JSON.stringify(options.body) }),
+      ...(options.formData
+        ? { body: options.formData }
+        : options.body === undefined
+          ? {}
+          : { body: JSON.stringify(options.body) }),
     });
   } catch {
     throw new WorkerApiError("Network unavailable", 0, "NETWORK_ERROR", "");
