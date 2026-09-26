@@ -1093,6 +1093,9 @@ const VERSION_READ_TOOL: Readonly<Record<string, string>> = {
   send_application_message: "read_my_application",
   update_profile: "read_profile",
   delete_profile: "read_profile",
+  save_reusable_answer: "list_reusable_answers",
+  delete_reusable_answer: "list_reusable_answers",
+  delete_resume: "list_resumes",
   save_discovery_item: "list_saved_discovery",
   remove_saved_discovery_item: "list_saved_discovery",
   save_external_preparation: "read_external_preparation",
@@ -1102,6 +1105,7 @@ const VERSION_READ_TOOL: Readonly<Record<string, string>> = {
   share_resume: "read_my_application",
   edit_taxonomy_draft: "read_taxonomy",
   publish_taxonomy_draft: "read_taxonomy",
+  create_taxonomy_draft: "read_taxonomy",
   correct_classification: "read_classification",
 };
 
@@ -1113,7 +1117,16 @@ async function recordVersion(
   context: AgentContext,
 ): Promise<{ recordVersion?: string; changes?: ProposalChange[] }> {
   const readName = VERSION_READ_TOOL[name];
-  if (!readName) return {};
+  if (!readName) {
+    const prepared = prepareTool(
+      name,
+      args,
+      conversation.mode,
+      conversation.organization_id,
+    );
+    const changes = proposalChanges(name, args, prepared.preview.body, null);
+    return changes.length > 0 ? { changes } : {};
+  }
   const readArgs =
     name === "share_resume"
       ? { id: args.applicationId }

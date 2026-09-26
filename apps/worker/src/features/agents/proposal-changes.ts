@@ -8,6 +8,30 @@ export interface ProposalChange {
 
 type RecordValue = Record<string, unknown>;
 
+const CREATION_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  create_feedback: [
+    "message",
+    "municipalityId",
+    "whatWouldImprove",
+    "category",
+  ],
+  submit_application: ["postingId", "answers"],
+  submit_program_application: ["programId", "answers"],
+  create_organization_posting: ["title", "description", "location"],
+  create_organization_program: ["kind", "title", "summary", "questions"],
+};
+
+const MESSAGE_TOOLS = new Set([
+  "reply_feedback",
+  "reopen_feedback",
+  "staff_reply_feedback",
+  "staff_request_feedback_details",
+  "send_application_message",
+  "send_staff_application_message",
+  "send_program_application_message",
+  "send_staff_program_application_message",
+]);
+
 function record(value: unknown): RecordValue | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as RecordValue)
@@ -54,8 +78,14 @@ export function proposalChanges(
 ): ProposalChange[] {
   const data = record(readData);
   const body = record(proposedBody);
-  if (!data) return [];
   const changes: ProposalChange[] = [];
+  const creationFields = CREATION_FIELDS[name];
+  if (creationFields && body) {
+    for (const key of creationFields)
+      addChange(changes, label(key), null, body[key]);
+    return changes;
+  }
+  if (!data) return changes;
   if (name === "update_profile") {
     addFields(
       changes,
@@ -80,6 +110,21 @@ export function proposalChanges(
     addChange(changes, "Saved preparation", data.saved === true, false);
   } else if (name === "delete_profile") {
     addChange(changes, "Profile", data.profile, null);
+  } else if (name === "save_reusable_answer") {
+    const answer = Array.isArray(data.answers)
+      ? data.answers.find((entry) => record(entry)?.id === args.id)
+      : null;
+    addFields(changes, record(answer), body);
+  } else if (name === "delete_reusable_answer") {
+    const answer = Array.isArray(data.answers)
+      ? data.answers.find((entry) => record(entry)?.id === args.id)
+      : null;
+    if (answer) addChange(changes, "Reusable answer", answer, null);
+  } else if (name === "delete_resume") {
+    const resume = Array.isArray(data.resumes)
+      ? data.resumes.find((entry) => record(entry)?.id === args.id)
+      : null;
+    if (resume) addChange(changes, "Résumé", resume, null);
   } else if (
     name === "edit_organization_posting" ||
     name === "edit_organization_program"
@@ -123,6 +168,8 @@ export function proposalChanges(
       record(data.submission)?.status,
       "waiting_on_resident",
     );
+  } else if (name === "reopen_feedback") {
+    addChange(changes, "Status", record(data.submission)?.status, "reopened");
   } else if (name === "staff_record_feedback_outcome") {
     const submission = record(data.submission);
     addChange(changes, "Status", submission?.status, "outcome_recorded");
@@ -147,8 +194,22 @@ export function proposalChanges(
     );
   } else if (name === "publish_taxonomy_draft") {
     addChange(changes, "Draft status", record(data.draft)?.status, "published");
+  } else if (name === "create_taxonomy_draft") {
+    addChange(changes, "Draft status", record(data.draft)?.status, "draft");
   } else if (name === "correct_classification") {
     addFields(changes, record(data.classification), body);
+  } else if (name === "review_feedback_theme_membership") {
+    if (Array.isArray(data.sources))
+      addChange(
+        changes,
+        "Submission in theme",
+        data.sources.some((source) => record(source)?.id === args.submissionId),
+        true,
+      );
   }
+  if (MESSAGE_TOOLS.has(name))
+    addChange(changes, "Message", null, body?.message);
+  if (name === "record_application_decision")
+    addChange(changes, "Applicant message", null, body?.message);
   return changes;
 }
