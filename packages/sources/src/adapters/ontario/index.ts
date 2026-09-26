@@ -1,4 +1,8 @@
-import type { OfficialIngestRecord, OfficialIngestResult, OfficialRecordKind } from "../../official.js";
+import type {
+  OfficialIngestRecord,
+  OfficialIngestResult,
+  OfficialRecordKind,
+} from "../../official.js";
 
 const TERMS = "https://www.ontario.ca/page/terms-use";
 
@@ -8,7 +12,8 @@ export const ONTARIO_SOURCES = [
     sourceId: "ontario-public-service-jobs",
     kind: "jobs_finder",
     title: "Careers: Ontario Public Service",
-    summary: "Explore Ontario Public Service careers and follow the official site to search current postings.",
+    summary:
+      "Explore Ontario Public Service careers and follow the official site to search current postings.",
     sourceUrl: "https://www.ontario.ca/page/careers-ontario-public-service",
     expectedTitle: "Careers: Ontario Public Service",
   },
@@ -16,7 +21,8 @@ export const ONTARIO_SOURCES = [
     sourceId: "ontario-benefits-finder",
     kind: "benefits_finder",
     title: "Find benefits and programs",
-    summary: "Use Ontario's official finder to explore support programs and check requirements with each program.",
+    summary:
+      "Use Ontario's official finder to explore support programs and check requirements with each program.",
     sourceUrl: "https://www.ontario.ca/page/find-benefits-and-programs",
     expectedTitle: "Find benefits and programs",
   },
@@ -24,15 +30,19 @@ export const ONTARIO_SOURCES = [
     sourceId: "ontario-funding-finder",
     kind: "funding_finder",
     title: "Available funding opportunities from the Ontario Government",
-    summary: "Review Ontario's current funding list and apply through the official program process.",
-    sourceUrl: "https://www.ontario.ca/page/available-funding-opportunities-ontario-government",
-    expectedTitle: "Available funding opportunities from the Ontario Government",
+    summary:
+      "Review Ontario's current funding list and apply through the official program process.",
+    sourceUrl:
+      "https://www.ontario.ca/page/available-funding-opportunities-ontario-government",
+    expectedTitle:
+      "Available funding opportunities from the Ontario Government",
   },
   {
     sourceId: "serviceontario-location-finder",
     kind: null,
     title: "ServiceOntario locations, hours and contact",
-    summary: "Search official ServiceOntario locations and confirm hours and services before visiting.",
+    summary:
+      "Search official ServiceOntario locations and confirm hours and services before visiting.",
     sourceUrl: "https://www.ontario.ca/locations/serviceontario/",
     expectedTitle: "ServiceOntario locations, hours and contact",
   },
@@ -59,7 +69,8 @@ export async function fetchOntarioOfficialRecords(
         headers: { Accept: "text/html" },
         signal: AbortSignal.timeout(12_000),
       });
-      if (!response.ok) throw new SourceFetchError(`SOURCE_HTTP_${response.status}`);
+      if (!response.ok)
+        throw new SourceFetchError(`SOURCE_HTTP_${response.status}`);
       const contentType = response.headers.get("content-type") ?? "";
       if (!contentType.toLowerCase().includes("text/html"))
         throw new SourceFetchError("SOURCE_CONTENT_TYPE_CHANGED");
@@ -104,18 +115,28 @@ export async function fetchOntarioOfficialRecords(
 }
 
 class SourceFetchError extends Error {
-  constructor(readonly code: string) { super(code); }
+  constructor(readonly code: string) {
+    super(code);
+  }
 }
 
 function errorCode(error: unknown): string {
   if (error instanceof SourceFetchError) return error.code;
-  if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError"))
+  if (
+    error instanceof Error &&
+    (error.name === "TimeoutError" || error.name === "AbortError")
+  )
     return "SOURCE_TIMEOUT";
   if (error instanceof TypeError) return "SOURCE_NETWORK_ERROR";
   return "SOURCE_FETCH_FAILED";
 }
 
 async function sha256(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
 }

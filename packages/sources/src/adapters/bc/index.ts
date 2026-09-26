@@ -1,17 +1,26 @@
-import type { OfficialIngestRecord, OfficialIngestResult, OfficialRecordKind } from "../../official.js";
+import type {
+  OfficialIngestRecord,
+  OfficialIngestResult,
+  OfficialRecordKind,
+} from "../../official.js";
 
 const TERMS = "https://www2.gov.bc.ca/gov/content/home/copyright";
-const LICENCE = "https://www2.gov.bc.ca/gov/content/data/policy-standards/data-policies/open-data/open-government-licence-bc";
-const CATALOGUE = "https://catalogue.data.gov.bc.ca/dataset/service-bc-office-locations";
-const LAYER = "https://delivery.maps.gov.bc.ca/arcgis/rest/services/whse/bcgw_pub_whse_imagery_and_base_maps/MapServer/51";
+const LICENCE =
+  "https://www2.gov.bc.ca/gov/content/data/policy-standards/data-policies/open-data/open-government-licence-bc";
+const CATALOGUE =
+  "https://catalogue.data.gov.bc.ca/dataset/service-bc-office-locations";
+const LAYER =
+  "https://delivery.maps.gov.bc.ca/arcgis/rest/services/whse/bcgw_pub_whse_imagery_and_base_maps/MapServer/51";
 
 export const BC_SOURCES = [
   {
     sourceId: "bc-public-service-jobs",
     kind: "jobs_finder",
     title: "Current B.C. Government job postings",
-    summary: "Search BC Public Service postings and apply through the official Career Centre.",
-    sourceUrl: "https://www2.gov.bc.ca/gov/content/careers-myhr/job-seekers/current-job-postings",
+    summary:
+      "Search BC Public Service postings and apply through the official Career Centre.",
+    sourceUrl:
+      "https://www2.gov.bc.ca/gov/content/careers-myhr/job-seekers/current-job-postings",
     expectedTitle: "Current B.C. Government job postings",
     maxBytes: 1_000_000,
   },
@@ -19,7 +28,8 @@ export const BC_SOURCES = [
     sourceId: "bc-benefits-connector",
     kind: "benefits_finder",
     title: "B.C. Benefits Connector",
-    summary: "Explore provincial support programs and follow each official program's application instructions.",
+    summary:
+      "Explore provincial support programs and follow each official program's application instructions.",
     sourceUrl: "https://www2.gov.bc.ca/bcbenefitsconnector",
     expectedTitle: "B.C. Benefits Connector",
     maxBytes: 3_000_000,
@@ -28,7 +38,8 @@ export const BC_SOURCES = [
     sourceId: "bc-funding-finder",
     kind: "funding_finder",
     title: "B.C. funding opportunities",
-    summary: "Find provincial grants, bursaries, and loans through the official funding search.",
+    summary:
+      "Find provincial grants, bursaries, and loans through the official funding search.",
     sourceUrl: "https://www2.gov.bc.ca/gov/content/funding",
     expectedTitle: "Funding Opportunities",
     maxBytes: 1_000_000,
@@ -53,7 +64,12 @@ export async function fetchBcOfficialRecords(
 
   for (const finder of BC_SOURCES) {
     try {
-      const html = await fetchText(fetcher, finder.sourceUrl, "text/html", finder.maxBytes);
+      const html = await fetchText(
+        fetcher,
+        finder.sourceUrl,
+        "text/html",
+        finder.maxBytes,
+      );
       if (!html.toLowerCase().includes(finder.expectedTitle.toLowerCase()))
         throw new SourceFetchError("PAGE_IDENTITY_CHANGED");
       records.push({
@@ -87,19 +103,31 @@ export async function fetchBcOfficialRecords(
   try {
     const query = new URL(`${LAYER}/query`);
     query.searchParams.set("where", "1=1");
-    query.searchParams.set("outFields", "SEQUENCE_ID,OFFICE_CODE,OFFICE_NAME,PHYSICAL_ADDRESS,LOCALITY,WEBSITE_URL,LATITUDE,LONGITUDE");
+    query.searchParams.set(
+      "outFields",
+      "SEQUENCE_ID,OFFICE_CODE,OFFICE_NAME,PHYSICAL_ADDRESS,LOCALITY,WEBSITE_URL,LATITUDE,LONGITUDE",
+    );
     query.searchParams.set("returnGeometry", "false");
     query.searchParams.set("f", "json");
-    const payload = await fetchText(fetcher, query.toString(), "application/json", 3_000_000);
+    const payload = await fetchText(
+      fetcher,
+      query.toString(),
+      "application/json",
+      3_000_000,
+    );
     let parsed: unknown;
     try {
       parsed = JSON.parse(payload);
     } catch {
       throw new SourceFetchError("DIRECTORY_INVALID_JSON");
     }
-    if (!isObject(parsed) || !Array.isArray(parsed.features) ||
-        parsed.exceededTransferLimit === true || parsed.features.length >= 1_000 ||
-        isObject(parsed.error))
+    if (
+      !isObject(parsed) ||
+      !Array.isArray(parsed.features) ||
+      parsed.exceededTransferLimit === true ||
+      parsed.features.length >= 1_000 ||
+      isObject(parsed.error)
+    )
       throw new SourceFetchError("DIRECTORY_SCHEMA_CHANGED");
 
     const seen = new Set<string>();
@@ -108,13 +136,20 @@ export async function fetchBcOfficialRecords(
       const attrs = feature.attributes;
       const title = trimmed(attrs.OFFICE_NAME);
       const key = trimmed(attrs.OFFICE_CODE) || String(attrs.SEQUENCE_ID ?? "");
-      if (!title || !/^[A-Za-z0-9_-]{1,80}$/.test(key) || seen.has(key)) continue;
+      if (!title || !/^[A-Za-z0-9_-]{1,80}$/.test(key) || seen.has(key))
+        continue;
       seen.add(key);
-      const location = [trimmed(attrs.PHYSICAL_ADDRESS), trimmed(attrs.LOCALITY)]
-        .filter(Boolean).join(", ");
+      const location = [
+        trimmed(attrs.PHYSICAL_ADDRESS),
+        trimmed(attrs.LOCALITY),
+      ]
+        .filter(Boolean)
+        .join(", ");
       const website = trimmed(attrs.WEBSITE_URL);
-      const sourceUrl = website && /^https:\/\/(?:[^/]+\.)?gov\.bc\.ca\//i.test(website)
-        ? website : CATALOGUE;
+      const sourceUrl =
+        website && /^https:\/\/(?:[^/]+\.)?gov\.bc\.ca\//i.test(website)
+          ? website
+          : CATALOGUE;
       const latitude = coordinate(attrs.LATITUDE, -90, 90);
       const longitude = coordinate(attrs.LONGITUDE, -180, 180);
       records.push({
@@ -145,24 +180,36 @@ export async function fetchBcOfficialRecords(
     }
     if (seen.size === 0) throw new SourceFetchError("EMPTY_DIRECTORY");
   } catch (error) {
-    failedSources.push({ sourceId: "service-bc-office-locations", code: errorCode(error) });
+    failedSources.push({
+      sourceId: "service-bc-office-locations",
+      code: errorCode(error),
+    });
   }
 
   return { records, failedSources };
 }
 
 class SourceFetchError extends Error {
-  constructor(readonly code: string) { super(code); }
+  constructor(readonly code: string) {
+    super(code);
+  }
 }
 
-async function fetchText(fetcher: typeof fetch, url: string, type: string, maxBytes: number): Promise<string> {
+async function fetchText(
+  fetcher: typeof fetch,
+  url: string,
+  type: string,
+  maxBytes: number,
+): Promise<string> {
   const response = await fetcher(url, {
     headers: { Accept: type },
     signal: AbortSignal.timeout(12_000),
   });
-  if (!response.ok) throw new SourceFetchError(`SOURCE_HTTP_${response.status}`);
+  if (!response.ok)
+    throw new SourceFetchError(`SOURCE_HTTP_${response.status}`);
   const length = Number(response.headers.get("content-length"));
-  if (Number.isFinite(length) && length > maxBytes) throw new SourceFetchError("SOURCE_TOO_LARGE");
+  if (Number.isFinite(length) && length > maxBytes)
+    throw new SourceFetchError("SOURCE_TOO_LARGE");
   const body = await response.text();
   if (new TextEncoder().encode(body).byteLength > maxBytes)
     throw new SourceFetchError("SOURCE_TOO_LARGE");
@@ -180,7 +227,9 @@ function trimmed(value: unknown): string {
 function coordinate(value: unknown, min: number, max: number): number | null {
   if (value === null || value === undefined || value === "") return null;
   const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) && number >= min && number <= max ? number : null;
+  return Number.isFinite(number) && number >= min && number <= max
+    ? number
+    : null;
 }
 
 function expiry(now: Date): string {
@@ -189,13 +238,21 @@ function expiry(now: Date): string {
 
 function errorCode(error: unknown): string {
   if (error instanceof SourceFetchError) return error.code;
-  if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError"))
+  if (
+    error instanceof Error &&
+    (error.name === "TimeoutError" || error.name === "AbortError")
+  )
     return "SOURCE_TIMEOUT";
   if (error instanceof TypeError) return "SOURCE_NETWORK_ERROR";
   return "SOURCE_FETCH_FAILED";
 }
 
 async function sha256(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
 }

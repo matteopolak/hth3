@@ -12,16 +12,16 @@ The provincial adapters supply official discovery links for jobs, support, fundi
 
 Both adapters return `records` and per-source `failedSources`. They never produce a record after HTTP error, CAPTCHA/identity mismatch, oversized response, or malformed directory data. Successful records expire after seven days. The Worker ingestion flow sets last fetched and verified times, records errors, and marks omitted BC offices stale after a successful directory refresh. The public source API exposes freshness and verification timestamps so gaps remain visible.
 
-| Coverage | Source | Mode | Limit |
-| --- | --- | --- | --- |
-| BC jobs | [Current B.C. Government job postings](https://www2.gov.bc.ca/gov/content/careers-myhr/job-seekers/current-job-postings) | Official link | No individual vacancy import |
-| BC support | [B.C. Benefits Connector](https://www2.gov.bc.ca/bcbenefitsconnector) | Official link | No eligibility assertion |
-| BC funding | [B.C. funding opportunities](https://www2.gov.bc.ca/gov/content/funding) | Official link | No individual award/call import |
-| BC offices | [Service BC office locations](https://catalogue.data.gov.bc.ca/dataset/service-bc-office-locations) | Licensed ArcGIS data | Confirm hours and services at publisher |
-| Ontario jobs | [Ontario Public Service careers](https://www.ontario.ca/page/careers-ontario-public-service) | Official link | No individual vacancy import |
-| Ontario support | [Find benefits and programs](https://www.ontario.ca/page/find-benefits-and-programs) | Official link | No eligibility assertion |
-| Ontario funding | [Available funding opportunities](https://www.ontario.ca/page/available-funding-opportunities-ontario-government) | Official link | No individual grant status import |
-| Ontario offices | [ServiceOntario location finder](https://www.ontario.ca/locations/serviceontario/) | Official link | No office pins or hours import |
+| Coverage        | Source                                                                                                                   | Mode                 | Limit                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------- | --------------------------------------- |
+| BC jobs         | [Current B.C. Government job postings](https://www2.gov.bc.ca/gov/content/careers-myhr/job-seekers/current-job-postings) | Official link        | No individual vacancy import            |
+| BC support      | [B.C. Benefits Connector](https://www2.gov.bc.ca/bcbenefitsconnector)                                                    | Official link        | No eligibility assertion                |
+| BC funding      | [B.C. funding opportunities](https://www2.gov.bc.ca/gov/content/funding)                                                 | Official link        | No individual award/call import         |
+| BC offices      | [Service BC office locations](https://catalogue.data.gov.bc.ca/dataset/service-bc-office-locations)                      | Licensed ArcGIS data | Confirm hours and services at publisher |
+| Ontario jobs    | [Ontario Public Service careers](https://www.ontario.ca/page/careers-ontario-public-service)                             | Official link        | No individual vacancy import            |
+| Ontario support | [Find benefits and programs](https://www.ontario.ca/page/find-benefits-and-programs)                                     | Official link        | No eligibility assertion                |
+| Ontario funding | [Available funding opportunities](https://www.ontario.ca/page/available-funding-opportunities-ontario-government)        | Official link        | No individual grant status import       |
+| Ontario offices | [ServiceOntario location finder](https://www.ontario.ca/locations/serviceontario/)                                       | Official link        | No office pins or hours import          |
 
 ## How to change it
 
