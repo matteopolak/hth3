@@ -35,7 +35,7 @@ node scripts/seed-source-pack.mjs --target local --apply
 node scripts/seed-source-pack.mjs --target production --apply
 ```
 
-The script uses `INSERT ... ON CONFLICT` for official records and `INSERT OR IGNORE` for practice records. D1's remote SQL import rejects explicit `BEGIN`/`COMMIT`, so the generated file has no manual transaction wrapper; failed runs can be replayed safely. It deliberately does not refresh older source-adapter records or overwrite staff edits to practice issues.
+The script uses `INSERT ... ON CONFLICT` for official records and `INSERT OR IGNORE` for practice records. A replay applies all pack-owned official metadata, including corrected jurisdiction, source URL, external ID, terms status, and language; only the original `id` and `created_at` stay fixed. It clears any prior error marker on these manually reviewed rows so a corrected freshness state remains valid. D1's remote SQL import rejects explicit `BEGIN`/`COMMIT`, so the generated file has no manual transaction wrapper; failed runs can be replayed safely. It deliberately does not refresh older source-adapter records or overwrite staff edits to practice issues.
 
 ## Configuration and dependencies
 

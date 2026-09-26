@@ -22,6 +22,10 @@ if (args.includes("--help") || (apply && !["local", "production"].includes(targe
 
 const quote = (value) => value == null ? "NULL" : `'${String(value).replaceAll("'", "''")}'`;
 const row = (columns, values) => `(${columns.join(", ")}) VALUES (${values.map(quote).join(", ")})`;
+const updateFromExcluded = (columns) => columns
+  .filter((column) => column !== "id" && column !== "created_at")
+  .map((column) => `${column}=excluded.${column}`)
+  .join(", ");
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const now = new Date().toISOString();
 const current = Date.parse(pack.expiresAt) > Date.now();
@@ -44,14 +48,16 @@ for (const item of pack.records) {
   }
   const j = item.jurisdiction;
   const base = [item.title, item.publisher, item.url, j.level, j.code, j.name, j.municipalityCode ?? null, j.municipalityName ?? null, item.termsUrl];
+  const registryColumns = ["id", "origin", "name", "publisher", "source_url", "jurisdiction_level", "jurisdiction_code", "jurisdiction_name", "municipality_code", "municipality_name", "terms_url", "terms_status", "collection_mode", "verified_at", "expires_at", "freshness_state", "created_at", "updated_at"];
   sql.push(`INSERT INTO source_registry ${row(
-    ["id", "origin", "name", "publisher", "source_url", "jurisdiction_level", "jurisdiction_code", "jurisdiction_name", "municipality_code", "municipality_name", "terms_url", "terms_status", "collection_mode", "verified_at", "expires_at", "freshness_state", "created_at", "updated_at"],
+    registryColumns,
     [sourceId, "official_external", ...base, "permitted", "manual", checkedAt, expiresAt, itemFreshness, now, now],
-  )} ON CONFLICT(id) DO UPDATE SET name=excluded.name, publisher=excluded.publisher, source_url=excluded.source_url, terms_url=excluded.terms_url, verified_at=excluded.verified_at, expires_at=excluded.expires_at, freshness_state=excluded.freshness_state, updated_at=excluded.updated_at;`);
+  )} ON CONFLICT(id) DO UPDATE SET ${updateFromExcluded(registryColumns)}, last_error=NULL;`);
+  const recordColumns = ["id", "source_id", "origin", "external_id", "title", "summary", "source_url", "publisher", "jurisdiction_level", "jurisdiction_code", "jurisdiction_name", "municipality_code", "municipality_name", "terms_url", "terms_status", "language", "verified_at", "expires_at", "payload_hash", "evidence_url", "freshness_state", "created_at", "updated_at"];
   sql.push(`INSERT INTO source_records ${row(
-    ["id", "source_id", "origin", "external_id", "title", "summary", "source_url", "publisher", "jurisdiction_level", "jurisdiction_code", "jurisdiction_name", "municipality_code", "municipality_name", "terms_url", "terms_status", "language", "verified_at", "expires_at", "payload_hash", "evidence_url", "freshness_state", "created_at", "updated_at"],
+    recordColumns,
     [recordId, sourceId, "official_external", item.url, item.title, item.summary, item.url, item.publisher, j.level, j.code, j.name, j.municipalityCode ?? null, j.municipalityName ?? null, item.termsUrl, "permitted", "en", checkedAt, expiresAt, sha256(JSON.stringify(item)), item.url, itemFreshness, now, now],
-  )} ON CONFLICT(id) DO UPDATE SET title=excluded.title, summary=excluded.summary, source_url=excluded.source_url, publisher=excluded.publisher, terms_url=excluded.terms_url, verified_at=excluded.verified_at, expires_at=excluded.expires_at, payload_hash=excluded.payload_hash, evidence_url=excluded.evidence_url, freshness_state=excluded.freshness_state, updated_at=excluded.updated_at;`);
+  )} ON CONFLICT(id) DO UPDATE SET ${updateFromExcluded(recordColumns)}, last_error_code=NULL;`);
   if (item.kind) {
     const coordinates = item.coordinates;
     if (coordinates && (item.kind !== "service_location" || !Number.isFinite(coordinates.latitude) || !Number.isFinite(coordinates.longitude) || Math.abs(coordinates.latitude) > 90 || Math.abs(coordinates.longitude) > 180)) {
