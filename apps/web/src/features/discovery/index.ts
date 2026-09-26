@@ -61,6 +61,7 @@ interface Options {
   area: DiscoveryArea;
   locale: Locale;
   token: string | null;
+  onPrepare?: (recordId: string) => void;
 }
 
 const API = (
@@ -102,6 +103,9 @@ const copy = {
     freshness: "Freshness",
     unknown: "Unknown",
     official: "Open official site",
+    prepareApplication: "Prepare application",
+    prepareVisit: "Plan visit",
+    prepareParticipation: "Prepare participation",
     officialNote:
       "Check current details and complete any action on the publisher’s site. Envoy does not record external submissions.",
     noHandoff: "No verified official destination is available for this record.",
@@ -168,6 +172,9 @@ const copy = {
     freshness: "Actualité",
     unknown: "Inconnue",
     official: "Ouvrir le site officiel",
+    prepareApplication: "Préparer la candidature",
+    prepareVisit: "Planifier une visite",
+    prepareParticipation: "Préparer la participation",
     officialNote:
       "Vérifiez les détails actuels et effectuez toute démarche sur le site de l’éditeur. Envoy n’enregistre pas les soumissions externes.",
     noHandoff:
@@ -207,6 +214,7 @@ export function createDiscoveryPage({
   area,
   locale,
   token,
+  onPrepare,
 }: Options): HTMLElement {
   const text = copy[locale];
   const root = node("section", "discovery-page");
@@ -537,10 +545,25 @@ export function createDiscoveryPage({
       view.append(node("p", "discovery-muted", text.staleNote));
     const actions = node("div", "discovery-actions");
     if (item.handoff) {
+      if (item.origin === "official_external" && onPrepare) {
+        const prepareLabel =
+          item.area === "nearby"
+            ? text.prepareVisit
+            : item.area === "participation"
+              ? text.prepareParticipation
+              : text.prepareApplication;
+        actions.append(
+          action(
+            prepareLabel,
+            "discovery-button discovery-button-primary",
+            () => onPrepare(item.id),
+          ),
+        );
+      }
       actions.append(
         action(
           text.official,
-          "discovery-button discovery-button-primary",
+          `discovery-button ${onPrepare && item.origin === "official_external" ? "" : "discovery-button-primary"}`,
           () => void openOfficial(item),
         ),
       );

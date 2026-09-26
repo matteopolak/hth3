@@ -12,6 +12,8 @@ The Nearby area offers a list/map switch when records include verified coordinat
 
 Signed-in applicants can save a record and maintain up to 12 personal checklist steps. The view calls `/api/v1/discovery/saved` and passes `includeSamples=true` only after the person chooses to show practice records. Guest search works without a token; saving requires an applicant token.
 
+The shell can pass `onPrepare(recordId)` to route a permitted `official_external` record to Envoy’s external preparation page. Jobs, support, and funding use a “Prepare application” action; service locations and consultations use visit/participation wording. The publisher handoff remains a separate action. Practice records and records without a permitted official handoff do not show this preparation action.
+
 `createProfilePage({ locale, token })` loads the owner’s `/api/v1/profile`, résumé list, and applications. The form and document workspace appear in separate outlined sections on wide screens and stack on phones. Applicants can edit contact details, skills, education, and experience manually. The document area accepts a selected or dropped PDF/DOCX file; extraction shows literal suggestions alongside their source snippets. Choosing a suggestion changes the draft only. The applicant must save the profile. A separate action shares a selected résumé with a selected existing application through `PUT /api/v1/applications/{id}/resume`. Deleting a résumé also revokes its application links on the Worker.
 
 ## How to change it
