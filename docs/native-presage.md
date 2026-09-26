@@ -20,6 +20,8 @@ The SDK requires a physical iPhone for live camera acceptance. A generic-device 
 
 The app target pins `SmartSpectra` from `Presage-Security/SmartSpectra-Swift` at 3.3.0, targets iOS 17+, and includes `NSCameraUsageDescription`. `PRESAGE_API_KEY` is an Xcode build setting expanded into the app's `Info.plist`; the tracked project defaults it to empty so builds without the key show a manual accessibility option. Set the key through a private local build configuration or a protected build environment. Do not add the key or a populated configuration file to Git. Because the SDK runs on the device, a supplied API key is embedded in that signed app; for a production distribution with stronger credential isolation, use Presage's documented OAuth mode and a registered bundle ID.
 
+SmartSpectra ships a dynamic binary framework. The target keeps `@executable_path/Frameworks` in `LD_RUNPATH_SEARCH_PATHS` for Debug and Release so the installed app can load its embedded framework. When changing package linkage, check both the app bundle's `Frameworks/SmartSpectra.framework` and the app executable's `LC_RPATH` entries; a successful compile alone does not prove the app can launch.
+
 This feature uses the user's existing Presage free trial entitlement. The camera check starts only after an explicit tap; do not enable unattended measurements or paid upgrades. `envoy.presageConsent` and `envoy.calmWriting` are on-device `UserDefaults` keys.
 
 ## Dependencies
