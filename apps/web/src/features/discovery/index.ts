@@ -583,6 +583,7 @@ export function createDiscoveryPage({
       form.append(createDiscoveryAreaStructure({
         area,
         locale,
+        selectedLocation: location,
         onBrowse: () => {
           const search = root.querySelector<HTMLInputElement>(".discovery-input");
           search?.scrollIntoView({
