@@ -10,7 +10,7 @@ The repository uses a pnpm workspace for the Worker, public clients, and shared 
 
 Dependency lifecycle scripts stay disabled unless explicitly addressed under `allowBuilds` in `pnpm-workspace.yaml`. Exact esbuild and workerd versions required by Vitest/Wrangler are allowed to install their runtimes; the unused sharp build is explicitly denied.
 
-Shared TypeScript settings live in `packages/config/tsconfig/base.json`. Packages extend that config and own their checks; the root scripts recurse only into packages that provide the corresponding command. `pnpm smoke` applies local D1 migrations and exercises the Worker outbox across retries and a restart.
+Shared TypeScript settings live in `packages/config/tsconfig/base.json`. Packages extend that config and own their checks; the root scripts recurse only into packages that provide the corresponding command. `pnpm smoke` applies local D1 migrations and exercises outbox idempotency/persistence plus role and organization denial through the Worker. The Wrangler dry-run explicitly selects the top-level local configuration; production deploys must name `--env production`.
 
 ## How to change it
 

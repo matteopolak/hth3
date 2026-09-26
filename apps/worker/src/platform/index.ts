@@ -6,11 +6,25 @@ import {
   type D1Database,
   type R2Bucket,
 } from "@civicresolve/db/d1";
+import {
+  canPerformGlobalAction,
+  canPerformOwnerAction,
+  canPerformOrganizationAction,
+  isDomainAction,
+  isGlobalAction,
+  isOwnerAction,
+  ORGANIZATION_ACTIONS,
+  type DomainAction,
+} from "@civicresolve/domain/permissions";
+import { authenticateRequest, Auth0TokenError } from "../auth/index.js";
 
 interface Env {
   DB: D1Database;
   PRIVATE_ASSETS: R2Bucket;
   APP_ENV: "development" | "production";
+  DEV_AUTH_ENABLED?: string;
+  AUTH0_DOMAIN?: string;
+  AUTH0_AUDIENCE?: string;
   ALLOWED_ORIGINS?: string;
 }
 
@@ -49,11 +63,31 @@ const worker = {
             404,
             cors,
           );
+        if (url.pathname === "/api/v1/_local/smoke/authz") {
+          if (env.DEV_AUTH_ENABLED !== "true")
+            return jsonError(
+              "NOT_FOUND",
+              "Route not found.",
+              requestId,
+              404,
+              cors,
+            );
+          return handleLocalAuthorizationSmoke(request, env, requestId, cors);
+        }
         return handleLocalOutboxSmoke(request, url, env, requestId, cors);
       }
 
       return jsonError("NOT_FOUND", "Route not found.", requestId, 404, cors);
     } catch (error) {
+      if (error instanceof Auth0TokenError) {
+        return jsonError(
+          "UNAUTHENTICATED",
+          "A valid access token is required.",
+          requestId,
+          401,
+          responseCors,
+        );
+      }
       if (error instanceof IdempotencyConflictError) {
         return jsonError(
           "IDEMPOTENCY_CONFLICT",
@@ -164,6 +198,69 @@ async function handleLocalOutboxSmoke(
   }
 
   return jsonError("NOT_FOUND", "Route not found.", requestId, 404, cors);
+}
+
+async function handleLocalAuthorizationSmoke(
+  request: Request,
+  env: Env,
+  requestId: string,
+  cors: Headers,
+): Promise<Response> {
+  if (request.method !== "POST") {
+    return jsonError("METHOD_NOT_ALLOWED", "Use POST.", requestId, 405, cors);
+  }
+  const body = (await request.json().catch(() => null)) as {
+    action?: unknown;
+    targetOrganizationId?: unknown;
+  } | null;
+  if (
+    !body ||
+    !isDomainAction(body.action) ||
+    (isOrganizationAction(body.action) &&
+      (typeof body.targetOrganizationId !== "string" ||
+        body.targetOrganizationId.length === 0))
+  ) {
+    return jsonError(
+      "INVALID_REQUEST",
+      "Provide a valid action and target organization.",
+      requestId,
+      400,
+      cors,
+    );
+  }
+
+  const actor = await authenticateRequest(request, env);
+  if (!actor) {
+    return jsonError(
+      "UNAUTHENTICATED",
+      "A local test identity is required.",
+      requestId,
+      401,
+      cors,
+    );
+  }
+  const allowed = isOrganizationAction(body.action)
+    ? canPerformOrganizationAction(
+        actor,
+        body.action,
+        body.targetOrganizationId as string,
+      )
+    : isGlobalAction(body.action)
+      ? canPerformGlobalAction(actor, body.action)
+      : isOwnerAction(body.action)
+        ? canPerformOwnerAction(actor, body.action, actor.subject)
+        : false;
+  return json(
+    { apiVersion: API_VERSION, allowed, requestId },
+    allowed ? 200 : 403,
+    cors,
+  );
+}
+
+function isOrganizationAction(
+  action: DomainAction,
+): action is (typeof ORGANIZATION_ACTIONS)[number] {
+  return (ORGANIZATION_ACTIONS as readonly string[]).includes(action);
 }
 
 function corsHeaders(request: Request, env: Env): Headers | Response {

@@ -184,6 +184,9 @@ importers:
       '@civicresolve/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@civicresolve/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
     devDependencies:
       wrangler:
         specifier: 4.113.0
@@ -196,6 +199,8 @@ importers:
   packages/db: {}
 
   packages/design-tokens: {}
+
+  packages/domain: {}
 
   packages/i18n:
     dependencies:

@@ -7,7 +7,7 @@
     "node": ">=22.14.0"
   },
   "scripts": {
-    "lint": "prettier --check .github/workflows/check.yml apps/worker packages/config packages/contracts packages/db packages/i18n packages/design-tokens package.json pnpm-workspace.yaml tsconfig.json docs/README.md docs/workspace-and-ci.md docs/shared-contracts-and-locales.md docs/worker-platform.md",
+    "lint": "prettier --check .github/workflows/check.yml apps/worker packages/config packages/contracts packages/db packages/domain packages/i18n packages/design-tokens package.json pnpm-workspace.yaml tsconfig.json docs/README.md docs/workspace-and-ci.md docs/shared-contracts-and-locales.md docs/worker-platform.md docs/authorization.md",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm exec vitest run",
     "build": "pnpm -r --if-present build",

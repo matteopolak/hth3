@@ -5,6 +5,15 @@ workers_dev = true
 
 [vars]
 APP_ENV = "development"
+DEV_AUTH_ENABLED = "false"
+AUTH0_DOMAIN = "dev-ole6i03kzvf3yb8z.us.auth0.com"
+AUTH0_AUDIENCE = "https://civicresolve.example/api"
+
+[env.production.vars]
+APP_ENV = "production"
+DEV_AUTH_ENABLED = "false"
+AUTH0_DOMAIN = "dev-ole6i03kzvf3yb8z.us.auth0.com"
+AUTH0_AUDIENCE = "https://civicresolve.example/api"
 
 [[d1_databases]]
 binding = "DB"

@@ -8,11 +8,12 @@
     "migrations:apply:local": "node scripts/wrangler.mjs d1 migrations apply civicresolve-local --local",
     "smoke": "node scripts/smoke.mjs",
     "typecheck": "tsc --noEmit",
-    "build": "node scripts/wrangler.mjs deploy --dry-run"
+    "build": "node scripts/wrangler.mjs deploy --dry-run --env \"\""
   },
   "dependencies": {
     "@civicresolve/contracts": "workspace:*",
-    "@civicresolve/db": "workspace:*"
+    "@civicresolve/db": "workspace:*",
+    "@civicresolve/domain": "workspace:*"
   },
   "devDependencies": {
     "wrangler": "4.113.0"

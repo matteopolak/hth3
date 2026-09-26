@@ -12,6 +12,8 @@ Private R2 keys include purpose, organization, owner, record, and asset IDs. The
 
 The seeded Auth0 organization is `CivicResolve Toronto Sandbox (Fictional, unaffiliated)`, with geography Toronto, Ontario and `sample = 1`. Its sample posting says it is not an official City of Toronto or government vacancy. These records exercise the internal workflow and do not claim a government partner.
 
+Worker authentication is implemented in `apps/worker/src/auth/`. Auth0 JWT validation, exact role and API-permission checks, and the required intersection with D1 organization membership are described in [Auth0 and organization authorization](authorization.md). Applicant ownership is based on the token subject and does not require membership in an employer organization.
+
 `pnpm --filter @civicresolve/worker smoke` applies migrations and runs a local Worker against local D1. Its `/_local/smoke/` routes exist only when `APP_ENV=development`; the smoke script verifies retries and reads an event after restarting the Worker. This harness is not a resident submission endpoint. `pnpm check` runs the same smoke after formatting, typechecks, tests, and builds.
 
 ## How to change it
@@ -28,6 +30,7 @@ Add a forward-only migration for schema changes and update package-level D1 help
 - Tiger is provisioned behind Hyperdrive configuration `d9c7e05b5ab547be9355ac1e0085dae6`; the later integration will bind it as `HYPERDRIVE`. No database password is stored in this repository.
 - `ALLOWED_ORIGINS`: comma-separated origins accepted by API CORS. Local development permits localhost web/mobile origins when this is unset.
 - `APP_ENV`: `development` enables only the local smoke harness; production must use `production`.
+- Auth0's public issuer host and API audience are configured as non-secret Wrangler vars. Role grants and active organization membership are checked on the Worker; see [authorization configuration](authorization.md).
 - Wrangler local state and logs are stored under `apps/worker/.wrangler/` and ignored by Git.
 
 ## Dependencies

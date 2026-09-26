@@ -18,6 +18,15 @@ await run("node", [
   "civicresolve-local",
   "--local",
 ]);
+await run("node", [
+  "scripts/wrangler.mjs",
+  "d1",
+  "execute",
+  "civicresolve-local",
+  "--local",
+  "--file",
+  "scripts/local-authz-seed.sql",
+]);
 
 try {
   let child = await startWorker();
@@ -34,6 +43,48 @@ try {
       "retry reused the original event ID",
     );
     assert(retry.body.replayed === true, "retry was marked as a replay");
+    await assertAuthorization(
+      "dev-civic-staff",
+      "feedback:read_organization",
+      "org_43G1B1RhPwac7EjS",
+      200,
+    );
+    await assertAuthorization(
+      "dev-civic-staff",
+      "feedback:read_organization",
+      "org_local_other",
+      403,
+    );
+    await assertAuthorization(
+      "dev-other-civic-staff",
+      "feedback:read_organization",
+      "org_43G1B1RhPwac7EjS",
+      403,
+    );
+    await assertAuthorization(
+      "dev-applicant",
+      "feedback:read_organization",
+      "org_43G1B1RhPwac7EjS",
+      403,
+    );
+    await assertAuthorization(
+      "dev-applicant",
+      "application:create_own",
+      null,
+      200,
+    );
+    await assertAuthorization(
+      "dev-hiring-reviewer",
+      "application:review_organization",
+      "org_43G1B1RhPwac7EjS",
+      200,
+    );
+    await assertAuthorization(
+      "dev-hiring-reviewer",
+      "feedback:read_organization",
+      "org_43G1B1RhPwac7EjS",
+      403,
+    );
     await stopWorker(child);
     child = await startWorker();
     await waitForHealth(child);
@@ -48,6 +99,9 @@ try {
     );
     console.log(
       "Local D1 migration and Worker outbox smoke passed: retry was idempotent and the event survived a Worker restart.",
+    );
+    console.log(
+      "Local authorization smoke passed using fixed development principals: allowed sandbox staff and applicant-owner actions; denied cross-organization, cross-role, and applicant staff access. No real Auth0 token was used.",
     );
   } finally {
     await stopWorker(child);
@@ -69,6 +123,8 @@ async function startWorker() {
       String(port),
       "--persist-to",
       ".wrangler/state",
+      "--var",
+      "DEV_AUTH_ENABLED:true",
     ],
     {
       cwd: workerDirectory,
@@ -85,6 +141,31 @@ async function startWorker() {
   child.stderr.on("data", capture);
   child.diagnostics = () => diagnostics;
   return child;
+}
+
+async function assertAuthorization(
+  token,
+  action,
+  targetOrganizationId,
+  status,
+) {
+  const response = await fetch(`${baseUrl}/api/v1/_local/smoke/authz`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ action, targetOrganizationId }),
+  });
+  const body = await response.json();
+  assert(
+    response.status === status,
+    `${token} ${action} expected ${status}, got ${response.status}`,
+  );
+  assert(
+    body.allowed === (status === 200),
+    `${token} ${action} returned unexpected authorization decision`,
+  );
 }
 
 async function waitForHealth(child) {
