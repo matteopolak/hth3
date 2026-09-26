@@ -4,7 +4,7 @@
 
 The guest feedback form can start a short, conversational ElevenLabs voice session. The guide asks what happened and what would improve the situation; the resident reviews the captured words before the existing feedback API submits anything.
 
-Live status (2026-09-26): a seven-day ElevenAgents Read API key with a 5,000-credit cap is installed as a production Worker secret and expires on October 3. The signed-URL request currently receives HTTP 401 from ElevenLabs, so production voice intake is unavailable until the key is corrected and a real session is accepted. Typed feedback remains available.
+Live status (2026-09-26): a seven-day ElevenAgents Write API key with a 5,000-credit cap is installed as a production Worker secret and expires on October 3. The production Worker returned a signed URL after the key scope was updated. A complete microphone conversation, transcript review, and feedback submission still need live acceptance. Typed feedback remains available.
 
 ## How it works
 
@@ -46,7 +46,7 @@ The current agent speaks English. The route accepts `fr` so the client can retai
 - `DB`: D1 database with feedback migration `0005_feedback.sql` applied.
 - `ALLOWED_ORIGINS`: includes the public web origin for the browser request.
 
-The production secret is present; rotate it with `wrangler secret put ELEVENLABS_API_KEY --env production` if ElevenLabs reports an invalid, expired, or disabled key. Do not place the key in `wrangler.toml` or `.dev.vars` in Git. The current CLI OAuth token can manage the agent but cannot mint a service-account key on this Creator workspace.
+The production secret is present. The provider returned `missing_permissions` for ElevenAgents Read; the existing key needed ElevenAgents Write to issue signed URLs. All unrelated scopes remain No Access. Rotate the key with `wrangler secret put ELEVENLABS_API_KEY --env production` if it expires or is disabled. Do not place it in `wrangler.toml` or `.dev.vars` in Git. The current CLI OAuth token can manage the agent but cannot mint a service-account key on this Creator workspace.
 
 ## Dependencies
 
