@@ -118,6 +118,26 @@ describe("Auth0 access token verification", () => {
       ),
     ).rejects.toBeInstanceOf(Auth0TokenError);
   });
+
+  it("rejects malformed signature encoding as an authentication error", async () => {
+    const valid = await signToken({
+      iss: `${DOMAIN}/`,
+      aud: AUDIENCE,
+      sub: "auth0|demo",
+      exp: NOW + 3600,
+    });
+    const [header, payload] = valid.split(".");
+    const malformed = `${header}.${payload}.A`;
+
+    await expect(
+      verifyAuth0Token(
+        malformed,
+        { domain: DOMAIN, audience: AUDIENCE },
+        testJwks(),
+        NOW,
+      ),
+    ).rejects.toBeInstanceOf(Auth0TokenError);
+  });
 });
 
 function testJwks(): Auth0JwksClient {
