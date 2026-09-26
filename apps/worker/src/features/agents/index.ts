@@ -395,7 +395,12 @@ async function sendMessage(
       proposal = outcome.proposal;
     }
   }
-  if (toolResult && !proposal && !feedbackDuplicateStatus(toolResult)) {
+  if (
+    toolResult &&
+    !proposal &&
+    !feedbackDuplicateStatus(toolResult) &&
+    instruction.tool?.name !== "prepare_feedback_evidence_upload"
+  ) {
     const result = toolResult as { status?: number; data?: unknown };
     if (result.status && result.status < 400 && context.env.AI) {
       try {
@@ -585,6 +590,20 @@ async function callTool(
       "Tool arguments are too large.",
       400,
     );
+  let prepared: ReturnType<typeof prepareTool>;
+  try {
+    prepared = prepareTool(
+      name,
+      args,
+      conversation.mode,
+      conversation.organization_id,
+      conversation.id,
+    );
+  } catch (error) {
+    if (error instanceof ToolInputError)
+      return featureError(context, "INVALID_TOOL_INPUT", error.message, 400);
+    throw error;
+  }
   if (name === "prepare_feedback_evidence_upload") {
     const pending = await context.env.DB.prepare(
       `SELECT id FROM agent_proposals
@@ -600,20 +619,6 @@ async function callTool(
         "Prepare a feedback preview before attaching evidence.",
         409,
       );
-  }
-  let prepared: ReturnType<typeof prepareTool>;
-  try {
-    prepared = prepareTool(
-      name,
-      args,
-      conversation.mode,
-      conversation.organization_id,
-      conversation.id,
-    );
-  } catch (error) {
-    if (error instanceof ToolInputError)
-      return featureError(context, "INVALID_TOOL_INPUT", error.message, 400);
-    throw error;
   }
   if (prepared.tool.access === "read") {
     const result = await executeTool(

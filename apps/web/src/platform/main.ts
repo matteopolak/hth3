@@ -42,7 +42,7 @@ import "../features/feedback/feedback.css";
 
 type Page = "assistant" | "feedback" | "applications" | "employee" | "discovery" | "profile" | "signin" | "programs" | "external-preparation";
 type EmployeePage = "assistant" | "feedback" | "applications";
-type StaffView = "issues" | "overview" | "themes" | "taxonomy" | "hiring" | "applicants" | "analytics" | "audit" | "views" | "reports" | "settings";
+type StaffView = "issues" | "overview" | "themes" | "taxonomy" | "hiring" | "applicants" | "analytics" | "audit" | "views" | "reports" | "settings" | "sources";
 type ChatMode = "resident" | "employee";
 
 interface ChatMessage {
@@ -462,9 +462,7 @@ function navigation(): HTMLElement {
       programButton("sponsor", "sidebar.programSponsor", "landmark"),
     );
     if (capabilities?.applicantReview) nav.append(staffViewAction("applicants", "users", "sidebar.applicants"));
-    if (capabilities?.sourceManage) nav.append(
-      sidebarAction("files", t("sidebar.sources"), () => void openPluginTool("employee", "list_sources")),
-    );
+    if (capabilities?.sourceManage) nav.append(staffViewAction("sources", "files", "sidebar.sources"));
     if (capabilities?.taxonomyManage) nav.append(staffViewAction("taxonomy", "taxonomy", "sidebar.taxonomy"));
     if (capabilities?.auditRead) nav.append(staffViewAction("audit", "activity", "sidebar.analytics", state.locale === "fr" ? "Journal d’activité" : "Activity log"));
     if (capabilities) nav.append(staffViewAction("settings", "user", "sidebar.profile", state.locale === "fr" ? "Paramètres" : "Settings"));
