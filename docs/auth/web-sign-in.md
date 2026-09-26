@@ -28,6 +28,8 @@ See `apps/web/.env.example`. Vite reads the following build-time public values:
 
 Local callback: `http://localhost:5173/callback`. Local logout return and web origin: `http://localhost:5173`. These exact URLs are allowlisted on the existing SPA application. The production equivalents depend on the deployed web origin and must be added to Auth0 before a production build is published. No client secret belongs in Vite variables or the repository.
 
+The hosted Auth0 SPA display name is `envoy`. The existing staff organization retains its stable Auth0 ID and slug; its login display name is `Envoy Staff Workspace`. Those labels are tenant settings, so changing the product name again requires an Auth0 CLI update as well as repository copy edits.
+
 ## Dependencies
 
 `@auth0/auth0-spa-js`, the configured Auth0 SPA application and organization, the Worker Auth0 JWT verifier and D1 membership table, and browser Web Crypto/redirect support.
