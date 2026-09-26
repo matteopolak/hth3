@@ -16,6 +16,8 @@ Apply pending D1 migrations before deploying code that reads new tables: from `a
 
 Keep `VITE_API_BASE_URL` unset for a same-origin web build; set it only to intentionally target another API. If the Worker URL changes, update the Auth0 allowlists, native Release configuration, and `ALLOWED_ORIGINS`. Never place service secrets in a `VITE_` variable or the repository. Wrangler/Cloudflare deployment history provides rollback for the Worker.
 
+For a live failure, check `./node_modules/.bin/wrangler tail --env production` from `apps/worker` and inspect the request ID, D1 migration state, and relevant outbox row. Avoid printing private receipts, voice URLs, or uploaded evidence while troubleshooting. Restore a known good version through Cloudflare's Worker deployment history if a code rollback is needed; database migrations require a separate forward repair.
+
 ## Configuration
 
 `apps/worker/wrangler.toml` defines the asset directory, SPA and API routing, public binding IDs, Auth0 audience/domain, cron, and CORS origins. `FEEDBACK_ABUSE_HMAC_KEY` and `ELEVENLABS_API_KEY` are existing Worker secrets. The web build uses the public `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, `VITE_AUTH0_AUDIENCE`, and `VITE_AUTH0_STAFF_ORGANIZATION_ID` settings, with defaults in `apps/web/src/platform/auth0.ts`. `pnpm-workspace.yaml` enforces a strict two-week minimum package release age.
