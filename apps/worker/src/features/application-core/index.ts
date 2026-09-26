@@ -135,7 +135,10 @@ async function listPublicPostings(context: FeatureContext): Promise<Response> {
     `SELECT p.id, p.organization_id, o.display_name AS organization_name,
        p.title, p.description, p.location_name, p.sample
      FROM postings AS p JOIN organizations AS o ON o.id = p.organization_id
-     WHERE p.status = 'published' AND p.sample = 1 AND o.sample = 1
+     WHERE p.status = 'published' AND (
+       (p.sample = 1 AND o.sample = 1) OR
+       (p.sample = 0 AND o.sample = 0 AND o.verification_status = 'verified')
+     )
      ORDER BY p.created_at DESC LIMIT 50`,
   ).all<PostingRow>();
   return featureJson(context, {
@@ -187,7 +190,7 @@ async function submitApplication(
     return featureError(
       context,
       "INVALID_REQUEST",
-      "Choose the sample posting, provide answers, and confirm the application before submission.",
+      "Choose a posting, provide answers, and confirm the application before submission.",
       400,
     );
   }
@@ -245,12 +248,13 @@ async function submitApplication(
       `INSERT OR IGNORE INTO applications (
           id, posting_id, applicant_subject, answers_json, status, sample,
           submitted_at, updated_at
-        ) VALUES (?, ?, ?, ?, 'submitted', 1, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, 'submitted', ?, ?, ?)`,
     ).bind(
       applicationId,
       posting.id,
       actor.subject,
       JSON.stringify(body.answers),
+      posting.sample,
       now,
       now,
     ),
@@ -265,7 +269,7 @@ async function submitApplication(
       actor.subject,
       posting.organization_id,
       applicationId,
-      JSON.stringify({ status: "submitted", sample: true }),
+      JSON.stringify({ status: "submitted", sample: posting.sample === 1 }),
       now,
     ),
     outboxStatement(context.env.DB, {
@@ -278,7 +282,7 @@ async function submitApplication(
       aggregateType: "application",
       aggregateId: applicationId,
       idempotencyKey: eventKey,
-      payload: { status: "submitted", sample: true },
+      payload: { status: "submitted", sample: posting.sample === 1 },
     }),
     idempotencyStatement(context.env.DB, {
       key: idempotencyKey,
@@ -299,7 +303,7 @@ async function submitApplication(
     return featureError(
       context,
       "APPLICATION_EXISTS",
-      "An application already exists for this sample posting.",
+      "An application already exists for this posting.",
       409,
     );
   return featureJson(
@@ -405,7 +409,7 @@ async function listOrganizationApplications(
     `SELECT a.id, a.posting_id, a.applicant_subject, a.answers_json, a.status,
        a.sample, a.submitted_at, a.updated_at, p.title, p.organization_id
      FROM applications AS a JOIN postings AS p ON p.id = a.posting_id
-     WHERE p.organization_id = ? AND p.sample = 1
+     WHERE p.organization_id = ?
      ORDER BY a.submitted_at DESC LIMIT 100`,
   )
     .bind(organizationId)
@@ -565,7 +569,10 @@ async function findPublicPosting(
       `SELECT p.id, p.organization_id, o.display_name AS organization_name,
         p.title, p.description, p.location_name, p.sample
        FROM postings AS p JOIN organizations AS o ON o.id = p.organization_id
-       WHERE p.id = ? AND p.status = 'published' AND p.sample = 1 AND o.sample = 1`,
+       WHERE p.id = ? AND p.status = 'published' AND (
+         (p.sample = 1 AND o.sample = 1) OR
+         (p.sample = 0 AND o.sample = 0 AND o.verification_status = 'verified')
+       )`,
     )
     .bind(postingId)
     .first<PostingRow>();
@@ -597,7 +604,7 @@ async function findOrganizationApplication(
       `SELECT a.id, a.posting_id, a.applicant_subject, a.answers_json, a.status,
         a.sample, a.submitted_at, a.updated_at, p.title, p.organization_id
        FROM applications AS a JOIN postings AS p ON p.id = a.posting_id
-       WHERE a.id = ? AND p.organization_id = ? AND p.sample = 1`,
+       WHERE a.id = ? AND p.organization_id = ?`,
     )
     .bind(applicationId, organizationId)
     .first<ApplicationRow>();
@@ -610,7 +617,7 @@ function publicPostingView(posting: PostingRow) {
     title: posting.title,
     description: posting.description,
     location: posting.location_name,
-    sample: true as const,
+    sample: posting.sample === 1,
   };
 }
 
@@ -620,7 +627,7 @@ function applicantApplicationView(application: ApplicationRow) {
     postingId: application.posting_id,
     postingTitle: application.title,
     status: application.status,
-    sample: true as const,
+    sample: application.sample === 1,
     submittedAt: application.submitted_at,
     updatedAt: application.updated_at,
     answers: JSON.parse(application.answers_json) as Record<string, string>,
