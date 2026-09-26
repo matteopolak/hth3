@@ -36,8 +36,12 @@ The local authorization smoke seeds only local D1 state from `apps/worker/script
 - `permissions` (or standard `scope`): exact API grants configured with Auth0 RBAC.
 - `APP_ENV`: `development` or `production`; production disables the local test identities.
 - `DEV_AUTH_ENABLED`: local smoke override only. Keep false in checked-in Wrangler vars and production.
-- Auth0 client IDs, callbacks, API scopes, Action, organization, and role membership are provisioned in the Auth0 tenant; credentials are not stored in this repository. Web callback is `http://localhost:5173/callback`; native callback is `civicresolve://auth/callback`.
-- The fictional staff sandbox uses Auth0 organization `org_43G1B1RhPwac7EjS` and D1 organization `civicresolve-toronto-sandbox`. It is labeled fictional and unaffiliated; it is not a government account.
+- Auth0 client IDs, callbacks, API scopes, Action, organization, and role membership are provisioned in the Auth0 tenant; credentials are not stored in this repository. Web callbacks are `http://localhost:5173/callback` and `https://envoy-web.pages.dev/callback`; native callback is `civicresolve://auth/callback`.
+- The staff sandbox uses Auth0 organization `org_43G1B1RhPwac7EjS` and a matching production D1 `organizations.id` and `auth0_org_id`. A sandbox staff member also needs a matching `organization_memberships` row with the intended D1 role. The workspace is unaffiliated with a government account.
+
+## Live acceptance status
+
+The production D1 sandbox membership and its organization admin Auth0 role were checked on September 26, 2026. The tenant's post-login Action and API permissions were also checked. A real staff access token and one allowed plus one denied Worker request have not yet been verified: Auth0's organization-scoped Universal Login requests the test member's credentials, which were not available to the automated run. Keep the live-auth issue open until those requests complete with a real token.
 
 ## Dependencies
 
