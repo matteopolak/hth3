@@ -15,6 +15,7 @@ export async function enforceGuestAbuseLimit(
   request: Request,
   context: FeedbackContext,
   scope: AbuseScope,
+  options: { bucketNamespace?: string } = {},
 ): Promise<Response | null> {
   const secret = context.env.FEEDBACK_ABUSE_HMAC_KEY;
   if (!secret || secret.length < 32) {
@@ -27,7 +28,13 @@ export async function enforceGuestAbuseLimit(
   }
 
   const address = request.headers.get("CF-Connecting-IP")?.trim() || "unknown";
-  const bucketHash = await hmacHex(secret, `feedback-abuse:v1:${address}`);
+  const bucketNamespace = options.bucketNamespace
+    ? `${options.bucketNamespace}:`
+    : "";
+  const bucketHash = await hmacHex(
+    secret,
+    `feedback-abuse:v1:${bucketNamespace}${address}`,
+  );
   const windowStart = Math.floor(Date.now() / ONE_HOUR_MS) * ONE_HOUR_MS;
   await context.env.DB.prepare(
     "DELETE FROM feedback_abuse_counters WHERE window_started_at < ?",

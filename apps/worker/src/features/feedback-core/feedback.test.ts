@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  areStrongFeedbackDuplicates,
   canStaffRecordOutcome,
   canStaffRequestDetails,
   canResidentReopenFeedback,
   canTransitionFeedback,
   isFeedbackCategory,
+  normalizeFeedbackDuplicateText,
   preserveFeedbackText,
 } from "@civicresolve/domain/feedback";
 import type {
@@ -51,6 +53,108 @@ describe("feedback domain rules", () => {
   it("accepts only the routed feedback categories", () => {
     expect(isFeedbackCategory("other_or_unsure")).toBe(true);
     expect(isFeedbackCategory("made_up_department")).toBe(false);
+  });
+
+  it("matches only substantial, near-identical normalized descriptions", () => {
+    const original =
+      "The pedestrian crossing signal at Queen Street and Lansdowne Avenue stays green for only a few seconds each evening.";
+    const equivalent =
+      "The pedestrian crossing signal at Queen St. and Lansdowne Avenue stays green for only a few seconds each evening.";
+    const distinct =
+      "The pedestrian crossing signal at Queen Street and Lansdowne Avenue is broken, and cars do not stop for people walking.";
+
+    expect(
+      normalizeFeedbackDuplicateText("Broken light on the road"),
+    ).toBeNull();
+    expect(areStrongFeedbackDuplicates(original, equivalent)).toBe(true);
+    expect(areStrongFeedbackDuplicates(original, distinct)).toBe(false);
+    expect(
+      areStrongFeedbackDuplicates(original, "Broken light on the road"),
+    ).toBe(false);
+  });
+});
+
+describe("guest feedback duplicate checks", () => {
+  const repeatedReport =
+    "The pedestrian crossing signal at Queen Street and Lansdowne Avenue stays green for only a few seconds each evening.";
+
+  it("returns only the matching case status from the preview endpoint", async () => {
+    const store = new GuestDuplicateStore([
+      {
+        original_text:
+          "The pedestrian crossing signal at Queen St. and Lansdowne Avenue stays green for only a few seconds each evening.",
+        status: "in_review",
+      },
+    ]);
+    const path = "/api/v1/feedback/duplicate-check";
+    const response = await handleFeedbackRequest(
+      guestFeedbackRequest(path, {
+        message: repeatedReport,
+        municipalityId: "3520005",
+      }),
+      new URL("https://example.test/api/v1/feedback/duplicate-check"),
+      store.context(),
+    );
+
+    expect(response?.status).toBe(200);
+    const body = (await response!.json()) as Record<string, unknown>;
+    expect(body).toMatchObject({ duplicate: { status: "in_review" } });
+    expect(body).not.toHaveProperty("submission");
+    expect(body).not.toHaveProperty("receiptToken");
+    expect(JSON.stringify(body)).not.toContain("Queen");
+    expect(JSON.stringify(body)).not.toContain("fb_");
+  });
+
+  it("does not search for a duplicate for short descriptions", async () => {
+    const store = new GuestDuplicateStore([
+      { original_text: "The crossing light is broken.", status: "submitted" },
+    ]);
+    const response = await handleFeedbackRequest(
+      guestFeedbackRequest("/api/v1/feedback/duplicate-check", {
+        message: "The crossing light is broken.",
+        municipalityId: "3520005",
+      }),
+      new URL("https://example.test/api/v1/feedback/duplicate-check"),
+      store.context(),
+    );
+
+    expect(response?.status).toBe(200);
+    expect(await response!.json()).toMatchObject({ duplicate: null });
+    expect(store.duplicateQueryCount).toBe(0);
+  });
+
+  it("returns a status-only duplicate outcome at creation", async () => {
+    const store = new GuestDuplicateStore([
+      { original_text: repeatedReport, status: "waiting_on_resident" },
+    ]);
+    const path = "/api/v1/feedback";
+    const response = await handleFeedbackRequest(
+      guestFeedbackRequest(
+        path,
+        {
+          message: repeatedReport,
+          municipalityId: "3520005",
+          sandboxAcknowledged: true,
+        },
+        {
+          "Idempotency-Key": "duplicate-submit-test-01",
+          "X-Receipt-Token": "ab".repeat(32),
+        },
+      ),
+      new URL("https://example.test/api/v1/feedback"),
+      store.context(),
+    );
+
+    expect(response?.status).toBe(200);
+    const body = (await response!.json()) as Record<string, unknown>;
+    expect(body).toMatchObject({
+      result: "duplicate",
+      created: false,
+      duplicate: { status: "waiting_on_resident" },
+    });
+    expect(body).not.toHaveProperty("submission");
+    expect(body).not.toHaveProperty("receiptToken");
+    expect(store.batchCount).toBe(0);
   });
 });
 
@@ -554,6 +658,114 @@ describe("guest abuse limits", () => {
     expect(rateLimitBindings).not.toContain(edgeAddress);
   });
 });
+
+class GuestDuplicateStore {
+  duplicateQueryCount = 0;
+  batchCount = 0;
+  private readonly candidates: Array<{
+    original_text: string;
+    status: FeedbackRow["status"];
+    organization_id: string;
+    municipality_csd_uid: string;
+    category: string;
+    created_at: string;
+  }>;
+
+  constructor(
+    candidates: Array<{
+      original_text: string;
+      status: FeedbackRow["status"];
+    }>,
+  ) {
+    this.candidates = candidates.map((candidate) => ({
+      ...candidate,
+      organization_id: "org_43G1B1RhPwac7EjS",
+      municipality_csd_uid: "3520005",
+      category: "other_or_unsure",
+      created_at: new Date().toISOString(),
+    }));
+  }
+
+  context(): FeedbackContext {
+    const store = this;
+    const database = {
+      prepare(query: string) {
+        let values: unknown[] = [];
+        const statement = {
+          bind(...bound: unknown[]) {
+            values = bound;
+            return statement;
+          },
+          async first<Row>() {
+            if (query.includes("FROM feedback_destinations AS d"))
+              return {
+                organization_id: "org_43G1B1RhPwac7EjS",
+                routing_label: "General review (fictional Toronto sandbox)",
+                sample: 1,
+                municipality_csd_uid: "3520005",
+                municipality_name: "Toronto",
+                province_name: "Ontario",
+              } as Row;
+            if (query.includes("INSERT INTO feedback_abuse_counters"))
+              return { request_count: 1 } as Row;
+            return null;
+          },
+          async all<Row>() {
+            if (query.includes("SELECT original_text, status")) {
+              store.duplicateQueryCount += 1;
+              return {
+                results: store.candidates.filter(
+                  (candidate) =>
+                    candidate.organization_id === values[0] &&
+                    candidate.municipality_csd_uid === values[1] &&
+                    candidate.category === values[2] &&
+                    candidate.created_at >= String(values[3]),
+                ) as Row[],
+                success: true,
+                meta: emptyMeta(),
+              };
+            }
+            return { results: [] as Row[], success: true, meta: emptyMeta() };
+          },
+          async run() {
+            return { success: true, meta: emptyMeta() };
+          },
+        };
+        return statement as unknown as D1PreparedStatement;
+      },
+      async batch() {
+        store.batchCount += 1;
+        return [];
+      },
+    };
+    return {
+      env: {
+        DB: database as unknown as D1Database,
+        PRIVATE_ASSETS: {} as R2Bucket,
+        FEEDBACK_ABUSE_HMAC_KEY: "test-only-hmac-key-never-used-in-production",
+        APP_ENV: "development",
+      },
+      requestId: "test-request",
+      cors: new Headers(),
+    };
+  }
+}
+
+function guestFeedbackRequest(
+  path: string,
+  body: unknown,
+  headers: Record<string, string> = {},
+): Request {
+  return new Request(new URL(path, "https://example.test"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "CF-Connecting-IP": "203.0.113.5",
+      ...headers,
+    },
+    body: JSON.stringify(body),
+  });
+}
 
 class FeedbackStore {
   readonly submission: FeedbackRow & { organization_id: string };

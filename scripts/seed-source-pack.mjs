@@ -26,7 +26,7 @@ const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const now = new Date().toISOString();
 const current = Date.parse(pack.expiresAt) > Date.now();
 const freshness = current ? "current" : "stale";
-const sql = ["PRAGMA foreign_keys = ON;", "BEGIN TRANSACTION;"];
+const sql = ["PRAGMA foreign_keys = ON;"];
 const seen = new Set();
 
 for (const item of pack.records) {
@@ -68,7 +68,6 @@ for (const issue of practice.issues) {
     [`${issue.id}-initial`, issue.id, "resident", issue.text, issue.createdAt],
   )};`);
 }
-sql.push("COMMIT;");
 const sqlText = `${sql.join("\n")}\n`;
 
 if (out) writeFileSync(resolve(out), sqlText);

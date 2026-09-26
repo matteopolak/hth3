@@ -56,6 +56,14 @@ export interface ReceiptCredentials {
   receiptToken: string;
 }
 
+export interface FeedbackDuplicate {
+  status: FeedbackStatus;
+}
+
+export type FeedbackSubmitResponse =
+  | { submission: FeedbackClientReceipt; receiptToken: string }
+  | { result: "duplicate"; created: false; duplicate: FeedbackDuplicate };
+
 export interface ConversationCredentials {
   accessToken?: string;
   conversationToken?: string;
@@ -223,6 +231,7 @@ export const api = {
     decision: "approve" | "reject",
     credentials: ConversationCredentials,
     sandboxAcknowledged = false,
+    duplicateOverride = false,
   ) =>
     request<{ proposal: AgentProposal; result?: unknown }>(
       `/agent/conversations/${encodeURIComponent(id)}/proposals/${encodeURIComponent(proposalId)}/${decision}`,
@@ -230,7 +239,9 @@ export const api = {
         method: "POST",
         headers: conversationHeaders(credentials),
         body:
-          decision === "approve" ? { approved: true, sandboxAcknowledged } : {},
+          decision === "approve"
+            ? { approved: true, sandboxAcknowledged, duplicateOverride }
+            : {},
       },
     ),
   getEmergencyGuidance: async (locale: Locale) => {
@@ -254,13 +265,23 @@ export const api = {
     return response;
   },
   getPostings: () => request<{ postings: PublicPostingView[] }>("/postings"),
+  checkFeedbackDuplicate: (
+    message: string,
+    municipalityId: string,
+    category?: string,
+  ) =>
+    request<{ duplicate: FeedbackDuplicate | null }>("/feedback/duplicate-check", {
+      method: "POST",
+      body: { message, municipalityId, ...(category ? { category } : {}) },
+    }),
   submitFeedback: (
     message: string,
     whatWouldImprove: string,
     credentials: ReceiptCredentials,
     locale: Locale,
+    duplicateOverride = false,
   ) =>
-    request<{ submission: FeedbackClientReceipt; receiptToken: string }>(
+    request<FeedbackSubmitResponse>(
       "/feedback",
       {
         method: "POST",
@@ -273,6 +294,7 @@ export const api = {
           whatWouldImprove,
           municipalityId: "3520005",
           sandboxAcknowledged: true,
+          duplicateOverride,
           locale,
         },
       },

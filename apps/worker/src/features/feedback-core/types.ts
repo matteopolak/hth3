@@ -19,6 +19,18 @@ export interface GuestFeedbackCreateBody {
   locale?: unknown;
   category?: unknown;
   evidence?: unknown;
+  duplicateOverride?: unknown;
+}
+
+export interface GuestFeedbackDuplicateCheckBody {
+  message?: unknown;
+  municipalityId?: unknown;
+  category?: unknown;
+}
+
+export interface FeedbackDuplicateCandidateRow {
+  original_text: string;
+  status: FeedbackStatus;
 }
 
 export interface FeedbackMessageBody {

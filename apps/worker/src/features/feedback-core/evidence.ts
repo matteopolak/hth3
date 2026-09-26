@@ -146,6 +146,7 @@ export async function storeEvidence(
 export function evidenceInsertStatements(
   database: D1Database,
   evidence: StoredEvidence[],
+  onlyIfPreviousChange = false,
 ): D1PreparedStatement[] {
   return evidence.map(({ row }) =>
     database
@@ -153,7 +154,9 @@ export function evidenceInsertStatements(
         `INSERT OR IGNORE INTO private_assets (
           id, organization_id, owner_subject, purpose, record_id, object_key,
           filename, content_type, byte_size, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ${
+          onlyIfPreviousChange ? "WHERE changes() = 1" : ""
+        }`,
       )
       .bind(
         row.id,

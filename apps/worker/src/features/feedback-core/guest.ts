@@ -1,10 +1,13 @@
 import { API_VERSION, type FeedbackStatus } from "@civicresolve/contracts/v1";
 import type { D1Database } from "@civicresolve/db/d1";
 import {
+  areStrongFeedbackDuplicates,
   canResidentReopenFeedback,
   canTransitionFeedback,
   isFeedbackCategory,
+  normalizeFeedbackDuplicateText,
 } from "@civicresolve/domain/feedback";
+import type { FeedbackCategory } from "@civicresolve/domain/feedback";
 import { classifyFeedbackSubmission } from "../taxonomy/classification.js";
 import {
   featureError,
@@ -45,10 +48,12 @@ import {
 } from "./repository.js";
 import type {
   EvidenceMetadata,
+  FeedbackDuplicateCandidateRow,
   FeedbackContext,
   FeedbackMessageBody,
   FeedbackRow,
   GuestFeedbackCreateBody,
+  GuestFeedbackDuplicateCheckBody,
   IdempotentFeedbackResponse,
 } from "./types.js";
 import {
@@ -67,11 +72,18 @@ interface DestinationRow {
   province_name: string;
 }
 
+const FEEDBACK_DUPLICATE_WINDOW_MS = 90 * 24 * 60 * 60 * 1_000;
+
 export async function handleGuestFeedback(
   request: Request,
   url: URL,
   context: FeedbackContext,
 ): Promise<Response | null> {
+  if (url.pathname === "/api/v1/feedback/duplicate-check") {
+    if (request.method === "POST")
+      return checkGuestFeedbackDuplicate(request, context);
+    return featureError(context, "METHOD_NOT_ALLOWED", "Use POST.", 405);
+  }
   if (url.pathname === "/api/v1/feedback") {
     if (request.method === "POST") return createGuestFeedback(request, context);
     return featureError(context, "METHOD_NOT_ALLOWED", "Use POST.", 405);
@@ -104,6 +116,107 @@ export async function handleGuestFeedback(
     action ? "Use POST." : "Use GET.",
     405,
   );
+}
+
+async function findRecentGuestDuplicate(
+  database: D1Database,
+  input: {
+    message: string;
+    category: FeedbackCategory;
+    destination: DestinationRow;
+  },
+): Promise<FeedbackDuplicateCandidateRow | null> {
+  if (!normalizeFeedbackDuplicateText(input.message)) return null;
+  const candidates = await database
+    .prepare(
+      `SELECT original_text, status
+       FROM feedback_submissions
+       WHERE organization_id = ? AND municipality_csd_uid = ?
+         AND category = ? AND created_at >= ?
+       ORDER BY created_at DESC
+       LIMIT 250`,
+    )
+    .bind(
+      input.destination.organization_id,
+      input.destination.municipality_csd_uid,
+      input.category,
+      recentFeedbackCutoff(),
+    )
+    .all<FeedbackDuplicateCandidateRow>();
+  return (
+    candidates.results?.find((candidate) =>
+      areStrongFeedbackDuplicates(input.message, candidate.original_text),
+    ) ?? null
+  );
+}
+
+function duplicateCreateResponse(
+  context: FeedbackContext,
+  status: FeedbackStatus,
+): Response {
+  return featureJson(context, {
+    apiVersion: API_VERSION,
+    result: "duplicate",
+    created: false,
+    duplicate: { status },
+  });
+}
+
+function recentFeedbackCutoff(now = new Date().toISOString()): string {
+  return new Date(
+    new Date(now).getTime() - FEEDBACK_DUPLICATE_WINDOW_MS,
+  ).toISOString();
+}
+
+async function checkGuestFeedbackDuplicate(
+  request: Request,
+  context: FeedbackContext,
+): Promise<Response> {
+  const body = await jsonBody<GuestFeedbackDuplicateCheckBody>(request);
+  const message = normalizedMessage(body?.message);
+  const category =
+    body?.category === undefined ? "other_or_unsure" : body.category;
+  if (
+    !body ||
+    !message ||
+    typeof body.municipalityId !== "string" ||
+    body.municipalityId.length !== 7 ||
+    !isFeedbackCategory(category)
+  ) {
+    return featureError(
+      context,
+      "INVALID_REQUEST",
+      "Provide a message, supported municipality, and optional supported category.",
+      400,
+    );
+  }
+  const limited = await enforceGuestAbuseLimit(request, context, "create", {
+    bucketNamespace: "duplicate-check",
+  });
+  if (limited) return limited;
+  const destination = await resolveDestination(
+    context.env.DB,
+    body.municipalityId,
+  );
+  if (!destination) {
+    return featureError(
+      context,
+      "DESTINATION_NOT_SUPPORTED",
+      body.municipalityId === TORONTO_CSDUID
+        ? "The fictional sandbox route is temporarily unavailable."
+        : "This municipality is not supported by the feedback prototype. No report was sent to another municipality.",
+      body.municipalityId === TORONTO_CSDUID ? 503 : 422,
+    );
+  }
+  const duplicate = await findRecentGuestDuplicate(context.env.DB, {
+    message,
+    category,
+    destination,
+  });
+  return featureJson(context, {
+    apiVersion: API_VERSION,
+    duplicate: duplicate ? { status: duplicate.status } : null,
+  });
 }
 
 async function createGuestFeedback(
@@ -157,6 +270,7 @@ async function createGuestFeedback(
   );
   const category =
     body.category === undefined ? "other_or_unsure" : body.category;
+  const duplicateOverride = body.duplicateOverride === true;
   const token = request.headers.get("X-Receipt-Token")?.toLowerCase();
   const clientKey = parseIdempotencyKey(request);
   if (
@@ -166,6 +280,8 @@ async function createGuestFeedback(
       body.whatWouldImprove !== "" &&
       !followUp) ||
     !isFeedbackCategory(category) ||
+    (body.duplicateOverride !== undefined &&
+      typeof body.duplicateOverride !== "boolean") ||
     !token ||
     !RECEIPT_TOKEN_PATTERN.test(token) ||
     !clientKey
@@ -194,17 +310,17 @@ async function createGuestFeedback(
     clientKey,
   );
   const evidenceHashes = files.map(({ digest }) => digest);
-  const requestHash = await sha256Hex(
-    JSON.stringify({
-      message,
-      followUp,
-      category,
-      municipalityId: body.municipalityId,
-      sandboxAcknowledged: body.sandboxAcknowledged,
-      tokenHash,
-      evidenceHashes,
-    }),
-  );
+  const hashBody = {
+    message,
+    followUp,
+    category,
+    municipalityId: body.municipalityId,
+    sandboxAcknowledged: body.sandboxAcknowledged,
+    tokenHash,
+    evidenceHashes,
+    ...(duplicateOverride ? { duplicateOverride: true } : {}),
+  };
+  const requestHash = await sha256Hex(JSON.stringify(hashBody));
   const database = context.env.DB;
   const replay = await findIdempotentResponse(
     database,
@@ -252,6 +368,15 @@ async function createGuestFeedback(
   const limited = await enforceGuestAbuseLimit(request, context, "create");
   if (limited) return limited;
 
+  if (!duplicateOverride) {
+    const duplicate = await findRecentGuestDuplicate(database, {
+      message,
+      category,
+      destination,
+    });
+    if (duplicate) return duplicateCreateResponse(context, duplicate.status);
+  }
+
   const now = new Date().toISOString();
   const submissionId = await stableId("fb", idempotencyKey);
   const messageId = await stableId("fbm", `${idempotencyKey}:initial`);
@@ -281,35 +406,57 @@ async function createGuestFeedback(
   }
 
   try {
-    await database.batch([
-      database
-        .prepare(
-          `INSERT OR IGNORE INTO feedback_submissions (
-            id, organization_id, original_text, status, receipt_token_hash,
-            department_name, outcome, sample, created_at, updated_at,
-            municipality_csd_uid, category, constructive_follow_up
-          ) VALUES (?, ?, ?, 'submitted', ?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
-        )
-        .bind(
-          submissionId,
-          destination.organization_id,
-          message,
-          tokenHash,
-          destination.routing_label,
-          destination.sample,
-          now,
-          now,
-          destination.municipality_csd_uid,
-          category,
-          followUp,
-        ),
-      database
-        .prepare(
-          `INSERT OR IGNORE INTO feedback_messages (
-            id, submission_id, author_kind, author_subject, body, created_at
-          ) VALUES (?, ?, 'resident', NULL, ?, ?)`,
-        )
-        .bind(messageId, submissionId, message, now),
+    const duplicateGuard =
+      !duplicateOverride && normalizeFeedbackDuplicateText(message)
+        ? `WHERE NOT EXISTS (
+             SELECT 1 FROM feedback_submissions
+             WHERE organization_id = ? AND municipality_csd_uid = ?
+               AND category = ? AND created_at >= ?
+               AND lower(trim(original_text)) = lower(trim(?))
+           )`
+        : "";
+    const submissionInsert = database
+      .prepare(
+        `INSERT OR IGNORE INTO feedback_submissions (
+          id, organization_id, original_text, status, receipt_token_hash,
+          department_name, outcome, sample, created_at, updated_at,
+          municipality_csd_uid, category, constructive_follow_up
+        ) SELECT ?, ?, ?, 'submitted', ?, ?, NULL, ?, ?, ?, ?, ?, ?
+          ${duplicateGuard}`,
+      )
+      .bind(
+        submissionId,
+        destination.organization_id,
+        message,
+        tokenHash,
+        destination.routing_label,
+        destination.sample,
+        now,
+        now,
+        destination.municipality_csd_uid,
+        category,
+        followUp,
+        ...(duplicateGuard
+          ? [
+              destination.organization_id,
+              destination.municipality_csd_uid,
+              category,
+              recentFeedbackCutoff(now),
+              message,
+            ]
+          : []),
+      );
+    const batchResults = await database.batch([
+      submissionInsert,
+      insertMessage(database, {
+        id: messageId,
+        submissionId,
+        authorKind: "resident",
+        authorSubject: null,
+        body: message,
+        createdAt: now,
+        onlyIfPreviousChange: true,
+      }),
       insertAudit(database, {
         id: auditId,
         subject: "guest",
@@ -326,6 +473,7 @@ async function createGuestFeedback(
           evidenceCount: evidence.length,
         },
         createdAt: now,
+        onlyIfPreviousChange: true,
       }),
       outboxStatement(database, {
         eventId,
@@ -347,7 +495,7 @@ async function createGuestFeedback(
           sample: true,
         },
       }),
-      ...evidenceInsertStatements(database, evidence),
+      ...evidenceInsertStatements(database, evidence, true),
       idempotencyStatement(database, {
         key: idempotencyKey,
         requestHash,
@@ -357,6 +505,32 @@ async function createGuestFeedback(
         createdAt: now,
       }),
     ]);
+
+    if (batchResults[0]?.meta.changes === 0) {
+      const persisted = await findIdempotentResponse(
+        database,
+        idempotencyKey,
+        requestHash,
+      );
+      if (!persisted) {
+        const bucket = context.env.PRIVATE_ASSETS;
+        if (bucket && evidence.length)
+          await deleteStoredEvidence(bucket, evidence);
+        const duplicate = await findRecentGuestDuplicate(database, {
+          message,
+          category,
+          destination,
+        });
+        if (duplicate)
+          return duplicateCreateResponse(context, duplicate.status);
+        return featureError(
+          context,
+          "SUBMISSION_NOT_CREATED",
+          "The report was not created. Please check the message and try again.",
+          409,
+        );
+      }
+    }
   } catch (error) {
     const bucket = context.env.PRIVATE_ASSETS;
     if (bucket) await deleteStoredEvidence(bucket, evidence);

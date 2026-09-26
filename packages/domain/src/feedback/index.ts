@@ -71,3 +71,54 @@ export function preserveFeedbackText(
   }
   return value;
 }
+
+/** Normalize only presentation differences before comparing substantial reports. */
+export function normalizeFeedbackDuplicateText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+  const words = normalized.split(" ").filter(Boolean);
+  if (normalized.length < 48 || words.length < 7) return null;
+  return normalized;
+}
+
+/** Require a high character-bigram overlap; short or generic text never matches. */
+export function areStrongFeedbackDuplicates(
+  left: unknown,
+  right: unknown,
+): boolean {
+  const normalizedLeft = normalizeFeedbackDuplicateText(left);
+  const normalizedRight = normalizeFeedbackDuplicateText(right);
+  if (!normalizedLeft || !normalizedRight) return false;
+  if (normalizedLeft === normalizedRight) return true;
+
+  const leftBigrams = characterBigrams(normalizedLeft);
+  const rightBigrams = characterBigrams(normalizedRight);
+  let intersection = 0;
+  for (const [bigram, leftCount] of leftBigrams) {
+    intersection += Math.min(leftCount, rightBigrams.get(bigram) ?? 0);
+  }
+  const denominator =
+    countOccurrences(leftBigrams) + countOccurrences(rightBigrams);
+  return denominator > 0 && (2 * intersection) / denominator >= 0.94;
+}
+
+function characterBigrams(value: string): Map<string, number> {
+  const characters = Array.from(value);
+  const bigrams = new Map<string, number>();
+  for (let index = 0; index < characters.length - 1; index += 1) {
+    const bigram = characters[index]! + characters[index + 1]!;
+    bigrams.set(bigram, (bigrams.get(bigram) ?? 0) + 1);
+  }
+  return bigrams;
+}
+
+function countOccurrences(values: Map<string, number>): number {
+  let count = 0;
+  for (const value of values.values()) count += value;
+  return count;
+}

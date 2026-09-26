@@ -6,9 +6,13 @@ Guest feedback is a private, replyable case record for constructive comments. Th
 
 ## How it works
 
-The resident reviews their exact original wording with an optional “what would improve this?” note, selects a service category, chooses a municipality, and confirms the destination. The Worker preserves `message` verbatim in `feedback_submissions.original_text` and stores the improvement note separately. Categories and the municipality are routing metadata; the resident’s text remains the source of truth.
+The resident reviews their exact original wording with an optional “what would improve this?” note, chooses a municipality, and confirms the destination. A service category is optional and defaults to `other_or_unsure`. The Worker preserves `message` verbatim in `feedback_submissions.original_text` and stores the improvement note separately. Categories and the municipality are routing metadata; the resident’s text remains the source of truth.
 
 `POST /api/v1/feedback` accepts JSON with `message`, optional `whatWouldImprove`, `category`, `evidence`, `municipalityId`, and `sandboxAcknowledged: true`. The only seeded route is Toronto’s Statistics Canada 2021 Census Subdivision UID `3520005`, which maps to Envoy's unverified practice queue. That identifier represents a real municipality. The destination remains fictional. The route is explicitly confirmed before it is used, and an unknown or unsupported municipality returns `DESTINATION_NOT_SUPPORTED` without falling back to Toronto.
+
+Before submission, `POST /api/v1/feedback/duplicate-check` accepts `{ "message": "...", "municipalityId": "3520005", "category": "other_or_unsure" }`; `category` may be omitted. It returns HTTP 200 with `{ "apiVersion": "v1", "duplicate": null }` or `{ "apiVersion": "v1", "duplicate": { "status": "in_review" } }`. The preview never returns a case ID, report text, person, receipt, messages, or evidence. It searches only the same routed organization, municipality, and category over the prior 90 days. Comparison normalizes Unicode compatibility forms, case, punctuation, and whitespace; it requires at least 48 characters and 7 words and a 94% character-bigram Dice match. Short or generic text is not matched. This prototype has municipality-level area data only; it does not request or store coordinates.
+
+The create endpoint repeats the duplicate check immediately before writing. When it finds a strong match, it returns HTTP 200 `{ "apiVersion": "v1", "result": "duplicate", "created": false, "duplicate": { "status": "in_review" } }` and creates no receipt. If the resident confirms this is a different issue or a recurrence, retry with `duplicateOverride: true`; normal receipt creation then continues. The database insert also suppresses a concurrent exact case-insensitive text match in the same routed municipality/category. Near-match detection happens in Worker code, so concurrent requests with different punctuation can still race; a dedicated fingerprint index would be required to close that narrow race without storing location or report text outside the case record.
 
 The request’s `X-Receipt-Token` must contain 32 cryptographically random bytes as 64 hexadecimal characters. The Worker stores only its SHA-256 hash and returns the client token with the initial receipt response. It does not place the token in a URL, audit event, outbox event, or idempotency response. Keep the token private: possession grants access to the receipt. Create a new token for each new submission. Reusing the same idempotency key and token replays the original receipt.
 
@@ -22,13 +26,15 @@ Emergency requests are redirected before the Worker creates a case. English and 
 
 Optional evidence accepts up to three PDF, PNG, or JPEG files, with a 5 MiB per-file and 10 MiB total limit. The Worker checks file signatures, stores bytes in private R2, and stores scoped metadata in D1. Guests must present the receipt token to download their files. Staff downloads require the same organization authorization as the case. No file bytes or base64 data are written to logs, audit details, or outbox payloads.
 
-Guest create, reply, and reopen writes use an HMAC of Cloudflare’s `CF-Connecting-IP` header as a short-lived abuse-control key. Raw IP addresses are not stored. Current limits are 8 new reports, 16 replies, and 4 reopens per IP per hour. The keyed counters are deleted after 24 hours. Idempotent retries do not consume additional requests.
+Guest create, duplicate preview, reply, and reopen actions use an HMAC of Cloudflare’s `CF-Connecting-IP` header as a short-lived abuse-control key. Raw IP addresses are not stored. Current limits are 8 new reports, 8 duplicate previews, 16 replies, and 4 reopens per IP per hour; previews use a separate keyed bucket and do not consume the create allowance. The keyed counters are deleted after 24 hours. Idempotent write retries do not consume additional requests.
 
 ## How to change it
 
 Add schema changes as forward-only migrations and keep the domain transition rules in `packages/domain/src/feedback/`. `0019_feedback_staff_workflow.sql` adds the organization-scoped staff assignment table without replacing the independent taxonomy assignment. Keep the original resident wording separate from any summary or staff reply. A new municipal destination must use an authoritative municipality identifier and explicit D1 routing row; never route an unsupported municipality to Toronto. Preserve the fictional destination label until a real organization has been verified and configured.
 
 Keep receipt tokens out of URLs, logs, analytics, audit details, and persisted idempotency responses. Do not replace the token with a public case number. When changing evidence rules, keep the R2 bucket private, validate the content signature and size, and retain both the receipt-token check and organization scope on downloads. Add English and French messages for any new emergency or destination states.
+
+Duplicate matching is intentionally conservative: same destination, municipality, category, recent date, and substantial normalized text are all required. Preserve only the status in duplicate responses. Keep municipality-level matching explicit until a vetted area dataset and resident-selected location are available; never infer a report location from browser GPS. Keep the SQL exact-match guard in the same D1 batch as case creation so simultaneous identical posts cannot both pass an earlier preview.
 
 Staff mutations must use the explicit transition map, authorize the organization against both the token permissions and D1 membership, and batch the state change with its audit, outbox, and idempotency rows. Outbox and audit payloads may include category, status, text length, and evidence count; they must never contain feedback text, receipt tokens, or attachment bytes.
 
@@ -40,12 +46,15 @@ Staff mutations must use the explicit transition map, authorize the organization
 - `X-Receipt-Token`: client-generated CSPRNG value from `crypto.getRandomValues(new Uint8Array(32))`, hex encoded. Never log or put it in a URL.
 - `Idempotency-Key`: required on writes and scoped to the action and actor.
 - `municipalityId`: Statistics Canada CSDUID. Only `3520005` has a route in this prototype.
+- `category`: optional feedback category; omitted values use `other_or_unsure` for duplicate search and routing.
+- `duplicateOverride`: optional boolean on create. Set to `true` only after the resident confirms that a strong match is a separate issue or recurrence.
 - `sandboxAcknowledged`: must be `true` after the resident has seen and confirmed the fictional Toronto destination.
 - `emergency: true`: optional explicit emergency redirect. The Worker returns localized 911 guidance with `accepted: false` and creates no case; do not infer this flag from free text.
 - `evidence`: optional array of `{ fileName, contentType, data }`, with `data` base64 encoded. Allowed content types are `application/pdf`, `image/png`, and `image/jpeg`.
 - Staff request-details messages are limited to 5,000 characters. Outcome summaries are limited to 2,000 characters.
 - `assignment-options` exposes only active departments and civic staff/organization admin subjects inside the authorized organization. Assignment writes reject inactive or cross-organization departments and non-staff assignees.
 - `CF-Connecting-IP`: supplied by Cloudflare at the edge and used only as HMAC input. Local smoke requests set a fixed test value.
+- Duplicate matching: 90-day candidate window, same destination/municipality/category, minimum 48 normalized characters and 7 words, and at least 94% character-bigram Dice similarity. Preview and create return status only; the preview has its own 8-per-hour abuse bucket.
 - Geography source: [Statistics Canada SGC 2021 entry for Toronto CSDUID 3520005](https://www23.statcan.gc.ca/imdb/p3VD.pl?CLV=4&CPV=3520005&CST=01012021&CVD=1341558&Function=getVD&MLV=4&TVD=1346772&dbg=1). Toronto directs residents to call [911 for emergencies](https://www.toronto.ca/home/contact-us/); its official [311 Toronto](https://www.toronto.ca/home/311-toronto-at-your-service/find-service-information/article/?kb=kA06g000001cvpFCAQ) channel handles non-emergency City services. Envoy does not submit to either channel.
 
 ## Dependencies
