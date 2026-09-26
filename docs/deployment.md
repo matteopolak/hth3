@@ -8,13 +8,13 @@ Envoy is one Cloudflare Worker application. The Worker serves the built Vite sit
 
 `pnpm deploy:production` builds `apps/web/dist`, then Wrangler uploads those assets with `apps/worker/src/platform/index.ts` as one Worker deployment. `[env.production.assets]` in `apps/worker/wrangler.toml` serves static files and falls back to `index.html` for SPA navigation. `/api` and `/api/*` run the Worker script first. The Vite build defaults to `/api/v1`, so browser requests stay on the same origin and need no separate API host. `pnpm dev -- --host` continues to run the Cloudflare Vite plugin with the Worker and local D1/R2 on port 5173 for LAN use.
 
-Production bindings attach D1, private R2, Workers AI, Vectorize, and Hyperdrive to that Worker. The five-minute cron delivers feedback events and refreshes due official sources. The existing `envoy-web` Pages deployment is a temporary rollback path while the combined Worker is verified; it is not part of the production architecture. The production CORS allowlist temporarily includes both origins during that transition.
+Production bindings attach D1, private R2, Workers AI, Vectorize, and Hyperdrive to that Worker. The five-minute cron delivers feedback events and refreshes due official sources. The production CORS allowlist contains the Worker origin. The former `envoy-web` Pages project has been deleted after the combined Worker was verified.
 
 ## How to change it
 
 Apply pending D1 migrations before deploying code that reads new tables: from `apps/worker`, run `./node_modules/.bin/wrangler d1 migrations apply civicresolve-prod --remote --env production`. Run `pnpm deploy:production` at the repo root. Check `/`, a deep SPA route such as `/callback`, `/api/healthz`, a representative `/api/v1/` read, and an asset URL on the Worker origin. Confirm the Auth0 SPA's callback, logout, and web-origin allowlists contain this Worker origin before using login there. Update the native iOS Release API URL to the same origin when publishing a new build.
 
-Keep `VITE_API_BASE_URL` unset for a same-origin web build; set it only to intentionally target another API. If the Worker URL changes, update the Auth0 allowlists, native Release configuration, and `ALLOWED_ORIGINS`. Never place service secrets in a `VITE_` variable or the repository. Retire the old Pages project only after the combined Worker and sign-in flows work; Wrangler/Cloudflare deployment history remains the rollback for the Worker itself.
+Keep `VITE_API_BASE_URL` unset for a same-origin web build; set it only to intentionally target another API. If the Worker URL changes, update the Auth0 allowlists, native Release configuration, and `ALLOWED_ORIGINS`. Never place service secrets in a `VITE_` variable or the repository. Wrangler/Cloudflare deployment history provides rollback for the Worker.
 
 ## Configuration
 

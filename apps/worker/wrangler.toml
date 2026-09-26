@@ -17,7 +17,7 @@ ELEVENLABS_AGENT_ID = "agent_5801m3fcxxsfez68g5v7gr22fzky"
 [env.production.vars]
 APP_ENV = "production"
 DEV_AUTH_ENABLED = "false"
-ALLOWED_ORIGINS = "https://civicresolve-api-production.matteopolak.workers.dev,https://envoy-web.pages.dev"
+ALLOWED_ORIGINS = "https://civicresolve-api-production.matteopolak.workers.dev"
 AUTH0_DOMAIN = "dev-ole6i03kzvf3yb8z.us.auth0.com"
 AUTH0_AUDIENCE = "https://civicresolve.example/api"
 ELEVENLABS_AGENT_ID = "agent_5801m3fcxxsfez68g5v7gr22fzky"
