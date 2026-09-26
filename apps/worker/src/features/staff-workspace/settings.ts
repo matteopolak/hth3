@@ -187,7 +187,7 @@ export async function handleWorkspaceSettings(
         scopedKey,
         hash,
         "staff_workspace_settings",
-        changingView ? actor.subject : organizationId,
+        organizationId,
         JSON.stringify(result),
         now,
       ),
@@ -203,7 +203,7 @@ export async function handleWorkspaceSettings(
           ? "workspace.default_view_changed"
           : "workspace.reporting_window_changed",
         "staff_workspace_settings",
-        changingView ? actor.subject : organizationId,
+        organizationId,
         now,
       ),
   ]);
