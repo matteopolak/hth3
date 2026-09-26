@@ -148,6 +148,11 @@ const en = {
   "voice.listening": "Listening · your words appear below",
   "voice.unavailable":
     "Voice is unavailable right now. You can still type your feedback.",
+  "voice.checking": "Checking the voice session…",
+  "voice.submitted": "Your spoken report was submitted. Your private receipt is shown below.",
+  "voice.duplicate": "A similar report may already exist. Review your draft before sending another.",
+  "voice.notSubmitted": "The voice session ended without a submission. Review and send your draft when ready.",
+  "voice.notConfirmed": "We could not confirm a voice submission. Review your draft before sending another report.",
   "language.english": "English",
   "language.french": "French",
   "common.loading": "Loading…",
@@ -246,6 +251,7 @@ const en = {
   "feedback.receiptNotFound": "This receipt could not be verified.",
   "feedback.staffReplyLabel": "Reply from the team",
   "application.title": "Opportunities",
+  "application.findRole": "Apply for work",
   "application.sampleNotice":
     "Practice posting. No employer or government agency receives this application.",
   "application.experienceLabel": "Relevant experience",

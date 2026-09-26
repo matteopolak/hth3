@@ -102,6 +102,7 @@ function newChatState(): ChatState {
 interface AppState {
   locale: Locale;
   page: Page;
+  applicationView: "browse" | "mine";
   discoveryArea: DiscoveryArea;
   programView: "discover" | "mine" | "sponsor";
   externalRecordId: string;
@@ -175,6 +176,7 @@ const state: AppState = {
   programView: "discover",
   externalRecordId: sessionStorage.getItem(EXTERNAL_RECORD_KEY) ?? "",
   page: "assistant",
+  applicationView: "browse",
   discoveryArea: "all",
   employeePage: "assistant",
   staffView: "overview",
@@ -228,6 +230,8 @@ const root = document.querySelector<HTMLDivElement>("#app");
 if (!root) throw new Error("App root is missing.");
 let voiceSession: { endSession(): Promise<void> } | null = null;
 let voiceStartSerial = 0;
+let voiceSessionToken: string | null = null;
+let voiceSessionTarget: "feedback" | ChatMode = "feedback";
 let lastAuthIdentity = "";
 
 applyTokens();
@@ -275,7 +279,10 @@ function continueAfterSignIn(): void {
   if (intent === "staff") {
     state.page = "employee";
     state.employeePage = "assistant";
-  } else if (intent === "applications") state.page = "applications";
+  } else if (intent === "applications") {
+    state.page = "applications";
+    state.applicationView = "mine";
+  }
   else if (intent === "saved") {
     state.page = "discovery";
     state.discoveryArea = "saved";
@@ -432,6 +439,7 @@ function navigation(): HTMLElement {
       navButton("assistant", "nav.assistant", "chat"),
       sidebarHeading(t("sidebar.explore")),
       discoveryButton("jobs", "sidebar.jobs"),
+      applicationButton("browse", "application.findRole", "briefcase"),
       discoveryButton("support", "sidebar.support"),
       discoveryButton("funding", "sidebar.funding"),
       programButton("discover", "sidebar.programs", "landmark"),
@@ -439,7 +447,7 @@ function navigation(): HTMLElement {
       discoveryButton("participation", "sidebar.participation"),
       navButton("feedback", "nav.feedback", "feedback"),
       sidebarHeading(t("sidebar.myActivity")),
-      navButton("applications", "sidebar.myApplications", "clipboard"),
+      applicationButton("mine", "sidebar.myApplications", "clipboard"),
       discoveryButton("saved", "sidebar.saved"),
       programButton("mine", "sidebar.programRequests", "files"),
       navButton("profile", "sidebar.profile", "user"),
@@ -607,6 +615,18 @@ function programButton(view: AppState["programView"], labelKey: MessageKey, icon
   return item;
 }
 
+function applicationButton(view: AppState["applicationView"], labelKey: MessageKey, icon: string): HTMLButtonElement {
+  const item = sidebarAction(icon, t(labelKey), () => {
+    state.page = "applications";
+    state.applicationView = view;
+    state.sidebarOpen = false;
+    render();
+  });
+  if (state.page === "applications" && state.applicationView === view) item.classList.add("is-active");
+  if (view === "mine" && !currentToken()) disableGuestNavigation(item);
+  return item;
+}
+
 function navButton(
   page: Page,
   key: MessageKey,
@@ -688,7 +708,7 @@ function mainPage(): HTMLElement {
   else if (state.page === "signin") main.append(signInPage());
   else if (state.page === "feedback") main.append(feedbackPage());
   else if (state.page === "applications") main.append(createPublicApplicationsPage({
-    view: "mine",
+    view: state.applicationView,
     locale: state.locale,
     token: currentToken() || null,
     onSignIn: () => openSignIn("applications"),
@@ -2048,14 +2068,19 @@ async function startVoice(target: "feedback" | ChatMode = "feedback"): Promise<v
   try {
     const signed = await api.createVoiceSession(state.locale);
     if (serial !== voiceStartSerial) return;
+    voiceSessionToken = signed.voiceSessionToken;
+    voiceSessionTarget = target;
     const { Conversation } = await import("@elevenlabs/client");
     if (serial !== voiceStartSerial) return;
     const session = await Conversation.startSession({
       signedUrl: signed.signedUrl,
       connectionType: "websocket",
+      userId: signed.voiceSessionToken,
+      dynamicVariables: { secret__envoy_voice_token: signed.voiceSessionToken },
       onMessage: ({ role, message }) => {
         if (serial !== voiceStartSerial) return;
         if (role === "user") {
+          if (/^(yes|oui)[,\s]*(please\s+)?(send|submit|envoyer|soumettre)(\s+(it|this|le|la|ça))?[.!\s]*$/i.test(message.trim())) return;
           if (target === "feedback") {
             state.feedbackDraft = [state.feedbackDraft, message].filter(Boolean).join("\n");
             const field = document.querySelector<HTMLTextAreaElement>("#feedback-message");
@@ -2077,12 +2102,14 @@ async function startVoice(target: "feedback" | ChatMode = "feedback"): Promise<v
         state.voiceError = t("voice.unavailable");
         state.voiceStatus = "idle";
         voiceSession = null;
+        voiceSessionToken = null;
         render();
       },
       onDisconnect: () => {
         if (serial !== voiceStartSerial) return;
         state.voiceStatus = "idle";
         voiceSession = null;
+        finishVoiceSession(signed.voiceSessionToken);
         render();
       },
     });
@@ -2100,6 +2127,7 @@ async function startVoice(target: "feedback" | ChatMode = "feedback"): Promise<v
         : t("voice.unavailable");
     state.voiceStatus = "idle";
     voiceSession = null;
+    voiceSessionToken = null;
   } finally {
     render();
   }
@@ -2108,9 +2136,58 @@ async function startVoice(target: "feedback" | ChatMode = "feedback"): Promise<v
 async function stopVoice(): Promise<void> {
   voiceStartSerial++;
   const session = voiceSession;
+  const token = voiceSessionToken;
   voiceSession = null;
   state.voiceStatus = "idle";
   if (session) await session.endSession().catch(() => {});
+  if (token) finishVoiceSession(token);
+  render();
+}
+
+function finishVoiceSession(token: string): void {
+  if (voiceSessionToken !== token) return;
+  voiceSessionToken = null;
+  void resolveVoiceSession(token, voiceSessionTarget);
+}
+
+async function resolveVoiceSession(token: string, target: "feedback" | ChatMode): Promise<void> {
+  state.voicePrompt = t("voice.checking");
+  if (target !== "feedback") state.notice = state.voicePrompt;
+  render();
+  try {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const outcome = await api.getVoiceSessionStatus(token);
+      if (outcome.status === "pending") {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        continue;
+      }
+      if (outcome.status === "submitted" && outcome.submissionId && outcome.receiptToken) {
+        const credentials = { submissionId: outcome.submissionId, receiptToken: outcome.receiptToken };
+        const receipt = await api.getReceipt(credentials);
+        state.receiptCredentials = credentials;
+        state.receipt = receipt.submission;
+        storeReceiptCredentials(credentials);
+        state.feedbackReviewing = false;
+        state.showFeedbackForm = false;
+        state.feedbackDraft = "";
+        state.feedbackImprovement = "";
+        state.page = "feedback";
+        state.notice = t("voice.submitted");
+      } else if (outcome.status === "duplicate") {
+        state.voicePrompt = t("voice.duplicate");
+        if (target === "feedback") state.page = "feedback";
+      } else {
+        state.voicePrompt = t("voice.notSubmitted");
+      }
+      if (target !== "feedback" && outcome.status !== "submitted") state.notice = state.voicePrompt;
+      render();
+      return;
+    }
+    state.voicePrompt = t("voice.notConfirmed");
+  } catch {
+    state.voicePrompt = t("voice.notConfirmed");
+  }
+  if (target !== "feedback") state.notice = state.voicePrompt;
   render();
 }
 
@@ -2663,7 +2740,7 @@ function pageTitle(): string {
   if (state.page === "assistant") return t("nav.assistant");
   if (state.page === "signin") return t("auth.signIn");
   if (state.page === "feedback") return t("feedback.title");
-  if (state.page === "applications") return t("application.title");
+  if (state.page === "applications") return t(state.applicationView === "browse" ? "application.findRole" : "sidebar.myApplications");
   if (state.page === "discovery") return t(`sidebar.${state.discoveryArea === "all" ? "explore" : state.discoveryArea}` as MessageKey);
   if (state.page === "programs") return t(state.programView === "discover" ? "sidebar.programs" : state.programView === "mine" ? "sidebar.programRequests" : "sidebar.programSponsor");
   if (state.page === "external-preparation") return t("sidebar.externalPreparation");

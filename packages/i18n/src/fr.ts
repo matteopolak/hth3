@@ -152,6 +152,11 @@ const fr: Catalogue = {
   "voice.listening": "Écoute · vos mots apparaissent ci-dessous",
   "voice.unavailable":
     "La voix est indisponible pour le moment. Vous pouvez toujours saisir votre commentaire.",
+  "voice.checking": "Vérification de la séance vocale…",
+  "voice.submitted": "Votre avis vocal a été envoyé. Votre reçu privé figure ci-dessous.",
+  "voice.duplicate": "Un avis semblable existe peut-être déjà. Vérifiez votre brouillon avant d’en envoyer un autre.",
+  "voice.notSubmitted": "La séance vocale s’est terminée sans envoi. Vérifiez et envoyez votre brouillon quand vous serez prêt.",
+  "voice.notConfirmed": "Nous n’avons pas pu confirmer l’envoi vocal. Vérifiez votre brouillon avant d’envoyer un autre avis.",
   "language.english": "Anglais",
   "language.french": "Français",
   "common.loading": "Chargement…",
@@ -252,6 +257,7 @@ const fr: Catalogue = {
   "feedback.receiptNotFound": "Impossible de vérifier ce reçu.",
   "feedback.staffReplyLabel": "Réponse de l’équipe",
   "application.title": "Possibilités",
+  "application.findRole": "Postuler à un emploi",
   "application.sampleNotice":
     "Offre d’essai. Aucun employeur ni organisme gouvernemental ne reçoit cette candidature.",
   "application.experienceLabel": "Expérience pertinente",
