@@ -1,6 +1,6 @@
 .staff-workspace {
   --staff-ink: #1c1c1c;
-  --staff-muted: #777;
+  --staff-muted: #626262;
   --staff-line: #e7e7e7;
   width: min(100%, 1180px);
   margin: 0 auto;
@@ -835,5 +835,16 @@
   .staff-theme-candidate-footer {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 360px) {
+  .staff-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .staff-actions {
+    width: 100%;
   }
 }

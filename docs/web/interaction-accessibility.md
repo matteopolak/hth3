@@ -10,6 +10,8 @@ The closed mobile rail is hidden from keyboard and screen-reader navigation. The
 
 `apps/web/src/platform/styles.css` supplies a visible two-pixel keyboard focus ring, readable muted text, and 44-pixel control targets for coarse pointers. The compact desktop layout remains intact. The main map's dense numbered pins are exempt from the 44-pixel rule; the same sourced places remain available through the 44-pixel map key rows and full list. At narrow widths the chat textarea grows to show the longer French prompt without an internal scrollbar. The app also honors `prefers-reduced-motion` and `prefers-contrast: more`.
 
+The staff workspace uses a darker muted-text token for readable supporting copy and stacks page actions below headings on very narrow screens so French titles retain their full width.
+
 The shell maps `@civicresolve/design-tokens` monochrome values into CSS variables; `CivicTheme` carries the same neutral design intent in SwiftUI. Status labels carry the meaning even where semantic token colors are identical.
 
 Native iOS uses SwiftUI controls and `CivicTheme` in `apps/mobile/ios/CivicResolve/Design/`. This web pass does not establish full VoiceOver or native touch-target acceptance.
@@ -31,5 +33,7 @@ The implementation depends on the platform shell, feature CSS, shared i18n strin
 ## Focused checks
 
 On 2026-09-26, isolated Chrome checks at 320 and 390 pixels with touch emulation reported 44-by-44-pixel menu controls, a 44-pixel locale control, no visible main-button targets under 44 pixels, and no document overflow. Keyboard checks confirmed focus entering and returning from the mobile rail, search dialog, plus menu, and model menu; no runtime exceptions occurred. French 320-pixel Jobs, Support, Funding, Nearby, and Participation smoke checks showed no document overflow or runtime exceptions. A computed contrast pass on the visible Assistant, Jobs, and Feedback main content found no sub-4.5:1 small-text samples under the audited white surfaces. Browser media emulation confirmed reduced motion shortens transitions to 0.01 ms and increased contrast switches the focus and muted-text tokens to `#000` and `#3d3d3d`.
+
+Staff Overview, Themes, Hiring, and Applicants were also checked in a local staff session at desktop width, and Applicants at 390 pixels. French Themes at 320 pixels exposed a squeezed heading; the narrow staff layout now places actions underneath it.
 
 A comprehensive screen-reader and native-device audit remains to be done before claiming the full design-system issue is complete.
