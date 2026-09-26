@@ -135,7 +135,7 @@ const fr: Catalogue = {
   "assistant.reviewReport": "Vérifier le signalement",
   "assistant.confirmReport": "Confirmer et envoyer le signalement",
   "assistant.reviewUpdatedReport": "Vérifier le signalement modifié",
-  "assistant.reportDestination": "Destination : la file de réception fictive d’Envoy à Toronto.",
+  "assistant.reportDestination": "Destination : l’équipe d’Envoy chargée des avis. Aucun envoi à la Ville de Toronto.",
   "assistant.confirmDestination": "Je comprends qu’aucune municipalité ni agence gouvernementale ne reçoit ce signalement.",
   "assistant.approve": "Approuver l’action",
   "assistant.decline": "Refuser",
@@ -212,7 +212,7 @@ const fr: Catalogue = {
   "feedback.separateIssue": "Il s’agit d’un autre problème ou d’une récidive. Envoyer un rapport distinct.",
   "feedback.submitSeparate": "Envoyer un rapport distinct",
   "feedback.sandboxAcknowledgement":
-    "Je comprends que mon avis sera transmis uniquement à l’équipe fictive d’Envoy à Toronto, et non à une municipalité ou à un organisme gouvernemental.",
+    "Je comprends que mon avis va à l’équipe d’Envoy chargée des avis et n’est pas envoyé à la Ville de Toronto ni à un autre organisme gouvernemental.",
   "feedback.sandboxBadge":
     "Environnement d’essai · aucun envoi à une municipalité ou à un employeur",
   "feedback.sandboxExplanation": "Votre message reste ici",
@@ -239,7 +239,7 @@ const fr: Catalogue = {
   "feedback.outcomeLabel":
     "Résumé du résultat (requis pour consigner un résultat)",
   "feedback.privacyNotice":
-    "N’indiquez aucun mot de passe, renseignement bancaire ou numéro d’assurance sociale. L’équipe fictive d’Envoy à Toronto lit ce message; la Ville de Toronto ne le reçoit pas.",
+    "N’indiquez aucun mot de passe, renseignement bancaire ou numéro d’assurance sociale. Votre avis va à l’équipe d’Envoy chargée des avis. Il n’est pas envoyé à la Ville de Toronto.",
   "feedback.submitted":
     "Commentaire enregistré. Votre reçu privé se trouve ci-dessous.",
   "feedback.receiptTitle": "Reçu de votre avis",
