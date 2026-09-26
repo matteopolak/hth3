@@ -13,7 +13,9 @@ CREATE TABLE service_location_metadata (
   accessibility_summary TEXT,
   details_verified_at TEXT,
   details_source_url TEXT CHECK (
-    details_source_url IS NULL OR details_source_url LIKE 'https://%')
+    details_source_url IS NULL OR details_source_url LIKE 'https://%'),
+  coordinates_source_url TEXT CHECK (
+    coordinates_source_url IS NULL OR coordinates_source_url LIKE 'https://%')
 );
 
 CREATE INDEX service_location_metadata_category

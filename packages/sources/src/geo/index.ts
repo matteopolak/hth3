@@ -16,6 +16,7 @@ export interface ServiceLocationMetadata {
   accessibility_summary: string | null;
   details_verified_at: string | null;
   details_source_url: string | null;
+  coordinates_source_url: string | null;
 }
 
 export interface ServiceFact {
@@ -34,6 +35,7 @@ export interface ServiceLocationView {
   accessibility: ServiceFact;
   pinEligible: boolean;
   pinKind: "official" | "sample" | null;
+  coordinatesSourceUrl: string | null;
 }
 
 export interface ServiceLocationInput {
@@ -77,6 +79,8 @@ export function serviceBcMetadata(
     accessibility_summary: null,
     details_verified_at: BC_REVIEWED_AT,
     details_source_url: BC_SERVICE_URL,
+    coordinates_source_url:
+      "https://delivery.maps.gov.bc.ca/arcgis/rest/services/whse/bcgw_pub_whse_imagery_and_base_maps/MapServer/51",
   };
 }
 
@@ -125,6 +129,7 @@ export function serviceLocationView(
     safeHttps(record.sourceUrl) &&
     safeHttps(record.evidenceUrl) &&
     safeHttps(metadata?.details_source_url) &&
+    safeHttps(metadata?.coordinates_source_url) &&
     publicAccess.status === "verified" &&
     services.status === "verified" &&
     (record.verified || record.origin === "sample");
@@ -141,6 +146,7 @@ export function serviceLocationView(
         ? "sample"
         : "official"
       : null,
+    coordinatesSourceUrl: metadata?.coordinates_source_url ?? null,
   };
 }
 
