@@ -155,8 +155,7 @@ export async function handleSavedWorkspaceResource(
       400,
     );
   const now = new Date().toISOString();
-  const itemId =
-    id ?? `${kind === "views" ? "sview" : "sreport"}_${crypto.randomUUID()}`;
+  const itemId = id ?? (await stableWorkspaceItemId(kind, scopedKey));
   const definition =
     request.method === "DELETE"
       ? existing!
@@ -188,7 +187,7 @@ export async function handleSavedWorkspaceResource(
       ? kind === "views"
         ? db
             .prepare(
-              `INSERT INTO staff_saved_views (id,organization_id,owner_subject,name,days,status_filter,category_filter,version,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+              `INSERT OR IGNORE INTO staff_saved_views (id,organization_id,owner_subject,name,days,status_filter,category_filter,version,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)`,
             )
             .bind(
               itemId,
@@ -204,7 +203,7 @@ export async function handleSavedWorkspaceResource(
             )
         : db
             .prepare(
-              `INSERT INTO staff_saved_reports (id,organization_id,owner_subject,name,days,group_by,version,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)`,
+              `INSERT OR IGNORE INTO staff_saved_reports (id,organization_id,owner_subject,name,days,group_by,version,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)`,
             )
             .bind(
               itemId,
@@ -257,7 +256,7 @@ export async function handleSavedWorkspaceResource(
     operation,
     db
       .prepare(
-        `INSERT INTO idempotency_records (idempotency_key,request_hash,aggregate_type,aggregate_id,response_json,created_at) SELECT ?,?,?,?,?,? WHERE changes() = 1`,
+        `INSERT OR IGNORE INTO idempotency_records (idempotency_key,request_hash,aggregate_type,aggregate_id,response_json,created_at) SELECT ?,?,?,?,?,? WHERE changes() = 1`,
       )
       .bind(scopedKey, hash, kind, itemId, JSON.stringify(result), now),
     db
@@ -274,13 +273,29 @@ export async function handleSavedWorkspaceResource(
         now,
       ),
   ]);
-  if (!writes[0]?.meta?.changes)
+  if (!writes[0]?.meta?.changes) {
+    const concurrent = await db
+      .prepare(
+        "SELECT request_hash,response_json FROM idempotency_records WHERE idempotency_key = ?",
+      )
+      .bind(scopedKey)
+      .first<{ request_hash: string; response_json: string }>();
+    if (concurrent)
+      return concurrent.request_hash === hash
+        ? featureJson(context, JSON.parse(concurrent.response_json) as unknown)
+        : featureError(
+            context,
+            "IDEMPOTENCY_CONFLICT",
+            "This request key was used for different content.",
+            409,
+          );
     return featureError(
       context,
       "STALE_VERSION",
       "Refresh this item before changing it.",
       409,
     );
+  }
   return featureJson(context, result, request.method === "POST" ? 201 : 200);
 }
 
@@ -413,4 +428,11 @@ async function digest(value: string): Promise<string> {
   return [...new Uint8Array(bytes)]
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
+}
+
+export async function stableWorkspaceItemId(
+  kind: Kind,
+  scopedKey: string,
+): Promise<string> {
+  return `${kind === "views" ? "sview" : "sreport"}_${(await digest(scopedKey)).slice(0, 32)}`;
 }
