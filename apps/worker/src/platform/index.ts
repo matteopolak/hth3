@@ -30,6 +30,7 @@ import { handleTaxonomyRequest } from "../features/taxonomy/index.js";
 import { handleVoiceRequest } from "../features/voice/index.js";
 import { ingestOfficialSources } from "../features/sources/ingest.js";
 import { handleEmployerRequest } from "../features/employer/index.js";
+import { handleStaffWorkspaceRequest } from "../features/staff-workspace/index.js";
 import { handleThemesRequest } from "../features/themes/index.js";
 import { handleDiscoveryRequest } from "../features/discovery/index.js";
 import { handleNearbyRequest } from "../features/nearby/index.js";
@@ -146,11 +147,8 @@ const worker = {
         featureContext,
       );
       if (programIntakeResponse) return programIntakeResponse;
-      const externalPreparationResponse = await handleExternalPreparationRequest(
-        request,
-        url,
-        featureContext,
-      );
+      const externalPreparationResponse =
+        await handleExternalPreparationRequest(request, url, featureContext);
       if (externalPreparationResponse) return externalPreparationResponse;
       const themesResponse = await handleThemesRequest(
         request,
@@ -158,6 +156,12 @@ const worker = {
         featureContext,
       );
       if (themesResponse) return themesResponse;
+      const staffWorkspaceResponse = await handleStaffWorkspaceRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (staffWorkspaceResponse) return staffWorkspaceResponse;
       const employerResponse = await handleEmployerRequest(
         request,
         url,
@@ -234,14 +238,21 @@ const worker = {
   },
 };
 
-async function refreshOfficialSourcesWhenDue(database: D1Database): Promise<void> {
+async function refreshOfficialSourcesWhenDue(
+  database: D1Database,
+): Promise<void> {
   const state = await database
     .prepare(
       "SELECT fetched_at, updated_at, last_error FROM source_registry WHERE id = ?",
     )
     .bind("service-bc-office-locations")
-    .first<{ fetched_at: string | null; updated_at: string; last_error: string | null }>();
-  const lastAttempt = state?.fetched_at ?? (state?.last_error ? state.updated_at : null);
+    .first<{
+      fetched_at: string | null;
+      updated_at: string;
+      last_error: string | null;
+    }>();
+  const lastAttempt =
+    state?.fetched_at ?? (state?.last_error ? state.updated_at : null);
   const retryAfter = state?.last_error ? 15 * 60_000 : 86_400_000;
   if (!lastAttempt || Date.now() - Date.parse(lastAttempt) >= retryAfter)
     await ingestOfficialSources(database);
