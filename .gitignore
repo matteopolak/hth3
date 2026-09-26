@@ -1,0 +1,29 @@
+# macOS metadata
+.DS_Store
+
+# Generated media and transcription artifacts
+/audio/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build and tool output
+dist/
+build/
+.next/
+.expo/
+coverage/
+out/
+tmp/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# Editor and OS-local files
+.idea/
+.vscode/
+*.swp
