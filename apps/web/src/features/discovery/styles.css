@@ -1,0 +1,225 @@
+.discovery-page {
+  max-width: 940px;
+  margin: auto;
+  color: #202020;
+  font-size: 13px;
+}
+.discovery-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.discovery-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e8e8e8;
+}
+.discovery-input,
+.discovery-select {
+  min-height: 36px;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  background: #fff;
+  color: #222;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.discovery-filters .discovery-input {
+  flex: 1 1 230px;
+}
+.discovery-select {
+  flex: 0 1 160px;
+}
+.discovery-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #5c5c5c;
+  font-size: 12px;
+}
+.discovery-check input {
+  accent-color: #202020;
+}
+.discovery-page > .discovery-check {
+  margin: 13px 0;
+}
+.discovery-button {
+  min-height: 35px;
+  border: 1px solid #d5d5d5;
+  border-radius: 7px;
+  background: #fff;
+  color: #202020;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.discovery-button:hover {
+  background: #f4f4f4;
+}
+.discovery-button-primary {
+  background: #202020;
+  border-color: #202020;
+  color: #fff;
+}
+.discovery-button-primary:hover {
+  background: #393939;
+}
+.discovery-link,
+.discovery-row-title {
+  border: 0;
+  background: transparent;
+  color: #202020;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.discovery-link {
+  font-size: 12px;
+  text-decoration: underline;
+}
+.discovery-list {
+  border-top: 1px solid #e8e8e8;
+}
+.discovery-row {
+  padding: 17px 0;
+  border-bottom: 1px solid #e8e8e8;
+}
+.discovery-row-title {
+  font-size: 14px;
+  font-weight: 650;
+}
+.discovery-row-title:hover {
+  text-decoration: underline;
+}
+.discovery-summary {
+  margin: 7px 0 10px;
+  color: #555;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.discovery-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 15px;
+  color: #777;
+  font-size: 11px;
+}
+.discovery-practice {
+  color: #333;
+  font-weight: 650;
+}
+.discovery-empty,
+.discovery-muted {
+  color: #777;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.discovery-empty {
+  padding: 40px 0;
+}
+.discovery-detail {
+  max-width: 760px;
+}
+.discovery-detail h3 {
+  margin: 0;
+  font-size: 19px;
+  letter-spacing: -0.025em;
+}
+.discovery-detail > .discovery-summary {
+  font-size: 13px;
+}
+.discovery-facts {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 9px 16px;
+  margin: 23px 0;
+  padding: 18px 0;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+  font-size: 12px;
+}
+.discovery-facts dt {
+  color: #777;
+}
+.discovery-facts dd {
+  margin: 0;
+}
+.discovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 15px 0 28px;
+}
+.discovery-provenance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: -8px 0 20px;
+  font-size: 12px;
+}
+.discovery-notice,
+.discovery-alert {
+  border: 1px solid #dedede;
+  border-radius: 7px;
+  background: #fafafa;
+  padding: 10px 12px;
+  color: #444;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.discovery-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.discovery-checklist {
+  border-top: 1px solid #e8e8e8;
+  padding-top: 18px;
+}
+.discovery-checklist h4 {
+  margin: 0 0 13px;
+  font-size: 13px;
+}
+.discovery-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 38px;
+  border-bottom: 1px solid #eee;
+}
+.discovery-step-remove {
+  border: 0;
+  background: transparent;
+  color: #777;
+  font-size: 19px;
+  cursor: pointer;
+}
+.discovery-step-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+}
+.discovery-step-form .discovery-input {
+  flex: 1;
+}
+@media (max-width: 620px) {
+  .discovery-filters {
+    align-items: stretch;
+  }
+  .discovery-filters .discovery-input,
+  .discovery-select {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .discovery-facts {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+}
