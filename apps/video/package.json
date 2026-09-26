@@ -1,0 +1,24 @@
+{
+  "name": "@envoy/video",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "render:draft": "remotion render src/index.ts EnvoyEvidence out/envoy-draft.mp4 --codec h264",
+    "render:final": "node scripts/check-footage.mjs && remotion render src/index.ts EnvoyEvidence out/envoy-final.mp4 --codec h264",
+    "still": "remotion still src/index.ts EnvoyEvidence out/envoy-still.png --frame 0"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.400"
+  },
+  "devDependencies": {
+    "@remotion/cli": "4.0.400",
+    "@types/react": "18.3.20",
+    "@types/react-dom": "18.3.5",
+    "typescript": "5.9.2"
+  }
+}

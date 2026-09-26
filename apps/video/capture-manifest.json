@@ -1,0 +1,50 @@
+{
+  "home": {
+    "status": "missing",
+    "file": null,
+    "recordedAt": null,
+    "evidence": null
+  },
+  "sources": {
+    "status": "missing",
+    "file": null,
+    "recordedAt": null,
+    "evidence": null
+  },
+  "agent": {
+    "status": "missing",
+    "file": null,
+    "recordedAt": null,
+    "evidence": null
+  },
+  "feedback": {
+    "status": "missing",
+    "file": null,
+    "recordedAt": null,
+    "evidence": null
+  },
+  "tiger": {
+    "status": "missing",
+    "file": null,
+    "recordedAt": null,
+    "evidence": null
+  },
+  "staff": {
+    "status": "missing",
+    "file": null,
+    "recordedAt": null,
+    "evidence": null
+  },
+  "closing": {
+    "status": "missing",
+    "file": null,
+    "recordedAt": null,
+    "evidence": null
+  },
+  "narration": {
+    "status": "missing",
+    "file": null,
+    "recordedAt": null,
+    "evidence": null
+  }
+}
