@@ -120,14 +120,64 @@ export async function ingestOfficialSources(
       records[0]!.expiresAt,
     );
     const sourceRecord = records[0]!;
+    const existingSource = await database
+      .prepare(
+        `SELECT publisher, jurisdiction_level, jurisdiction_code,
+           jurisdiction_name, licence_name, licence_url, terms_url,
+           curator_overrides_json FROM source_registry WHERE id = ?`,
+      )
+      .bind(sourceId)
+      .first<{
+        publisher: string;
+        jurisdiction_level: string;
+        jurisdiction_code: string;
+        jurisdiction_name: string;
+        licence_name: string | null;
+        licence_url: string | null;
+        terms_url: string | null;
+        curator_overrides_json: string;
+      }>();
+    const overrides = JSON.parse(
+      existingSource?.curator_overrides_json ?? "{}",
+    ) as Record<string, unknown>;
+    const refreshedMetadata = [
+      ["publisher", "publisher", sourceRecord.publisher],
+      [
+        "jurisdictionLevel",
+        "jurisdiction_level",
+        sourceRecord.jurisdictionLevel,
+      ],
+      ["jurisdictionCode", "jurisdiction_code", sourceRecord.jurisdictionCode],
+      ["jurisdictionName", "jurisdiction_name", sourceRecord.jurisdictionName],
+      ["licenceName", "licence_name", sourceRecord.licenceName],
+      ["licenceUrl", "licence_url", sourceRecord.licenceUrl],
+      ["termsUrl", "terms_url", sourceRecord.termsUrl],
+    ] as const;
+    const metadataChanged = refreshedMetadata.some(
+      ([overrideKey, column, value]) =>
+        !Object.hasOwn(overrides, overrideKey) &&
+        existingSource?.[column] !== value,
+    );
     const source = await database
       .prepare(
         `
-      UPDATE source_registry SET publisher=?, jurisdiction_level=?,
-        jurisdiction_code=?, jurisdiction_name=?, licence_name=?,
-        licence_url=?, terms_url=?, terms_status='permitted', fetched_at=?,
-        verified_at=?, expires_at=?, freshness_state='current',
-        last_error=NULL, updated_at=? WHERE id=?
+      UPDATE source_registry SET
+        publisher=CASE WHEN json_type(curator_overrides_json, '$.publisher') IS NULL THEN ? ELSE publisher END,
+        jurisdiction_level=CASE WHEN json_type(curator_overrides_json, '$.jurisdictionLevel') IS NULL THEN ? ELSE jurisdiction_level END,
+        jurisdiction_code=CASE WHEN json_type(curator_overrides_json, '$.jurisdictionCode') IS NULL THEN ? ELSE jurisdiction_code END,
+        jurisdiction_name=CASE WHEN json_type(curator_overrides_json, '$.jurisdictionName') IS NULL THEN ? ELSE jurisdiction_name END,
+        licence_name=CASE WHEN json_type(curator_overrides_json, '$.licenceName') IS NULL THEN ? ELSE licence_name END,
+        licence_url=CASE WHEN json_type(curator_overrides_json, '$.licenceUrl') IS NULL THEN ? ELSE licence_url END,
+        terms_url=CASE WHEN json_type(curator_overrides_json, '$.termsUrl') IS NULL THEN ? ELSE terms_url END,
+        terms_status=CASE
+          WHEN json_type(curator_overrides_json, '$.termsStatus') IS NULL THEN 'permitted'
+          ELSE json_extract(curator_overrides_json, '$.termsStatus')
+        END,
+        fetched_at=CASE WHEN json_type(curator_overrides_json, '$.sourceUrl') IS NULL THEN ? ELSE NULL END,
+        verified_at=CASE WHEN json_type(curator_overrides_json, '$.sourceUrl') IS NULL THEN ? ELSE NULL END,
+        expires_at=CASE WHEN json_type(curator_overrides_json, '$.sourceUrl') IS NULL THEN ? ELSE NULL END,
+        freshness_state=CASE WHEN json_type(curator_overrides_json, '$.sourceUrl') IS NULL THEN 'current' ELSE 'unknown' END,
+        last_error=NULL, version=version + ?, updated_at=? WHERE id=?
     `,
       )
       .bind(
@@ -141,6 +191,7 @@ export async function ingestOfficialSources(
         now.toISOString(),
         now.toISOString(),
         latestExpiry,
+        metadataChanged ? 1 : 0,
         now.toISOString(),
         sourceId,
       )

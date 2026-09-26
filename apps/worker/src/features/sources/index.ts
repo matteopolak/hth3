@@ -10,6 +10,7 @@ import type {
   SourceRecordWithDetails,
 } from "@civicresolve/sources";
 import type { FeatureContext } from "../shared.js";
+import { handleSourceCuratorRequest } from "./curator.js";
 
 const COLLECTION_PATH = "/api/v1/sources";
 const RECORDS_PATH = "/api/v1/source-records";
@@ -30,6 +31,12 @@ export async function handleSourceRequest(
   url: URL,
   context: FeatureContext,
 ): Promise<Response | null> {
+  const curatorResponse = await handleSourceCuratorRequest(
+    request,
+    url,
+    context,
+  );
+  if (curatorResponse) return curatorResponse;
   const sourceRecordResponse = await handleSourceRecordRequest(
     request,
     url,
@@ -72,6 +79,29 @@ export async function handleSourceRecordRequest(
   const recordPath = url.pathname.slice(RECORDS_PATH.length);
   if (recordPath === "") {
     const records = await listSourceRecords(context.env.DB, { includeSamples });
+    const sourceTerms = await context.env.DB.prepare(
+      "SELECT id, terms_status, freshness_state, expires_at FROM source_registry",
+    ).all<{
+      id: string;
+      terms_status: string;
+      freshness_state: string;
+      expires_at: string | null;
+    }>();
+    const termsBySource = new Map(
+      (sourceTerms.results ?? []).map((source) => [source.id, source]),
+    );
+    const rightsReviewedRecords = records.filter((record) =>
+      record.origin === "sample"
+        ? includeSamples
+        : (() => {
+            const source = termsBySource.get(record.sourceId);
+            return (
+              source?.terms_status === "permitted" &&
+              source.freshness_state === "current" &&
+              (!source.expires_at || Date.parse(source.expires_at) > Date.now())
+            );
+          })(),
+    );
     const details = await context.env.DB.prepare(
       "SELECT record_id, kind, latitude, longitude FROM source_record_details",
     ).all<SourceRecordDetailRow>();
@@ -80,7 +110,7 @@ export async function handleSourceRecordRequest(
     );
     return sourceJson(context, {
       apiVersion: API_VERSION,
-      records: records.map((record) =>
+      records: rightsReviewedRecords.map((record) =>
         withDetails(record, detailById.get(record.id)),
       ),
       samplesIncluded: includeSamples,
@@ -99,6 +129,27 @@ export async function handleSourceRecordRequest(
   });
   if (!record)
     return sourceError(context, "NOT_FOUND", "Source record not found.", 404);
+  if (record.origin !== "sample") {
+    const sourceTerms = await context.env.DB.prepare(
+      "SELECT terms_status, freshness_state, expires_at FROM source_registry WHERE id = ?",
+    )
+      .bind(record.sourceId)
+      .first<{
+        terms_status: string;
+        freshness_state: string;
+        expires_at: string | null;
+      }>();
+    const sourceExpiry = sourceTerms?.expires_at
+      ? Date.parse(sourceTerms.expires_at)
+      : null;
+    if (
+      sourceTerms?.terms_status !== "permitted" ||
+      sourceTerms.freshness_state !== "current" ||
+      (sourceExpiry !== null &&
+        (!Number.isFinite(sourceExpiry) || sourceExpiry <= Date.now()))
+    )
+      return sourceError(context, "NOT_FOUND", "Source record not found.", 404);
+  }
   const detail = await context.env.DB.prepare(
     "SELECT record_id, kind, latitude, longitude FROM source_record_details WHERE record_id = ?",
   )
