@@ -13,7 +13,7 @@ This is the release and evidence checklist for the Civic Technology submission. 
 - [ ] Recheck source freshness. The 2026-09-26 unified production view showed six job finders, four open consultations plus three official directories, and 78 Nearby results. A previous source snapshot had 65 Service BC office records. Do not call a finder an individual vacancy, award, or eligibility result.
 - [ ] Submit one new, clearly labeled practice report, confirm its private receipt, and verify persistence after refresh. Keep the token private.
 - [ ] Verify a new outbox event reaches Tiger; note synchronization time. The 2026-09-26 19:41 UTC read-only check showed four delivered and four aggregate events, including two sample events from the newly captured practice report. Recheck before presenting.
-- [ ] Verify Workers AI in a new production conversation and retain a redacted capture of the reviewable proposal. The Toronto streetlight prompt was previously accepted; verify the final deployed build again.
+- [ ] Retain the new production Workers AI bench proposal capture, with its Envoy-only destination and disabled Confirm button visible. The 2026-09-26 combined Worker version `837bf16a` returned this pending card; recheck the final deployed build before judging.
 - [ ] Check the English presentation path visually at desktop and mobile widths. Check the French critical flow for missing strings without delaying the English demo for cosmetic polish.
 - [ ] If showing native iOS, complete the exact recorded journey on a physical device against production. A generic build alone is insufficient.
 
@@ -56,7 +56,7 @@ Create this project under [Hack the Hill III](https://hack-the-hill-iii.devpost.
 
 > Finding the right public service often means jumping between websites, interpreting unfamiliar language, and deciding which office can help. When something goes wrong, people should be able to describe the issue in their own words and review the destination before sending anything.
 >
-> envoy brings those steps into one resident experience. Guests can browse official public source links, inspect Service BC locations with attribution and freshness, and ask an assistant about a civic issue. In separate production checks, Workers AI prepared a reviewable Toronto streetlight report proposal and later warned that a matching practice report already existed. The model does not submit a report without a person's approval.
+> envoy brings those steps into one resident experience. Guests can browse official public source links, inspect Service BC locations with attribution and freshness, and ask an assistant about a civic issue. In a fresh production check, Workers AI prepared an editable, unsubmitted practice report proposal for a damaged bench at Nathan Phillips Square and showed Envoy as its destination. The model does not submit a report without a person's approval.
 >
 > The current report intake is a **practice workspace**. It uses real municipality names and sourced public information, but no municipality or employer is participating. Practice reports are stored in envoy and do not reach a government office. An earlier non-emergency practice report produced a private receipt; D1 kept the case and an outbox delivered privacy-safe feedback events to Tiger Data. A dated read-only query confirmed the submitted and classified events. We keep resident message bodies out of Tiger.
 >

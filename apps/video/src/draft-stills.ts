@@ -28,8 +28,8 @@ export const draftStills: Partial<Record<SceneId, Still[]>> = {
   ],
   agent: [
     {
-      file: "captures/pages-agent-proposal-2026-09-26.png",
-      description: "Production Workers AI proposal, 2026-09-26",
+      file: "captures/unified-proposal-pending-2026-09-26.png",
+      description: "Current production proposal; no submission",
     },
   ],
   feedback: [

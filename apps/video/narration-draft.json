@@ -16,11 +16,11 @@
       "Before visiting, residents should confirm current hours and services with the source agency."
     ],
     "agent": [
-      "A resident can also describe a service problem in ordinary language, without choosing a form first.",
-      "In this production chat, the question is about a broken streetlight in Toronto.",
-      "Workers AI warns that a similar practice report already exists, then asks whether this is a different issue or a recurrence.",
-      "A separate production capture shows the reviewable report proposal. The model does not send a report on its own.",
-      "The resident can edit, decline, or deliberately approve the next step."
+      "A resident can describe a civic issue in ordinary language, without choosing a form first.",
+      "This production guest chat uses a clearly labeled practice scenario: a damaged bench at Nathan Phillips Square in Toronto.",
+      "Workers AI replies with a feedback preview, and envoy shows a pending approval card with editable words.",
+      "The card names envoy's review team as the destination and says the City of Toronto does not receive the report.",
+      "The acknowledgement is unchecked, Confirm is disabled, and we leave this practice proposal unsubmitted."
     ],
     "feedback": [
       "This feedback form works for guests too. The words here are explicitly marked as a practice report.",

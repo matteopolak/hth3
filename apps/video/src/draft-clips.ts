@@ -20,9 +20,9 @@ export const draftClips: Partial<Record<SceneId, DraftClip>> = {
     description: "Live Jobs, Participation and Nearby navigation, 2026-09-26",
   },
   agent: {
-    file: "captures/unified-agent-interaction-2026-09-26.mp4",
-    seconds: 38,
-    description: "Guest Workers AI duplicate check, 2026-09-26",
+    file: "captures/unified-proposal-agent-interaction-2026-09-26.mp4",
+    seconds: 50,
+    description: "Production pending feedback approval, 2026-09-26",
   },
   feedback: {
     file: "captures/unified-feedback-interaction-2026-09-26.mp4",

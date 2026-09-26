@@ -24,8 +24,8 @@ export const scenes = [
     seconds: 50,
     title: "Talk through a service issue",
     caption:
-      "A resident describes a problem in plain language. Workers AI checks for a match and asks before a report is sent.",
-    capture: "Production guest chat and separately captured reviewable proposal",
+      "A resident describes a problem in plain language. Workers AI prepares an editable proposal that waits for approval.",
+    capture: "Production guest chat with pending, unsubmitted feedback approval",
     required: true,
   },
   {
