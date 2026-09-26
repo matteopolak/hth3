@@ -32,6 +32,7 @@ const transitions: Record<ApplicationStatus, ApplicationStatus[]> = {
 
 export async function mountApplicants(
   context: StaffPageContext,
+  preferredId?: string,
 ): Promise<void> {
   const { host, token, organizationId, locale } = context;
   let applications: Application[];
@@ -87,7 +88,10 @@ export async function mountApplicants(
   collection.append(list);
   host.append(collection);
   let selectedId = "";
-  if (applications[0]) void openApplication(applications[0].id);
+  const initial =
+    applications.find((application) => application.id === preferredId) ??
+    applications[0];
+  if (initial) void openApplication(initial.id);
 
   async function openApplication(id: string, scroll = false): Promise<void> {
     selectedId = id;
@@ -287,8 +291,7 @@ export async function mountApplicants(
             "PATCH",
             { status: next },
           );
-        await mountApplicants(context);
-        await openApplication(id);
+        await mountApplicants(context, id);
       } catch (error) {
         setError(panel, errorMessage(error, locale));
       }

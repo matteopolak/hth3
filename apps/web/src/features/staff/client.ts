@@ -1,4 +1,4 @@
-import type { ApplicationStatus } from "@civicresolve/contracts/v1";
+import type { ApplicationStatus, Locale } from "@civicresolve/contracts/v1";
 export interface TaxonomyDocument {
   groups: Array<{
     id: string;
@@ -174,6 +174,7 @@ export async function staffRequest<T>(
   path: string,
   method: "GET" | "POST" | "PATCH" = "GET",
   body?: unknown,
+  locale?: Locale,
 ): Promise<T> {
   const response = await fetch(
     `${base}/staff/organizations/${encodeURIComponent(organizationId)}${path}`,
@@ -181,6 +182,7 @@ export async function staffRequest<T>(
       method,
       headers: {
         Accept: "application/json",
+        ...(locale ? { "Accept-Language": locale } : {}),
         Authorization: `Bearer ${token}`,
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
         ...(method === "GET" ? {} : { "Idempotency-Key": crypto.randomUUID() }),

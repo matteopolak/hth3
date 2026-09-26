@@ -28,7 +28,7 @@ interface AssignmentOptions {
     nameFr: string;
     jurisdictionLevel: string;
   }>;
-  assignees: Array<{ subject: string; roles: string[] }>;
+  assignees: Array<{ subject: string; roles: string[]; displayLabel: string }>;
 }
 
 export function staffFeedbackOperations(
@@ -83,6 +83,9 @@ export function staffFeedbackOperations(
         token,
         organizationId,
         "/feedback/assignment-options",
+        "GET",
+        undefined,
+        locale,
       );
     } catch (error) {
       routing.replaceChildren(
@@ -126,12 +129,8 @@ export function staffFeedbackOperations(
     unassigned.value = "";
     assignee.append(unassigned);
     for (const member of choices.assignees) {
-      const tail = member.subject.split("|").at(-1) ?? member.subject;
-      const label =
-        tail.length > 24 ? `${tail.slice(0, 8)}…${tail.slice(-6)}` : tail;
-      const option = node("option", "", label);
+      const option = node("option", "", member.displayLabel);
       option.value = member.subject;
-      option.title = member.subject;
       assignee.append(option);
     }
     assignee.value = submission.assignment?.assigneeSubject ?? "";

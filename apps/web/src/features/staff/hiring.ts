@@ -15,7 +15,10 @@ import {
   text,
 } from "./ui.js";
 
-export async function mountHiring(context: StaffPageContext): Promise<void> {
+export async function mountHiring(
+  context: StaffPageContext,
+  preferredId?: string,
+): Promise<void> {
   const { host, token, organizationId, locale } = context;
   let postings: Posting[];
   try {
@@ -63,7 +66,9 @@ export async function mountHiring(context: StaffPageContext): Promise<void> {
   }
   collection.append(list);
   host.append(collection);
-  if (postings[0]) showPosting(postings[0]);
+  const initial =
+    postings.find((posting) => posting.id === preferredId) ?? postings[0];
+  if (initial) showPosting(initial);
 
   function openEditor(posting?: Posting): void {
     collection.querySelector(".staff-detail")?.remove();
@@ -145,14 +150,14 @@ export async function mountHiring(context: StaffPageContext): Promise<void> {
         return;
       }
       try {
-        await staffRequest(
+        const result = await staffRequest<{ posting: Posting }>(
           token,
           organizationId,
           posting ? `/postings/${encodeURIComponent(posting.id)}` : "/postings",
           posting ? "PATCH" : "POST",
           input,
         );
-        await mountHiring(context);
+        await mountHiring(context, result.posting.id);
       } catch (error) {
         setError(panel, errorMessage(error, locale));
       }
@@ -244,7 +249,7 @@ export async function mountHiring(context: StaffPageContext): Promise<void> {
         `/postings/${encodeURIComponent(posting.id)}/${action}`,
         "POST",
       );
-      await mountHiring(context);
+      await mountHiring(context, posting.id);
     } catch (error) {
       setError(panel, errorMessage(error, locale));
     }

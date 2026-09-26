@@ -22,6 +22,8 @@ Theme source buttons need the platform’s `onOpenFeedback(id)` callback to open
 
 The separate `staffFeedbackOperations` export mounts routing and lifecycle controls in the staff feedback detail sidebar. It loads active departments and assignable organization members from `/feedback/assignment-options`, saves a department with an optional assignee, and exposes request-details and record-outcome forms while the case is in review. The caller passes the case’s current `assignment` from the detail response and an `onChanged` callback that refreshes the case and queue. The Worker validates membership, state transitions, and idempotency keys. If a new feedback action is added, update this module and the platform case detail together.
 
+The routing selector displays the Worker’s localized `displayLabel` for each staff member. The opaque Auth0 subject is retained only as the option value sent to the Worker. `staffRequest` can send `Accept-Language` for endpoints with localized response fields. Posting saves, posting transitions, and applicant decisions reopen the same record after refreshing the collection.
+
 ## Configuration
 
 - `VITE_API_BASE_URL` points the browser at the Worker v1 API. It defaults to `http://localhost:8787/api/v1`.
