@@ -450,7 +450,6 @@ function navigation(): HTMLElement {
       nav.append(nested);
     }
   }
-  nav.append(sidebarAction("plugins", t("sidebar.plugins"), () => void openChatTray(activeChatMode(), "plugins")));
   sidebar.append(nav);
 
   const history = el("section", "sidebar-history");
@@ -814,8 +813,8 @@ function chatPage(mode: ChatMode): HTMLElement {
   const input = el("textarea", "chat-input") as HTMLTextAreaElement;
   input.rows = 3;
   input.maxLength = 4000;
-  input.placeholder = t("assistant.placeholder");
-  input.setAttribute("aria-label", t("assistant.placeholder"));
+  input.placeholder = t(mode === "employee" ? "assistant.staffPlaceholder" : "assistant.placeholder");
+  input.setAttribute("aria-label", input.placeholder);
   input.value = chat.draft;
   input.addEventListener("input", () => (chat.draft = input.value));
   input.addEventListener("keydown", (event) => {
@@ -862,6 +861,7 @@ function chatPage(mode: ChatMode): HTMLElement {
     void sendChat(mode);
   });
   composeArea.append(composer);
+  if (!hasContent) composeArea.append(chatPromptCards(mode));
   if (chat.contextArea) composeArea.append(el("span", "chat-context-area", chat.contextArea));
   if (chat.savedResume) {
     const chip = el("div", "chat-resume-chip");
@@ -877,6 +877,50 @@ function chatPage(mode: ChatMode): HTMLElement {
   if (state.voicePrompt && state.voiceStatus !== "idle") composeArea.append(el("p", "voice-prompt", state.voicePrompt));
   page.append(composeArea);
   return page;
+}
+
+function chatPromptCards(mode: ChatMode): HTMLElement {
+  const suggestions: Array<{
+    icon: string;
+    color: string;
+    title: MessageKey;
+    detail: MessageKey;
+    prompt: MessageKey;
+  }> = mode === "resident"
+    ? [
+        { icon: "briefcase", color: "blue", title: "assistant.cardJobsTitle", detail: "assistant.cardJobsDetail", prompt: "assistant.cardJobsPrompt" },
+        { icon: "map", color: "green", title: "assistant.cardSupportTitle", detail: "assistant.cardSupportDetail", prompt: "assistant.cardSupportPrompt" },
+        { icon: "files", color: "violet", title: "assistant.cardProgramsTitle", detail: "assistant.cardProgramsDetail", prompt: "assistant.cardProgramsPrompt" },
+        { icon: "feedback", color: "orange", title: "assistant.cardIssueTitle", detail: "assistant.cardIssueDetail", prompt: "assistant.cardIssuePrompt" },
+      ]
+    : [
+        { icon: "inbox", color: "blue", title: "assistant.cardInboxTitle", detail: "assistant.cardInboxDetail", prompt: "assistant.cardInboxPrompt" },
+        { icon: "tags", color: "violet", title: "assistant.cardThemesTitle", detail: "assistant.cardThemesDetail", prompt: "assistant.cardThemesPrompt" },
+        { icon: "users", color: "orange", title: "assistant.cardApplicantsTitle", detail: "assistant.cardApplicantsDetail", prompt: "assistant.cardApplicantsPrompt" },
+        { icon: "files", color: "green", title: "assistant.cardRequestsTitle", detail: "assistant.cardRequestsDetail", prompt: "assistant.cardRequestsPrompt" },
+      ];
+  const grid = el("div", "chat-prompt-cards");
+  for (const suggestion of suggestions) {
+    const card = button("", `chat-prompt-card accent-${suggestion.color}`, () => {
+      state.chats[mode].draft = t(suggestion.prompt);
+      state.chats[mode].tray = null;
+      render();
+      const input = document.querySelector<HTMLTextAreaElement>(".chat-input");
+      input?.focus();
+      input?.setSelectionRange(input.value.length, input.value.length);
+    });
+    card.setAttribute("aria-label", `${t("assistant.tryPrompt")}: ${t(suggestion.title)}`);
+    card.append(
+      el("span", "chat-prompt-icon", iconNode(suggestion.icon)),
+      el("span", "chat-prompt-copy",
+        el("strong", "", t(suggestion.title)),
+        el("small", "", t(suggestion.detail)),
+      ),
+      el("span", "chat-prompt-try", t("assistant.tryPrompt")),
+    );
+    grid.append(card);
+  }
+  return grid;
 }
 
 function chatActionMenu(mode: ChatMode): HTMLElement {

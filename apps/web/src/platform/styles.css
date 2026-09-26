@@ -1389,6 +1389,35 @@ body { min-width: 0; }
   padding: 6px;
 }
 .chat-shell.is-empty .chat-action-menu { top: calc(100% + 8px); bottom: auto; }
+.chat-prompt-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.chat-prompt-card {
+  display: flex;
+  min-width: 0;
+  min-height: 76px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e7e7e7;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+  color: #202020;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.chat-prompt-card:hover { border-color: #c9c9c9; box-shadow: 0 5px 16px #0000000c; transform: translateY(-1px); }
+.chat-prompt-card:focus-visible { outline: 2px solid #171717; outline-offset: 2px; }
+.chat-prompt-icon { display: inline-grid; flex: 0 0 38px; width: 38px; height: 38px; place-items: center; border-radius: 10px; }
+.chat-prompt-icon .nav-icon { display: inline-grid; width: auto; }
+.chat-prompt-icon svg { width: 20px; height: 20px; stroke-width: 1.8; }
+.chat-prompt-card.accent-blue .chat-prompt-icon { background: #edf3ff; color: #345db8; }
+.chat-prompt-card.accent-green .chat-prompt-icon { background: #e9f7f1; color: #167b59; }
+.chat-prompt-card.accent-violet .chat-prompt-icon { background: #f2edfc; color: #7651ad; }
+.chat-prompt-card.accent-orange .chat-prompt-icon { background: #fff1e6; color: #b76124; }
+.chat-prompt-copy { display: grid; min-width: 0; gap: 3px; }
+.chat-prompt-copy strong { overflow: hidden; font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.chat-prompt-copy small { overflow: hidden; color: #777; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.chat-prompt-try { flex: 0 0 auto; margin-left: auto; color: #777; font-size: 11px; font-weight: 600; }
 .chat-action-item { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 38px; border: 0; border-radius: 7px; background: transparent; padding: 0 10px; color: #303030; text-align: left; font-size: 12px; cursor: pointer; }
 .chat-action-item:hover { background: #f3f3f3; }
 .chat-action-item .nav-icon { display: inline-grid; width: 17px; color: #666; }
@@ -1427,4 +1456,7 @@ body { min-width: 0; }
   .signin-page { margin: 18px auto 35px; }
   .signin-choices { grid-template-columns: 1fr; }
   .signin-choice { min-height: 172px; padding: 16px; }
+  .chat-prompt-cards { grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
+  .chat-prompt-card { min-height: 60px; padding: 10px 12px; }
+  .chat-prompt-icon { flex-basis: 35px; width: 35px; height: 35px; }
 }
