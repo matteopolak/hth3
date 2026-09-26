@@ -2,7 +2,7 @@
 
 ## What it is
 
-`apps/mobile/ios/CivicResolve` is Envoy’s native SwiftUI iOS client for guest feedback, applicant profiles and résumés, and sample employer applications. It calls the same Cloudflare Worker API as the web client and does not wrap a web page.
+`apps/mobile/ios/CivicResolve` is Envoy’s native SwiftUI iOS client for guest feedback, official-source discovery, applicant profiles and résumés, and job applications. It calls the same Cloudflare Worker API as the web client and does not wrap a web page.
 
 ## How it works
 
@@ -12,11 +12,11 @@ Native sign-in uses Auth0.swift’s PKCE Universal Login flow. It requests the C
 
 The profile view reads and saves the authenticated applicant’s supported profile fields. Résumés upload as multipart PDF or DOCX files to the private Worker storage route, can be deleted, and are extracted only through the deterministic Worker parser. The app displays each source-backed suggestion and text preview; tapping “Apply to draft” changes the editable profile, and the applicant must still save it. There is no OCR or automated qualification inference. Résumés stay private unless the applicant explicitly selects one and shares it with a specific application. Deletion revokes that share.
 
-Sample postings load without sign-in. Application submission requires an Auth0 or local development identity, complete answers, and the applicant’s explicit confirmation. The displayed result always comes from the Worker response.
+Published postings load without sign-in, including clearly labeled practice records when selected. Application submission requires an Auth0 or local development identity, complete answers, and the applicant’s explicit confirmation. The displayed result always comes from the Worker response.
 
 ## How to change it
 
-Keep JSON models and Worker requests in `Platform/WorkerAPI.swift`, Auth0 configuration and credential handling in `Platform/Auth0Session.swift`, local-only identities in `Platform/LocalIdentity.swift`, and guest receipt storage in `Platform/KeychainReceiptStore.swift`. Screen behavior belongs in `Features/Feedback`, `Features/Applications`, and `Features/Profile`. Add English and French copy to `Platform/AppCopy.swift` until the shared localization catalogue is consumed natively.
+Keep JSON models and Worker requests in `Platform/WorkerAPI.swift`, Auth0 configuration and credential handling in `Platform/Auth0Session.swift`, local-only identities in `Platform/LocalIdentity.swift`, and guest receipt storage in `Platform/KeychainReceiptStore.swift`. Screen behavior belongs in `Features/Feedback`, `Features/Applications`, and `Features/Profile`. Add English and French copy to `Platform/AppCopy.swift` until the shared localization catalogue is consumed natively. Keep `CFBundleExecutable` in `Info.plist` set to `$(EXECUTABLE_NAME)`; a simulator build can succeed without it but installation fails.
 
 When an API request or response changes, update the Worker and shared contract first, then the Codable type, client method, and screen. Keep profile suggestions reviewable and source-linked; never save them automatically. Keep a résumé private unless the user chooses a particular application to share it with. Do not add a production local identity or store tokens in ordinary preferences.
 
@@ -36,8 +36,10 @@ Auth0’s Applicant role needs `read:applications`, `submit:applications`, `writ
 
 Open `apps/mobile/ios/CivicResolve.xcodeproj` in Xcode. The app display name is Envoy and its bundle identifier is `com.matteopolak.envoy`; the Auth0 callback scheme remains `civicresolve`. The project includes Auth0.swift 3.0.0 through Swift Package Manager. A generic device build can be checked with `xcodebuild -project apps/mobile/ios/CivicResolve.xcodeproj -scheme CivicResolve -sdk iphoneos -configuration Debug -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build`. The app targets iOS 17 or newer. Local HTTP is allowed only for local networking; Release targets the deployed HTTPS Worker.
 
-At the foundation checkpoint, generic iOS Debug and Release builds succeeded, but runtime visual QA was unavailable: the host's CoreSimulator 1051.54.0 is older than the Xcode 27 requirement 1171.7.0, and its simulator service cannot start. The current Auth0 and profile UI additions can be compile-checked on a generic iOS destination, but real Auth0 sign-in, upload, and simulator visual acceptance still require a working simulator. No provider or deployment acceptance should be inferred from the build.
+For simulator QA, Xcode 27 needs its bundled system resources installed. On this host, Xcode's first-launch installer updated CoreSimulator from 1051.54 to 1171.7 without a runtime download. An existing iOS 26.5 runtime was then used to create and boot an iPhone 17 with `xcrun simctl create` and `xcrun simctl boot`. Build with `xcodebuild -project apps/mobile/ios/CivicResolve.xcodeproj -scheme CivicResolve -configuration Debug -destination 'platform=iOS Simulator,id=<device-uuid>' CODE_SIGNING_ALLOWED=NO build`, then use `xcrun simctl install <device-uuid> <built-app-path>` and `xcrun simctl launch <device-uuid> com.matteopolak.envoy`. The app target must retain `@executable_path/Frameworks` in `LD_RUNPATH_SEARCH_PATHS` so the embedded SmartSpectra framework loads at runtime.
+
+The Debug simulator build, install, and launch succeeded on iPhone 17 with iOS 26.5. A simulator screenshot confirmed that the Explore screen renders at 1206 × 2622 without visible clipping. Xcode 27's Device Hub did not respond to the available computer-use accessibility bridge, so Ask, Feedback, Applications, Profile, and Accessibility were not visually navigated in this pass. Auth0 sign-in, camera access, upload, and provider behavior remain unverified by this simulator smoke check.
 
 ## Dependencies
 
-SwiftUI, Foundation/URLSession, UniformTypeIdentifiers, Security/Keychain, Auth0.swift, and the Worker postings, application, profile, résumé, feedback-receipt, and guest-message APIs. The Worker depends on D1 for applicant metadata and private R2 for résumé bytes. See [Applicant profile and résumé extraction](applications/resume-extraction.md) for parser and retention limits.
+SwiftUI, Foundation/URLSession, UniformTypeIdentifiers, Security/Keychain, Auth0.swift, SmartSpectra, and the Worker postings, application, profile, résumé, feedback-receipt, and guest-message APIs. The Worker depends on D1 for applicant metadata and private R2 for résumé bytes. See [Applicant profile and résumé extraction](applications/resume-extraction.md) for parser and retention limits.
