@@ -68,7 +68,14 @@ export async function handleStaffWorkspaceRequest(
       "posting:manage_organization",
       organizationId,
     ),
-    taxonomyManage: canPerformGlobalAction(actor, "taxonomy:manage"),
+    taxonomyManage:
+      canPerformGlobalAction(actor, "taxonomy:manage") ||
+      canPerformOrganizationAction(
+        actor,
+        "organization:manage_own",
+        organizationId,
+      ),
+    sourceManage: canPerformGlobalAction(actor, "source:manage"),
     auditRead:
       canPerformOrganizationAction(
         actor,

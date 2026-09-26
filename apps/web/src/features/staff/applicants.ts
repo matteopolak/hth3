@@ -52,7 +52,7 @@ export async function mountApplicants(
     node(
       "p",
       "staff-page-note",
-      `${applications.length} ${text(locale, "applications", "candidatures")}`,
+      `${applications.length} ${applications.length === 1 ? text(locale, "application", "candidature") : text(locale, "applications", "candidatures")}`,
     ),
   );
   const collection = node("div", "staff-collection");

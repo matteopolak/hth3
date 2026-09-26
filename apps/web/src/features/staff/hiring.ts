@@ -41,7 +41,7 @@ export async function mountHiring(
     node(
       "p",
       "staff-page-note",
-      `${postings.length} ${text(locale, "postings", "offres")}`,
+      `${postings.length} ${postings.length === 1 ? text(locale, "posting", "offre") : text(locale, "postings", "offres")}`,
     ),
   );
   const collection = node("div", "staff-collection");

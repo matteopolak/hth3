@@ -176,6 +176,7 @@ const LOCAL_IDENTITIES = [
   ["dev-civic-staff", "local.civicReviewer"],
   ["dev-hiring-reviewer", "local.hiringReviewer"],
   ["dev-organization-admin", "local.admin"],
+  ["dev-curator", "local.curator"],
 ] as const;
 
 const state: AppState = {
@@ -459,10 +460,10 @@ function navigation(): HTMLElement {
       programButton("sponsor", "sidebar.programSponsor", "landmark"),
     );
     if (capabilities?.applicantReview) nav.append(staffViewAction("applicants", "users", "sidebar.applicants"));
-    if (capabilities?.taxonomyManage) nav.append(
+    if (capabilities?.sourceManage) nav.append(
       sidebarAction("files", t("sidebar.sources"), () => void openPluginTool("employee", "list_sources")),
-      staffViewAction("taxonomy", "taxonomy", "sidebar.taxonomy"),
     );
+    if (capabilities?.taxonomyManage) nav.append(staffViewAction("taxonomy", "taxonomy", "sidebar.taxonomy"));
     if (capabilities?.auditRead) nav.append(staffViewAction("audit", "activity", "sidebar.analytics", state.locale === "fr" ? "Journal d’activité" : "Activity log"));
   } else {
     nav.append(

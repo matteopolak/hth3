@@ -6,6 +6,7 @@ export interface StaffWorkspaceCapabilities {
   applicantReview: boolean;
   postingManage: boolean;
   taxonomyManage: boolean;
+  sourceManage: boolean;
   auditRead: boolean;
 }
 

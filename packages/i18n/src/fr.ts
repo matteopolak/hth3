@@ -48,6 +48,7 @@ const fr: Catalogue = {
   "local.civicReviewer": "Évaluation civique",
   "local.hiringReviewer": "Évaluation des candidatures",
   "local.admin": "Administration de l’organisme",
+  "local.curator": "Responsable de la plateforme",
   "local.identityNotice":
     "Identités de test réservées au développement. Elles ne permettent pas de se connecter et sont absentes des versions de production.",
   "assistant.residentMode": "Assistant des résidents",

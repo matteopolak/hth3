@@ -44,6 +44,7 @@ const en = {
   "local.civicReviewer": "Civic reviewer",
   "local.hiringReviewer": "Hiring reviewer",
   "local.admin": "Organization admin",
+  "local.curator": "Platform curator",
   "local.identityNotice":
     "Development-only test identities. They are not sign-in accounts and disappear from production builds.",
   "assistant.residentMode": "Resident assistant",

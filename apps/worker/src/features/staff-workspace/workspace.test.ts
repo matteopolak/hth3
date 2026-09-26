@@ -80,6 +80,8 @@ describe("staff workspace permissions", () => {
         feedbackRead: true,
         applicantReview: false,
         postingManage: false,
+        taxonomyManage: false,
+        sourceManage: false,
         auditRead: false,
       },
       auditEvents: [],
@@ -91,11 +93,25 @@ describe("staff workspace permissions", () => {
       capabilities: {
         applicantReview: true,
         postingManage: true,
+        taxonomyManage: true,
+        sourceManage: false,
         auditRead: true,
       },
       auditEvents: [
         { id: "event-1", entityType: "posting", entityId: "posting-1" },
       ],
+    });
+
+    const curator = await get("dev-curator");
+    expect(curator.status).toBe(200);
+    expect(await curator.json()).toMatchObject({
+      capabilities: {
+        feedbackRead: false,
+        postingManage: false,
+        taxonomyManage: true,
+        sourceManage: true,
+        auditRead: true,
+      },
     });
   });
 });

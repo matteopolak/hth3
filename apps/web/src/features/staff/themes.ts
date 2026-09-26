@@ -88,7 +88,7 @@ export async function mountThemes(context: StaffPageContext): Promise<void> {
       node(
         "p",
         "staff-page-note",
-        `${overview.themes.length} ${text(locale, "active themes · last 30 days", "thèmes actifs · 30 derniers jours")}`,
+        `${overview.themes.length} ${overview.themes.length === 1 ? text(locale, "active theme · last 30 days", "thème actif · 30 derniers jours") : text(locale, "active themes · last 30 days", "thèmes actifs · 30 derniers jours")}`,
       ),
       candidatePanel,
     );
