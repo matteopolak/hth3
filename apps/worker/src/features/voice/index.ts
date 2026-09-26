@@ -30,13 +30,20 @@ export async function handleVoiceRequest(
   const apiKey = context.env.ELEVENLABS_API_KEY;
   const agentId = context.env.ELEVENLABS_AGENT_ID;
   const abuseSecret = context.env.FEEDBACK_ABUSE_HMAC_KEY;
-  if (!apiKey || !agentId || !abuseSecret || abuseSecret.length < 32)
+  if (!apiKey || !agentId || !abuseSecret || abuseSecret.length < 32) {
+    console.warn("voice_session_unavailable", {
+      stage: "configuration",
+      apiKeyConfigured: Boolean(apiKey),
+      agentIdConfigured: Boolean(agentId),
+      abuseKeyConfigured: Boolean(abuseSecret && abuseSecret.length >= 32),
+    });
     return featureError(
       context,
       "VOICE_UNAVAILABLE",
       "Voice intake is unavailable. You can type your feedback instead.",
       503,
     );
+  }
 
   const limited = await consumeSessionAllowance(request, context, abuseSecret);
   if (limited)
@@ -55,25 +62,32 @@ export async function handleVoiceRequest(
     headers: { "xi-api-key": apiKey },
     signal: AbortSignal.timeout(10_000),
   }).catch(() => null);
-  if (!response?.ok)
+  if (!response?.ok) {
+    console.warn("voice_session_unavailable", {
+      stage: "upstream",
+      status: response?.status ?? "network_error",
+    });
     return featureError(
       context,
       "VOICE_UNAVAILABLE",
       "Voice intake is unavailable. You can type your feedback instead.",
       503,
     );
+  }
 
   const payload = (await response.json().catch(() => null)) as {
     signed_url?: unknown;
   } | null;
   const signedUrl = payload?.signed_url;
-  if (typeof signedUrl !== "string" || !validSignedUrl(signedUrl))
+  if (typeof signedUrl !== "string" || !validSignedUrl(signedUrl)) {
+    console.warn("voice_session_unavailable", { stage: "invalid_response" });
     return featureError(
       context,
       "VOICE_UNAVAILABLE",
       "Voice intake is unavailable. You can type your feedback instead.",
       503,
     );
+  }
 
   return featureJson(context, {
     apiVersion: API_VERSION,
