@@ -31,7 +31,7 @@ Change form validation in `packages/domain/src/program-intake/index.ts`, the Wor
 
 ## Configuration
 
-Migration `0017_program_intake.sql` creates sponsor programs, applications, and messages and seeds one clearly labelled practice program. The feature uses the existing Worker `DB`, `APP_ENV`, Auth0 domain/audience, and development-auth settings. Sponsor management requires persisted organization admin membership and the existing `manage:organizations` API scope. Applicant submission uses `submit:applications`; reading uses `read:applications`. The web API base comes from `VITE_API_BASE_URL`.
+Migration `0017_program_intake.sql` creates sponsor programs, applications, and messages and seeds one clearly labelled practice program; `0020_program_intake_copy.sql` shortens its summary after the migration was already applied locally. The feature uses the existing Worker `DB`, `APP_ENV`, Auth0 domain/audience, and development-auth settings. Sponsor management requires persisted organization admin membership and the existing `manage:organizations` API scope. Applicant submission uses `submit:applications`; reading uses `read:applications`. The web API base comes from `VITE_API_BASE_URL`.
 
 ## Dependencies
 
