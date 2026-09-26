@@ -3,6 +3,12 @@ import SwiftUI
 struct FeedbackView: View {
     @EnvironmentObject private var model: CivicResolveModel
     @AppStorage("envoy.calmWriting") private var calmWriting = false
+    @State private var duplicate: FeedbackDuplicateCandidate?
+    @State private var duplicateOverride = false
+    @State private var checkingDuplicate = false
+    @State private var duplicateCheckFailed = false
+    @State private var previewRequestID: UUID?
+    private let duplicateAPI = FeedbackDuplicateAPI()
 
     var body: some View {
         ScrollView {
@@ -30,6 +36,13 @@ struct FeedbackView: View {
                                 Button(copy("feedback.review")) {
                                     model.error = nil
                                     model.feedbackReviewing = true
+                                    duplicate = nil
+                                    duplicateOverride = false
+                                    duplicateCheckFailed = false
+                                    checkingDuplicate = true
+                                    let requestID = UUID()
+                                    previewRequestID = requestID
+                                    Task { await checkDuplicate(requestID: requestID) }
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .disabled(model.feedbackDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isWorking)
@@ -100,15 +113,99 @@ struct FeedbackView: View {
                 Text(copy("feedback.improvement")).font(.caption.weight(.semibold)).foregroundStyle(CivicTheme.muted)
                 Text(model.improvementDraft).textSelection(.enabled)
             }
+            if checkingDuplicate {
+                ProgressView(previewCopy("checking"))
+                    .font(.subheadline)
+            } else if let duplicate {
+                VStack(alignment: .leading, spacing: 9) {
+                    Label(previewCopy("similarTitle"), systemImage: "doc.on.doc")
+                        .font(.subheadline.weight(.semibold))
+                    Text(previewCopy("similarBody"))
+                        .font(.subheadline)
+                    Text("\(previewCopy("status")): \(model.statusCopy(duplicate.status))")
+                        .font(.subheadline.weight(.medium))
+                    Toggle(previewCopy("separateIssue"), isOn: $duplicateOverride)
+                        .font(.subheadline)
+                    Text(previewCopy("sameIssue"))
+                        .font(.caption).foregroundStyle(CivicTheme.muted)
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(CivicTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(CivicTheme.border))
+            } else if duplicateCheckFailed {
+                InlineNotice(message: previewCopy("checkUnavailable"))
+            }
             Toggle(copy("feedback.ack"), isOn: $model.feedbackAcknowledged)
                 .font(.subheadline)
             HStack {
-                Button(copy("feedback.edit")) { model.feedbackReviewing = false }
+                Button(copy("feedback.edit")) {
+                    model.feedbackReviewing = false
+                    duplicate = nil
+                    duplicateOverride = false
+                    previewRequestID = nil
+                    checkingDuplicate = false
+                }
                     .buttonStyle(.bordered)
-                Button(copy("feedback.send")) { Task { await model.submitFeedback() } }
+                Button(copy("feedback.send")) { Task { await submitReviewedFeedback() } }
                     .buttonStyle(.borderedProminent)
-                    .disabled(!model.feedbackAcknowledged || model.isWorking)
+                    .disabled(!model.feedbackAcknowledged || model.isWorking || checkingDuplicate || (duplicate != nil && !duplicateOverride))
             }
+        }
+    }
+
+    private func checkDuplicate(requestID: UUID) async {
+        let message = model.feedbackDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard message.count >= 48, message.split(whereSeparator: { $0.isWhitespace }).count >= 7 else {
+            if previewRequestID == requestID { checkingDuplicate = false }
+            return
+        }
+        defer { if previewRequestID == requestID { checkingDuplicate = false } }
+        do {
+            let candidate = try await duplicateAPI.check(message: message)
+            if previewRequestID == requestID { duplicate = candidate }
+        } catch {
+            if previewRequestID == requestID { duplicateCheckFailed = true }
+        }
+    }
+
+    private func submitReviewedFeedback() async {
+        guard model.feedbackAcknowledged, !model.feedbackDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        model.isWorking = true
+        model.error = nil
+        model.notice = nil
+        defer { model.isWorking = false }
+        do {
+            let token = try KeychainReceiptStore.randomToken()
+            let result = try await duplicateAPI.create(
+                message: model.feedbackDraft,
+                improvement: model.improvementDraft,
+                locale: model.locale,
+                receiptToken: token,
+                duplicateOverride: duplicateOverride
+            )
+            switch result {
+            case let .duplicate(candidate):
+                duplicate = candidate
+                duplicateOverride = false
+                duplicateCheckFailed = false
+            case let .created(receipt, returnedToken):
+                let credentials = ReceiptCredentials(submissionId: receipt.id, receiptToken: returnedToken)
+                model.credentials = credentials
+                model.feedbackReceipt = receipt
+                model.feedbackDraft = ""
+                model.improvementDraft = ""
+                model.feedbackReviewing = false
+                model.feedbackAcknowledged = false
+                duplicate = nil
+                duplicateOverride = false
+                previewRequestID = nil
+                model.notice = copy("feedback.sent")
+                do { try KeychainReceiptStore.save(credentials) }
+                catch { model.error = copy("feedback.keychainFailed") }
+            }
+        } catch {
+            model.error = error.localizedDescription
         }
     }
 
@@ -165,4 +262,26 @@ struct FeedbackView: View {
     }
 
     private func copy(_ key: String) -> String { model.copy(key) }
+
+    private func previewCopy(_ key: String) -> String {
+        let english: [String: String] = [
+            "checking": "Checking for similar reports…",
+            "similarTitle": "A similar report may already be open",
+            "similarBody": "Only its current status is shown. No one else’s report or personal information is shared.",
+            "status": "Current status",
+            "separateIssue": "This is a separate issue or a recurrence. Send my report anyway.",
+            "sameIssue": "If this describes the same issue, you can keep your draft and avoid sending a duplicate.",
+            "checkUnavailable": "Similar reports could not be checked now. The service will check again before saving your report.",
+        ]
+        let french: [String: String] = [
+            "checking": "Recherche de signalements semblables…",
+            "similarTitle": "Un signalement semblable est peut-être déjà ouvert",
+            "similarBody": "Seul son état actuel est affiché. Le signalement et les renseignements personnels d’une autre personne ne sont pas partagés.",
+            "status": "État actuel",
+            "separateIssue": "Il s’agit d’un problème distinct ou récurrent. Envoyer quand même mon signalement.",
+            "sameIssue": "S’il s’agit du même problème, vous pouvez garder votre brouillon sans envoyer de doublon.",
+            "checkUnavailable": "La recherche de signalements semblables est indisponible. Le service vérifiera de nouveau avant d’enregistrer votre signalement.",
+        ]
+        return (model.locale == .fr ? french : english)[key] ?? key
+    }
 }
