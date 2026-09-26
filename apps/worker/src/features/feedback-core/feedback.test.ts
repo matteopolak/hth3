@@ -72,6 +72,23 @@ describe("feedback domain rules", () => {
       areStrongFeedbackDuplicates(original, "Broken light on the road"),
     ).toBe(false);
   });
+
+  it("ignores only a leading practice label when matching seeded reports", () => {
+    const seeded =
+      "[Practice] A deep pothole has formed near a pedestrian crossing on Bloor Street West. Could the road surface be checked?";
+    const residentText =
+      "A deep pothole has formed near a pedestrian crossing on Bloor Street West. Could the road surface be checked?";
+
+    expect(normalizeFeedbackDuplicateText(seeded)).toBe(
+      normalizeFeedbackDuplicateText(residentText),
+    );
+    expect(areStrongFeedbackDuplicates(seeded, residentText)).toBe(true);
+    expect(
+      normalizeFeedbackDuplicateText(
+        "A [Practice] label appears inside this substantial report about a pedestrian crossing signal on Bloor Street West.",
+      ),
+    ).toContain("practice");
+  });
 });
 
 describe("guest feedback duplicate checks", () => {

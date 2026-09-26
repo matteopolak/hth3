@@ -77,6 +77,8 @@ export function normalizeFeedbackDuplicateText(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const normalized = value
     .normalize("NFKC")
+    // Seeded practice cases carry a transparent label that is not part of the report.
+    .replace(/^\s*\[\s*practice\s*\]\s*/iu, "")
     .toLowerCase()
     .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
     .trim()
