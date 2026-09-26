@@ -488,6 +488,27 @@ async function callTool(
   const now = new Date();
   const id = `proposal_${randomHex(16)}`;
   const expiresAt = new Date(now.getTime() + 30 * 60_000).toISOString();
+  let programSample = false;
+  if (name === "submit_program_application") {
+    const program = await executeTool(
+      request,
+      context,
+      prepareTool(
+        "read_program",
+        { id: args.programId },
+        conversation.mode,
+        conversation.organization_id,
+      ),
+    );
+    if (program.status >= 400)
+      return featureJson(
+        context,
+        { apiVersion: API_VERSION, result: program },
+        program.status,
+      );
+    const record = (program.data as { program?: { sample?: unknown } }).program;
+    programSample = record?.sample === true;
+  }
   const preview = {
     ...prepared.preview,
     organizationId: conversation.organization_id,
@@ -495,8 +516,17 @@ async function callTool(
     expiresAt,
     ...(name === "create_feedback"
       ? {
+          requiresSandboxAcknowledgment: true,
           destinationNotice:
             "This report goes only to Envoy's Toronto intake queue. It is not connected to a government office.",
+        }
+      : {}),
+    ...(name === "submit_program_application"
+      ? {
+          requiresSandboxAcknowledgment: programSample,
+          destinationNotice: programSample
+            ? "This is a practice sponsor. The application stays in Envoy and does not reach a government agency."
+            : "This is a first-party application to the participating sponsor named on the program.",
         }
       : {}),
     ...(await recordVersion(request, name, args, conversation, context)),
@@ -599,6 +629,7 @@ async function approveProposal(
     );
   const preview = JSON.parse(proposal.preview_json) as {
     recordVersion?: string;
+    requiresSandboxAcknowledgment?: boolean;
   };
   if (preview.recordVersion) {
     const latest = await recordVersion(
@@ -617,13 +648,13 @@ async function approveProposal(
       );
   }
   if (
-    proposal.tool_name === "create_feedback" &&
+    preview.requiresSandboxAcknowledgment === true &&
     body.sandboxAcknowledged !== true
   )
     return featureError(
       context,
       "SANDBOX_ACK_REQUIRED",
-      "Confirm that this report stays in Envoy's own queue and does not go to a government office.",
+      "Confirm the practice destination shown in the action preview.",
       409,
     );
   if (
@@ -632,6 +663,15 @@ async function approveProposal(
     typeof prepared.body === "object"
   )
     prepared.body = { ...prepared.body, sandboxAcknowledged: true };
+  if (
+    proposal.tool_name === "submit_program_application" &&
+    prepared.body &&
+    typeof prepared.body === "object"
+  )
+    prepared.body = {
+      ...prepared.body,
+      sandboxAcknowledged: body.sandboxAcknowledged === true,
+    };
   let receiptToken = request.headers.get("X-Receipt-Token") ?? undefined;
   if (proposal.tool_name === "create_feedback") {
     const secret = context.env.FEEDBACK_ABUSE_HMAC_KEY;
@@ -715,6 +755,41 @@ async function getProposal(
     .first<ProposalRow>();
 }
 
+const VERSION_READ_TOOL: Readonly<Record<string, string>> = {
+  staff_change_feedback_status: "read_staff_feedback",
+  staff_reply_feedback: "read_staff_feedback",
+  staff_assign_feedback: "read_staff_feedback",
+  staff_request_feedback_details: "read_staff_feedback",
+  staff_record_feedback_outcome: "read_staff_feedback",
+  review_feedback_theme_membership: "read_feedback_theme",
+  staff_change_application_status: "read_staff_application",
+  send_staff_application_message: "read_staff_application",
+  record_application_decision: "read_staff_application",
+  edit_organization_posting: "read_organization_posting",
+  publish_organization_posting: "read_organization_posting",
+  close_organization_posting: "read_organization_posting",
+  edit_organization_program: "read_organization_program",
+  publish_organization_program: "read_organization_program",
+  close_organization_program: "read_organization_program",
+  change_program_application_status: "read_staff_program_application",
+  send_staff_program_application_message: "read_staff_program_application",
+  send_program_application_message: "read_my_program_application",
+  submit_program_application: "read_program",
+  send_application_message: "read_my_application",
+  update_profile: "read_profile",
+  delete_profile: "read_profile",
+  save_discovery_item: "list_saved_discovery",
+  remove_saved_discovery_item: "list_saved_discovery",
+  save_external_preparation: "read_external_preparation",
+  delete_external_preparation: "read_external_preparation",
+  reply_feedback: "read_feedback_receipt",
+  reopen_feedback: "read_feedback_receipt",
+  share_resume: "read_my_application",
+  edit_taxonomy_draft: "read_taxonomy",
+  publish_taxonomy_draft: "read_taxonomy",
+  correct_classification: "read_classification",
+};
+
 async function recordVersion(
   request: Request,
   name: string,
@@ -722,23 +797,14 @@ async function recordVersion(
   conversation: ConversationRow,
   context: AgentContext,
 ): Promise<{ recordVersion?: string }> {
-  const readName =
-    name === "staff_change_feedback_status" || name === "staff_reply_feedback"
-      ? "read_staff_feedback"
-      : name === "staff_change_application_status"
-        ? "list_staff_applications"
-        : name === "reply_feedback" || name === "reopen_feedback"
-          ? "read_feedback_receipt"
-          : name === "share_resume"
-            ? "read_my_application"
-            : name === "edit_taxonomy_draft" ||
-                name === "publish_taxonomy_draft"
-              ? "read_taxonomy"
-              : name === "correct_classification"
-                ? "read_classification"
-                : null;
+  const readName = VERSION_READ_TOOL[name];
   if (!readName) return {};
-  const readArgs = name === "share_resume" ? { id: args.applicationId } : args;
+  const readArgs =
+    name === "share_resume"
+      ? { id: args.applicationId }
+      : name === "submit_program_application"
+        ? { id: args.programId }
+        : args;
   const prepared = prepareTool(
     readName,
     readArgs,
@@ -756,7 +822,12 @@ async function recordVersion(
   const data = result.data as {
     submission?: { updatedAt?: unknown };
     application?: { updatedAt?: unknown };
-    applications?: Array<{ id?: unknown; updatedAt?: unknown }>;
+    posting?: { updatedAt?: unknown };
+    program?: { updatedAt?: unknown };
+    theme?: { updatedAt?: unknown };
+    sources?: Array<{ id?: unknown }>;
+    updatedAt?: unknown;
+    items?: Array<{ item?: { id?: unknown }; updatedAt?: unknown }>;
     draft?: unknown;
     classification?: { id?: unknown };
   };
@@ -767,10 +838,41 @@ async function recordVersion(
     typeof data.classification?.id === "string"
   )
     return { recordVersion: data.classification.id };
-  const version =
-    name === "staff_change_application_status"
-      ? data.applications?.find((item) => item.id === args.id)?.updatedAt
-      : (data.submission ?? data.application)?.updatedAt;
+  if (readName === "read_feedback_theme" && data.theme)
+    return {
+      recordVersion: await sha256Hex(
+        JSON.stringify({
+          theme: data.theme,
+          sourceIds: data.sources?.map((source) => source.id) ?? [],
+        }),
+      ),
+    };
+  if (readName === "read_profile")
+    return {
+      recordVersion:
+        typeof data.updatedAt === "string" ? data.updatedAt : "profile:absent",
+    };
+  if (readName === "read_external_preparation")
+    return {
+      recordVersion:
+        typeof data.updatedAt === "string"
+          ? data.updatedAt
+          : "preparation:absent",
+    };
+  if (readName === "list_saved_discovery") {
+    const saved = data.items?.find((entry) => entry.item?.id === args.id);
+    return {
+      recordVersion:
+        typeof saved?.updatedAt === "string" ? saved.updatedAt : "saved:absent",
+    };
+  }
+  const version = (
+    data.submission ??
+    data.application ??
+    data.posting ??
+    data.program ??
+    data.theme
+  )?.updatedAt;
   return typeof version === "string" ? { recordVersion: version } : {};
 }
 

@@ -2,8 +2,10 @@ import { handleApplicationRequest } from "../application-core/index.js";
 import { handleAnalyticsRequest } from "../analytics/index.js";
 import { handleDiscoveryRequest } from "../discovery/index.js";
 import { handleEmployerRequest } from "../employer/index.js";
+import { handleExternalPreparationRequest } from "../external-preparation/index.js";
 import { handleFeedbackRequest } from "../feedback-core/index.js";
 import { handleProfileRequest } from "../profile/index.js";
+import { handleProgramIntakeRequest } from "../program-intake/index.js";
 import { handleSourceRequest } from "../sources/index.js";
 import { handleTaxonomyRequest } from "../taxonomy/index.js";
 import { handleThemesRequest } from "../themes/index.js";
@@ -39,6 +41,13 @@ function feedbackId(args: ToolArguments): string {
   return value;
 }
 
+function evidenceId(args: ToolArguments): string {
+  const value = args.assetId;
+  if (typeof value !== "string" || !/^asset_[a-f0-9]{32}$/.test(value))
+    throw new ToolInputError("assetId must be an evidence identifier.");
+  return value;
+}
+
 function organizationPath(organizationId: string | null): string {
   if (!organizationId) throw new ToolInputError("An organization is required.");
   return `/api/v1/staff/organizations/${organizationId}`;
@@ -51,10 +60,32 @@ function object(args: ToolArguments, key: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function array(args: ToolArguments, key: string): unknown[] {
+  const value = args[key];
+  if (!Array.isArray(value))
+    throw new ToolInputError(`${key} must be an array.`);
+  return value;
+}
+
 function string(args: ToolArguments, key: string): string {
   const value = args[key];
   if (typeof value !== "string" || value.trim().length === 0)
     throw new ToolInputError(`${key} is required.`);
+  return value;
+}
+
+function optionalSubject(args: ToolArguments): string | null {
+  const value = args.assigneeSubject;
+  if (value === null) return null;
+  if (
+    typeof value !== "string" ||
+    value.trim().length === 0 ||
+    value.length > 240 ||
+    /[\u0000-\u001f]/.test(value)
+  )
+    throw new ToolInputError(
+      "assigneeSubject must be an account identifier or null.",
+    );
   return value;
 }
 
@@ -114,6 +145,24 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     path: (args) => `/api/v1/postings/${identifier(args, "id")}`,
     handler: handleApplicationRequest,
   },
+  list_programs: {
+    mode: "both",
+    access: "read",
+    description:
+      "List published first-party grants and benefit programs with practice status and sponsor.",
+    method: "GET",
+    path: () => "/api/v1/programs",
+    handler: handleProgramIntakeRequest,
+  },
+  read_program: {
+    mode: "both",
+    access: "read",
+    description:
+      "Open one published grant or benefit program and its intake questions.",
+    method: "GET",
+    path: (args) => `/api/v1/programs/${identifier(args, "id")}`,
+    handler: handleProgramIntakeRequest,
+  },
   list_sources: {
     mode: "both",
     access: "read",
@@ -148,7 +197,7 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       "Search real sourced jobs, support, funding, offices and participation records with filters.",
     method: "GET",
     path: (args) =>
-      `/api/v1/discovery${discoveryQuery(args, ["area", "q", "jurisdiction", "language", "freshness", "limit", "offset", "includeSamples"])}`,
+      `/api/v1/discovery${discoveryQuery(args, ["area", "type", "audience", "status", "source", "location", "q", "jurisdiction", "language", "freshness", "limit", "offset", "includeSamples"])}`,
     handler: handleDiscoveryRequest,
   },
   read_discovery_item: {
@@ -198,6 +247,84 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     method: "DELETE",
     path: (args) => `/api/v1/discovery/saved/${sourceRecordId(args)}`,
     handler: handleDiscoveryRequest,
+  },
+  list_external_preparations: {
+    mode: "resident",
+    access: "read",
+    description:
+      "List the signed-in resident's saved preparation drafts for official external opportunities.",
+    method: "GET",
+    path: () => "/api/v1/external-preparations",
+    handler: handleExternalPreparationRequest,
+  },
+  read_external_preparation: {
+    mode: "resident",
+    access: "read",
+    description:
+      "Read an official external opportunity and the resident's saved answers and checklist if signed in.",
+    method: "GET",
+    path: (args) => `/api/v1/external-preparations/${sourceRecordId(args)}`,
+    handler: handleExternalPreparationRequest,
+  },
+  save_external_preparation: {
+    mode: "resident",
+    access: "write",
+    description:
+      "Prepare saving answers and checklist for an official external opportunity; this does not submit to the publisher.",
+    method: "PUT",
+    path: (args) => `/api/v1/external-preparations/${sourceRecordId(args)}`,
+    handler: handleExternalPreparationRequest,
+    body: (args) => ({ answers: args.answers, checklist: args.checklist }),
+  },
+  delete_external_preparation: {
+    mode: "resident",
+    access: "write",
+    description:
+      "Prepare deleting the resident's saved external preparation draft.",
+    method: "DELETE",
+    path: (args) => `/api/v1/external-preparations/${sourceRecordId(args)}`,
+    handler: handleExternalPreparationRequest,
+  },
+  export_external_preparation: {
+    mode: "resident",
+    access: "read",
+    description:
+      "Get a text download path for prepared answers and checklist, without recording an external submission.",
+    method: "GET",
+    path: (args) =>
+      `/api/v1/external-preparations/${sourceRecordId(args)}/export${discoveryQuery(args, ["locale"])}`,
+    handler: handleExternalPreparationRequest,
+  },
+  list_reusable_answers: {
+    mode: "resident",
+    access: "read",
+    description:
+      "List the signed-in resident's private reusable application answers.",
+    method: "GET",
+    path: () => "/api/v1/external-preparations/answers",
+    handler: handleExternalPreparationRequest,
+  },
+  save_reusable_answer: {
+    mode: "resident",
+    access: "write",
+    description: "Prepare saving one private reusable application answer.",
+    method: "PUT",
+    path: (args) =>
+      `/api/v1/external-preparations/answers/${identifier(args, "id")}`,
+    handler: handleExternalPreparationRequest,
+    body: (args) => ({
+      label: string(args, "label"),
+      response: string(args, "response"),
+    }),
+  },
+  delete_reusable_answer: {
+    mode: "resident",
+    access: "write",
+    description: "Prepare deleting one private reusable application answer.",
+    method: "DELETE",
+    path: (args) =>
+      `/api/v1/external-preparations/answers/${identifier(args, "id")}`,
+    handler: handleExternalPreparationRequest,
   },
   read_profile: {
     mode: "resident",
@@ -255,6 +382,16 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       "Read a guest feedback receipt; requires its private receipt token.",
     method: "GET",
     path: (args) => `/api/v1/feedback/receipts/${feedbackId(args)}`,
+    handler: handleFeedbackRequest,
+  },
+  read_feedback_attachment: {
+    mode: "resident",
+    access: "read",
+    description:
+      "Get an attachment download path from the resident's private feedback receipt; receipt token required.",
+    method: "GET",
+    path: (args) =>
+      `/api/v1/feedback/receipts/${feedbackId(args)}/attachments/${evidenceId(args)}`,
     handler: handleFeedbackRequest,
   },
   emergency_guidance: {
@@ -385,12 +522,74 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     handler: handleEmployerRequest,
     body: (args) => ({ message: string(args, "message") }),
   },
+  list_my_program_applications: {
+    mode: "resident",
+    access: "read",
+    description:
+      "List the signed-in resident's first-party program applications.",
+    method: "GET",
+    path: () => "/api/v1/program-applications",
+    handler: handleProgramIntakeRequest,
+  },
+  read_my_program_application: {
+    mode: "resident",
+    access: "read",
+    description: "Read one of the signed-in resident's program applications.",
+    method: "GET",
+    path: (args) => `/api/v1/program-applications/${identifier(args, "id")}`,
+    handler: handleProgramIntakeRequest,
+  },
+  submit_program_application: {
+    mode: "resident",
+    access: "write",
+    description:
+      "Prepare a reviewed in-app grant or benefit application. A practice sponsor needs separate acknowledgment before approval.",
+    method: "POST",
+    path: () => "/api/v1/program-applications",
+    handler: handleProgramIntakeRequest,
+    body: (args) => ({
+      programId: identifier(args, "programId"),
+      answers: object(args, "answers"),
+      confirmedByApplicant: true,
+      sandboxAcknowledged: false,
+    }),
+  },
+  read_program_application_messages: {
+    mode: "resident",
+    access: "read",
+    description: "Read messages on one of the resident's program applications.",
+    method: "GET",
+    path: (args) =>
+      `/api/v1/program-applications/${identifier(args, "id")}/messages`,
+    handler: handleProgramIntakeRequest,
+  },
+  send_program_application_message: {
+    mode: "resident",
+    access: "write",
+    description:
+      "Prepare a message to the sponsor of the resident's own program application.",
+    method: "POST",
+    path: (args) =>
+      `/api/v1/program-applications/${identifier(args, "id")}/messages`,
+    handler: handleProgramIntakeRequest,
+    body: (args) => ({ message: string(args, "message") }),
+  },
   list_staff_feedback: {
     mode: "employee",
     access: "read",
     description: "List feedback assigned to this staff member's organization.",
     method: "GET",
     path: (_args, org) => `${organizationPath(org)}/feedback`,
+    handler: handleFeedbackRequest,
+  },
+  list_feedback_assignment_options: {
+    mode: "employee",
+    access: "read",
+    description:
+      "List active departments and eligible staff members for assigning organization feedback cases.",
+    method: "GET",
+    path: (_args, org) =>
+      `${organizationPath(org)}/feedback/assignment-options`,
     handler: handleFeedbackRequest,
   },
   read_feedback_analytics: {
@@ -437,6 +636,17 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     path: (_args, org) => `${organizationPath(org)}/themes/refresh`,
     handler: handleThemesRequest,
   },
+  review_feedback_theme_membership: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a reviewed move of one organization feedback submission into a same-category theme.",
+    method: "POST",
+    path: (args, org) =>
+      `${organizationPath(org)}/themes/${themeId(args)}/memberships`,
+    handler: handleThemesRequest,
+    body: (args) => ({ submissionId: feedbackId({ id: args.submissionId }) }),
+  },
   read_staff_feedback: {
     mode: "employee",
     access: "read",
@@ -455,6 +665,16 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       `${organizationPath(org)}/feedback/${feedbackId(args)}/messages`,
     handler: handleFeedbackRequest,
   },
+  read_staff_feedback_attachment: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Get the authorized download path for evidence attached to an organization feedback case.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/feedback/${feedbackId(args)}/attachments/${evidenceId(args)}`,
+    handler: handleFeedbackRequest,
+  },
   list_staff_applications: {
     mode: "employee",
     access: "read",
@@ -462,6 +682,123 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     method: "GET",
     path: (_args, org) => `${organizationPath(org)}/applications`,
     handler: handleApplicationRequest,
+  },
+  list_organization_programs: {
+    mode: "employee",
+    access: "read",
+    description:
+      "List first-party grant and benefit programs owned by this organization.",
+    method: "GET",
+    path: (_args, org) => `${organizationPath(org)}/programs`,
+    handler: handleProgramIntakeRequest,
+  },
+  read_organization_program: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Read one of this organization's program forms and current version.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/programs/${identifier(args, "id")}`,
+    handler: handleProgramIntakeRequest,
+  },
+  create_organization_program: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a draft grant or benefit intake with a reviewed question set.",
+    method: "POST",
+    path: (_args, org) => `${organizationPath(org)}/programs`,
+    handler: handleProgramIntakeRequest,
+    body: (args) => ({
+      kind: string(args, "kind"),
+      title: string(args, "title"),
+      summary: string(args, "summary"),
+      questions: array(args, "questions"),
+    }),
+  },
+  edit_organization_program: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare edits to a draft program's kind, title, summary or intake questions.",
+    method: "PATCH",
+    path: (args, org) =>
+      `${organizationPath(org)}/programs/${identifier(args, "id")}`,
+    handler: handleProgramIntakeRequest,
+    body: (args) => ({
+      kind: args.kind,
+      title: args.title,
+      summary: args.summary,
+      questions: args.questions,
+    }),
+  },
+  publish_organization_program: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare publication of a draft program; sponsor verification is rechecked on approval.",
+    method: "POST",
+    path: (args, org) =>
+      `${organizationPath(org)}/programs/${identifier(args, "id")}/publish`,
+    handler: handleProgramIntakeRequest,
+  },
+  close_organization_program: {
+    mode: "employee",
+    access: "write",
+    description: "Prepare closing a published first-party program.",
+    method: "POST",
+    path: (args, org) =>
+      `${organizationPath(org)}/programs/${identifier(args, "id")}/close`,
+    handler: handleProgramIntakeRequest,
+  },
+  list_staff_program_applications: {
+    mode: "employee",
+    access: "read",
+    description: "List applicants to this organization's first-party programs.",
+    method: "GET",
+    path: (_args, org) => `${organizationPath(org)}/program-applications`,
+    handler: handleProgramIntakeRequest,
+  },
+  read_staff_program_application: {
+    mode: "employee",
+    access: "read",
+    description: "Read one program application in the current organization.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/program-applications/${identifier(args, "id")}`,
+    handler: handleProgramIntakeRequest,
+  },
+  change_program_application_status: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a reviewed program application status update within the allowed transition graph.",
+    method: "PATCH",
+    path: (args, org) =>
+      `${organizationPath(org)}/program-applications/${identifier(args, "id")}/status`,
+    handler: handleProgramIntakeRequest,
+    body: (args) => ({ status: string(args, "status") }),
+  },
+  read_staff_program_application_messages: {
+    mode: "employee",
+    access: "read",
+    description: "Read messages on an organization program application.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/program-applications/${identifier(args, "id")}/messages`,
+    handler: handleProgramIntakeRequest,
+  },
+  send_staff_program_application_message: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a message to one of this organization's program applicants.",
+    method: "POST",
+    path: (args, org) =>
+      `${organizationPath(org)}/program-applications/${identifier(args, "id")}/messages`,
+    handler: handleProgramIntakeRequest,
+    body: (args) => ({ message: string(args, "message") }),
   },
   read_staff_application: {
     mode: "employee",
@@ -512,6 +849,42 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       `${organizationPath(org)}/feedback/${feedbackId(args)}/status`,
     handler: handleFeedbackRequest,
     body: (args) => ({ status: string(args, "status"), outcome: args.outcome }),
+  },
+  staff_assign_feedback: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare assigning a feedback case to an active department and an eligible staff member in this organization; null clears the assignee.",
+    method: "PATCH",
+    path: (args, org) =>
+      `${organizationPath(org)}/feedback/${feedbackId(args)}/assignment`,
+    handler: handleFeedbackRequest,
+    body: (args) => ({
+      departmentId: identifier(args, "departmentId"),
+      assigneeSubject: optionalSubject(args),
+    }),
+  },
+  staff_request_feedback_details: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a question to the resident and move the case to waiting on resident.",
+    method: "POST",
+    path: (args, org) =>
+      `${organizationPath(org)}/feedback/${feedbackId(args)}/request-details`,
+    handler: handleFeedbackRequest,
+    body: (args) => ({ message: string(args, "message") }),
+  },
+  staff_record_feedback_outcome: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a reviewed case outcome summary and mark the case outcome recorded.",
+    method: "POST",
+    path: (args, org) =>
+      `${organizationPath(org)}/feedback/${feedbackId(args)}/outcome`,
+    handler: handleFeedbackRequest,
+    body: (args) => ({ summary: string(args, "summary") }),
   },
   staff_change_application_status: {
     mode: "employee",
