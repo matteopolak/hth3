@@ -12,6 +12,7 @@ import { createParticipationPage } from "../features/participation/index.js";
 import { createPublicApplicationsPage } from "../features/applications/index.js";
 import { createPublicProgramsPage } from "../features/programs/index.js";
 import { createExternalPreparationPage } from "../features/external-preparation/index.js";
+import { agentApprovalIntro, agentApprovalState, agentResult } from "../features/agent-results/index.js";
 import { staffFeedbackOperations, staffWorkspace } from "../features/staff/index.js";
 import { webAuth } from "./auth0.js";
 import {
@@ -42,6 +43,7 @@ type ChatMode = "resident" | "employee";
 interface ChatMessage {
   role: "user" | "assistant" | "tool";
   content: string;
+  result?: unknown;
 }
 
 interface ChatHistoryEntry {
@@ -319,6 +321,7 @@ function render(): void {
   workspace.append(header());
   workspace.append(mainPage());
   shell.append(workspace);
+  shell.inert = state.searchOpen;
   root!.append(shell);
   if (state.searchOpen) root!.append(searchOverlay());
 }
@@ -328,8 +331,10 @@ function header(): HTMLElement {
   const menu = button(t("app.openMenu"), "mobile-menu-button", () => {
     state.sidebarOpen = true;
     render();
+    document.querySelector<HTMLButtonElement>(".sidebar-search-button")?.focus();
   });
   menu.setAttribute("aria-label", t("app.openMenu"));
+  menu.setAttribute("aria-expanded", String(state.sidebarOpen));
   menu.replaceChildren(iconNode("menu"));
   header.append(menu);
   const heading = el("h1", "page-title", pageTitle());
@@ -383,6 +388,15 @@ function brand(): HTMLElement {
 
 function navigation(): HTMLElement {
   const sidebar = el("aside", "sidebar");
+  sidebar.addEventListener("keydown", (event) => {
+    if (!state.sidebarOpen) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      state.sidebarOpen = false;
+      render();
+      document.querySelector<HTMLButtonElement>(".mobile-menu-button")?.focus();
+    } else if (event.key === "Tab") trapTab(event, sidebar);
+  });
   const head = el("div", "sidebar-head");
   const collapse = button(t("app.collapseMenu"), "sidebar-collapse", () => {
     state.sidebarCollapsed = !state.sidebarCollapsed;
@@ -493,10 +507,14 @@ function navigation(): HTMLElement {
 
 function searchOverlay(): HTMLElement {
   const overlay = el("div", "search-overlay");
-  overlay.append(button(t("app.closeMenu"), "search-backdrop", () => {
+  const close = () => {
     state.searchOpen = false;
     render();
-  }));
+    document.querySelector<HTMLButtonElement>(
+      window.matchMedia("(max-width: 620px)").matches ? ".mobile-menu-button" : ".sidebar-search-button",
+    )?.focus();
+  };
+  overlay.append(button(t("app.closeMenu"), "search-backdrop", close));
   const dialog = el("section", "search-dialog");
   dialog.setAttribute("role", "dialog");
   dialog.setAttribute("aria-modal", "true");
@@ -531,15 +549,31 @@ function searchOverlay(): HTMLElement {
     }
     if (empty) empty.hidden = visible > 0;
   });
-  input.addEventListener("keydown", (event) => {
+  overlay.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-      state.searchOpen = false;
-      render();
-    }
+      event.preventDefault();
+      close();
+    } else if (event.key === "Tab") trapTab(event, dialog);
   });
   dialog.append(input, el("span", "search-heading", t("sidebar.recent")), list);
   overlay.append(dialog);
   return overlay;
+}
+
+function trapTab(event: KeyboardEvent, container: HTMLElement): void {
+  const focusable = [...container.querySelectorAll<HTMLElement>(
+    'a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])',
+  )].filter((item) => !item.hidden && getComputedStyle(item).visibility !== "hidden");
+  if (!focusable.length) return;
+  const first = focusable[0]!;
+  const last = focusable[focusable.length - 1]!;
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 function disableGuestNavigation(item: HTMLButtonElement): void {
@@ -802,7 +836,7 @@ async function beginAuth(mode: "applicant" | "employee"): Promise<void> {
 
 function chatPage(mode: ChatMode): HTMLElement {
   const chat = state.chats[mode];
-  const hasContent = chat.messages.length > 0 || chat.proposals.some((item) => item.status === "pending");
+  const hasContent = chat.messages.length > 0 || chat.proposals.length > 0;
   const page = el("section", `chat-shell ${hasContent ? "has-messages" : "is-empty"}`);
 
   const thread = el("div", "chat-thread");
@@ -814,12 +848,7 @@ function chatPage(mode: ChatMode): HTMLElement {
   }
   for (const message of chat.messages) {
     if (message.role === "tool") {
-      const details = el("details", "chat-tool-result");
-      details.append(
-        el("summary", "", t("assistant.toolResult")),
-        el("pre", "", message.content),
-      );
-      thread.append(details);
+      thread.append(agentResult(message.result ?? message.content, state.locale));
       continue;
     }
     const entry = el("article", `chat-message chat-${message.role}`);
@@ -833,10 +862,9 @@ function chatPage(mode: ChatMode): HTMLElement {
     );
     thread.append(entry);
   }
-  for (const proposal of chat.proposals.filter(
-    (item) => item.status === "pending",
-  )) {
-    thread.append(proposalCard(mode, proposal));
+  for (const proposal of chat.proposals) {
+    if (proposal.status === "pending") thread.append(proposalCard(mode, proposal));
+    else thread.append(agentApprovalState({ status: proposal.status, preview: proposal.preview }, state.locale));
   }
   if (chat.pending) thread.append(loadingState());
   page.append(thread);
@@ -861,11 +889,15 @@ function chatPage(mode: ChatMode): HTMLElement {
   const add = button("", "chat-round-button chat-add-button", () => void openChatTray(mode, "actions"));
   add.append(iconNode("plus"));
   add.setAttribute("aria-label", t("assistant.addToChat"));
+  add.setAttribute("aria-expanded", String(chat.tray === "actions"));
+  add.setAttribute("aria-haspopup", "true");
   const model = button("", "chat-model-button", () => {
     chat.modelOpen = !chat.modelOpen;
     if (!chat.modelOpen) chat.thinkingOpen = false;
     chat.tray = null;
     render();
+    if (chat.modelOpen) document.querySelector<HTMLButtonElement>(".chat-model-option")?.focus();
+    else document.querySelector<HTMLButtonElement>(".chat-model-button")?.focus();
   });
   model.append(el("span", "", t(chat.modelChoice === "fast" ? "assistant.modelFast" : "assistant.modelBalanced")), iconNode("chevron-down"));
   model.setAttribute("aria-haspopup", "dialog");
@@ -971,7 +1003,15 @@ function chatPromptCards(mode: ChatMode): HTMLElement {
 
 function chatActionMenu(mode: ChatMode): HTMLElement {
   const menu = el("div", "chat-action-menu");
-  menu.setAttribute("role", "menu");
+  menu.setAttribute("role", "group");
+  menu.setAttribute("aria-label", t("assistant.addToChat"));
+  menu.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    state.chats[mode].tray = null;
+    render();
+    document.querySelector<HTMLButtonElement>(".chat-add-button")?.focus();
+  });
   if (canUploadResume()) menu.append(resumeUploadControl(mode, "chat-action-item action-upload"));
   else {
     const upload = button(t("assistant.uploadResume"), "chat-action-item action-upload", () => openSignIn("resume"));
@@ -997,6 +1037,14 @@ function chatModelMenu(mode: ChatMode): HTMLElement {
   const menu = el("div", "chat-model-menu");
   menu.setAttribute("role", "dialog");
   menu.setAttribute("aria-label", t("assistant.modelSettings"));
+  menu.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    chat.modelOpen = false;
+    chat.thinkingOpen = false;
+    render();
+    document.querySelector<HTMLButtonElement>(".chat-model-button")?.focus();
+  });
   menu.append(el("span", "chat-model-menu-label", t("assistant.modelSettings")));
   for (const choice of ["balanced", "fast"] as const) {
     const selected = chat.modelChoice === choice;
@@ -1005,6 +1053,7 @@ function chatModelMenu(mode: ChatMode): HTMLElement {
       chat.modelOpen = false;
       chat.thinkingOpen = false;
       render();
+      document.querySelector<HTMLButtonElement>(".chat-model-button")?.focus();
     });
     option.append(
       el("span", "chat-model-option-copy",
@@ -1152,11 +1201,7 @@ async function uploadChatResume(mode: ChatMode, file: File): Promise<void> {
 function proposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
   if (proposal.preview.name === "create_feedback") return feedbackProposalCard(mode, proposal);
   const card = el("section", "proposal-card");
-  card.append(el("h3", "", t("assistant.reviewAction")));
-  if (proposal.preview.name) {
-    const action = proposal.preview.name.replace(/^staff_/, "").replaceAll("_", " ");
-    card.append(el("p", "proposal-action", action.charAt(0).toUpperCase() + action.slice(1)));
-  }
+  card.append(agentApprovalIntro(proposal.preview, state.locale));
   const changes = proposalChanges(proposal.preview.changes);
   if (changes) card.append(changes);
   else {
@@ -1264,7 +1309,7 @@ function feedbackProposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElem
     ? raw as Record<string, unknown> : {};
   const original = typeof body.message === "string" ? body.message : "";
   const card = el("section", "proposal-card feedback-proposal");
-  card.append(el("h3", "", t("assistant.reviewReport")));
+  card.append(agentApprovalIntro(proposal.preview, state.locale));
   const editor = textArea(
     `proposal-message-${proposal.id}`,
     t("feedback.messageLabel"),
@@ -1483,6 +1528,10 @@ async function openChatTray(mode: ChatMode, tray: ChatState["tray"]): Promise<vo
   chat.thinkingOpen = false;
   state.sidebarOpen = false;
   render();
+  if (tray === "actions") {
+    if (chat.tray) document.querySelector<HTMLElement>(".chat-action-menu input[type=file],.chat-action-menu button")?.focus();
+    else document.querySelector<HTMLButtonElement>(".chat-add-button")?.focus();
+  }
   if (chat.tray === "plugins" && chat.tools.length === 0) {
     chat.pending = true;
     render();
@@ -1530,7 +1579,7 @@ async function openPluginTool(mode: ChatMode, name: string): Promise<void> {
       if (isResumeUploadHandoff(response.result)) {
         chat.messages.push({ role: "assistant", content: t("assistant.resumeUploadReady") });
         chat.tray = "files";
-      } else chat.messages.push({ role: "tool", content: visibleToolResult(response.result) });
+      } else chat.messages.push({ role: "tool", content: visibleToolResult(response.result), result: response.result });
     }
     if (response.proposal) chat.proposals.push(response.proposal);
   } catch (error) {
@@ -1616,6 +1665,7 @@ async function sendChat(mode: ChatMode): Promise<void> {
       else chat.messages.push({
           role: "tool",
           content: visibleToolResult(response.toolResult),
+          result: response.toolResult,
         });
     }
     if (response.proposal) chat.proposals.push(response.proposal);
@@ -1698,6 +1748,7 @@ async function decideProposal(
       chat.messages.push({
         role: "tool",
         content: visibleToolResult(response.result),
+        result: response.result,
       });
     }
   } catch (error) {
