@@ -35,7 +35,7 @@ The script uses `INSERT ... ON CONFLICT` for official records and `INSERT OR IGN
 
 ## Configuration and dependencies
 
-No packages, API keys, or paid services are required. The script uses Node built-ins and the repository's installed Wrangler through `pnpm exec`. It expects the `civicresolve-local` or `civicresolve-prod` D1 bindings in `apps/worker/wrangler.toml` and migrations `0001`, `0003`, `0005`, `0006`, `0008`, `0009`, and `0013` or later. Production execution requires the active Wrangler account to have D1 access. The workspace `pnpm` minimum release age remains two weeks; this workflow installs nothing.
+No packages, API keys, or paid services are required. The script uses Node built-ins and the repository's installed `apps/worker/node_modules/.bin/wrangler` directly. It expects the `civicresolve-local` or `civicresolve-prod` D1 bindings in `apps/worker/wrangler.toml` and migrations `0001`, `0003`, `0005`, `0006`, `0008`, `0009`, and `0013` or later. Production execution requires the active Wrangler account to have D1 access. The workspace `pnpm` minimum release age remains two weeks; this workflow installs nothing.
 
 ## Coverage
 

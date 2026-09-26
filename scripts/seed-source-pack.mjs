@@ -79,9 +79,9 @@ if (apply) {
   const file = join(temp, "seed.sql");
   writeFileSync(file, sqlText);
   try {
-    const command = ["exec", "wrangler", "d1", "execute", target === "production" ? "civicresolve-prod" : "civicresolve-local", target === "production" ? "--remote" : "--local", "--file", file];
+    const command = ["d1", "execute", target === "production" ? "civicresolve-prod" : "civicresolve-local", target === "production" ? "--remote" : "--local", "--file", file];
     if (target === "production") command.push("--env", "production");
-    const result = spawnSync("pnpm", command, { cwd: join(root, "apps/worker"), stdio: "inherit" });
+    const result = spawnSync(join(root, "apps/worker/node_modules/.bin/wrangler"), command, { cwd: join(root, "apps/worker"), stdio: "inherit" });
     if (result.error) throw result.error;
     if (result.status !== 0) process.exitCode = result.status ?? 1;
   } finally {
