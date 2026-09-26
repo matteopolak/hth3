@@ -8,9 +8,13 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
   expect(resident).toContain("save_external_preparation");
   expect(resident).toContain("submit_program_application");
   expect(resident).toContain("check_feedback_duplicate");
+  expect(resident).toContain("search_nearby");
+  expect(resident).toContain("get_consultation_handoff");
   expect(resident).not.toContain("staff_assign_feedback");
   expect(employee).toContain("staff_assign_feedback");
   expect(employee).toContain("theme_candidates");
+  expect(employee).toContain("search_nearby");
+  expect(employee).toContain("list_consultations");
   expect(resident).not.toContain("theme_candidates");
   expect(employee).not.toContain("save_external_preparation");
 
@@ -60,6 +64,38 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
   );
   expect(candidates.tool.method).toBe("POST");
   expect(candidates.tool.access).toBe("read");
+  expect(
+    prepareTool(
+      "search_nearby",
+      { category: "library", location: "Toronto", limit: 30 },
+      "resident",
+      null,
+    ).path,
+  ).toBe("/api/v1/nearby?category=library&location=Toronto&limit=30");
+  expect(
+    prepareTool(
+      "list_consultations",
+      { jurisdiction: "CA-ON" },
+      "resident",
+      null,
+    ).path,
+  ).toBe("/api/v1/consultations?jurisdiction=CA-ON");
+  expect(
+    prepareTool(
+      "get_consultation_handoff",
+      { id: "ontario-budget-2026" },
+      "employee",
+      org,
+    ).path,
+  ).toBe("/api/v1/consultations/ontario-budget-2026/handoff");
+  expect(() =>
+    prepareTool(
+      "read_consultation",
+      { id: "https://attacker.invalid" },
+      "resident",
+      null,
+    ),
+  ).toThrow(ToolInputError);
   const feedback = prepareTool(
     "create_feedback",
     {

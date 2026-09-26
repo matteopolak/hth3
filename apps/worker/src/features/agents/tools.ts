@@ -1,9 +1,11 @@
 import { handleApplicationRequest } from "../application-core/index.js";
 import { handleAnalyticsRequest } from "../analytics/index.js";
+import { handleConsultationRequest } from "../consultations/index.js";
 import { handleDiscoveryRequest } from "../discovery/index.js";
 import { handleEmployerRequest } from "../employer/index.js";
 import { handleExternalPreparationRequest } from "../external-preparation/index.js";
 import { handleFeedbackRequest } from "../feedback-core/index.js";
+import { handleNearbyRequest } from "../nearby/index.js";
 import { handleProfileRequest } from "../profile/index.js";
 import { handleProgramIntakeRequest } from "../program-intake/index.js";
 import { handleSourceRequest } from "../sources/index.js";
@@ -106,6 +108,13 @@ function themeId(args: ToolArguments): string {
   return value;
 }
 
+function consultationId(args: ToolArguments): string {
+  const value = args.id;
+  if (typeof value !== "string" || !/^[a-z0-9-]{1,120}$/.test(value))
+    throw new ToolInputError("id must be a consultation identifier.");
+  return value;
+}
+
 function discoveryQuery(
   args: ToolArguments,
   fields: readonly string[],
@@ -189,6 +198,44 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     path: (args) =>
       `/api/v1/source-records/${sourceRecordId(args)}${args.includeSamples === true ? "?includeSamples=true" : ""}`,
     handler: handleSourceRequest,
+  },
+  search_nearby: {
+    mode: "both",
+    access: "read",
+    description:
+      "Find source-backed nearby public services, including category, address, hours, accessibility, map precision and verification evidence.",
+    method: "GET",
+    path: (args) =>
+      `/api/v1/nearby${discoveryQuery(args, ["category", "q", "location", "freshness", "limit", "offset", "includeSamples"])}`,
+    handler: handleNearbyRequest,
+  },
+  list_consultations: {
+    mode: "both",
+    access: "read",
+    description:
+      "List reviewed official public consultations and participation directories, optionally by jurisdiction; participation stays on the publisher site.",
+    method: "GET",
+    path: (args) =>
+      `/api/v1/consultations${discoveryQuery(args, ["jurisdiction"])}`,
+    handler: handleConsultationRequest,
+  },
+  read_consultation: {
+    mode: "both",
+    access: "read",
+    description:
+      "Read a consultation's publisher, deadline, source state and participation status.",
+    method: "GET",
+    path: (args) => `/api/v1/consultations/${consultationId(args)}`,
+    handler: handleConsultationRequest,
+  },
+  get_consultation_handoff: {
+    mode: "both",
+    access: "read",
+    description:
+      "Get the official consultation site and current participation status. This does not submit or record a contribution.",
+    method: "GET",
+    path: (args) => `/api/v1/consultations/${consultationId(args)}/handoff`,
+    handler: handleConsultationRequest,
   },
   search_discovery: {
     mode: "both",
