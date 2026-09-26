@@ -336,6 +336,16 @@
   line-height: 1.5;
   white-space: pre-wrap;
 }
+.ja-suggestion blockquote {
+  margin: 8px 0 15px;
+  border-left: 2px solid #ddd;
+  padding-left: 11px;
+  color: #666;
+  white-space: pre-wrap;
+}
+.ja-list-head .ja-refresh {
+  justify-self: start;
+}
 .ja-answer {
   display: grid;
   grid-template-columns: minmax(110px, 32%) 1fr;
