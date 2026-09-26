@@ -17,6 +17,9 @@ import {
   type DomainAction,
 } from "@civicresolve/domain/permissions";
 import { authenticateRequest, Auth0TokenError } from "../auth/index.js";
+import { handleApplicationRequest } from "../features/application-core/index.js";
+import { handleFeedbackRequest } from "../features/feedback-core/index.js";
+import type { FeatureContext } from "../features/shared.js";
 
 interface Env {
   DB: D1Database;
@@ -76,6 +79,20 @@ const worker = {
         }
         return handleLocalOutboxSmoke(request, url, env, requestId, cors);
       }
+
+      const featureContext: FeatureContext = { env, requestId, cors };
+      const feedbackResponse = await handleFeedbackRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (feedbackResponse) return feedbackResponse;
+      const applicationResponse = await handleApplicationRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (applicationResponse) return applicationResponse;
 
       return jsonError("NOT_FOUND", "Route not found.", requestId, 404, cors);
     } catch (error) {

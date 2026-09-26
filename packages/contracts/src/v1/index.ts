@@ -37,6 +37,7 @@ export interface GuestFeedbackCreateResponse {
 
 export interface FeedbackReceiptView {
   id: string;
+  sample: boolean;
   status: FeedbackStatus;
   departmentName: string | null;
   messages: Array<{
@@ -76,11 +77,11 @@ export interface ApplicationSubmissionResponse {
 
 export interface ApplicationStatusChangeRequest {
   status: ApplicationStatus;
-  message?: string;
 }
 
 export type OutboxEvent =
   | FeedbackSubmittedEvent
+  | FeedbackMessageAddedEvent
   | FeedbackStatusChangedEvent
   | ApplicationSubmittedEvent
   | ApplicationStatusChangedEvent;
@@ -100,6 +101,12 @@ export interface FeedbackSubmittedEvent extends OutboxEventBase {
   eventType: "feedback.submitted";
   submissionId: string;
   payload: { status: "submitted"; messageLength: number };
+}
+
+export interface FeedbackMessageAddedEvent extends OutboxEventBase {
+  eventType: "feedback.message_added";
+  submissionId: string;
+  payload: { author: "resident" | "staff"; messageLength: number };
 }
 
 export interface FeedbackStatusChangedEvent extends OutboxEventBase {

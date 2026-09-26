@@ -2,11 +2,11 @@
 
 ## What it is
 
-These packages define the versioned API vocabulary, the English/French interface messages, and the shared visual token values used by web and mobile. The first contract version covers guest feedback receipts and the participating-employer application loop.
+These packages define the versioned API vocabulary, the English/French interface messages, and the shared visual token values used by web and mobile. The first contract version covers guest feedback receipts, guest/staff messages, and the participating-employer application loop.
 
 ## How it works
 
-`@civicresolve/contracts/v1` exports typed request/response shapes, public receipt and posting views, application and feedback statuses, and privacy-conscious outbox events. The event union is versioned independently with `schemaVersion`; event payloads avoid copying resident message text into analytics. Public request paths are versioned as `/api/v1/…`.
+`@civicresolve/contracts/v1` exports typed request/response shapes, public receipt and posting views, application and feedback statuses, and privacy-conscious outbox events. The event union is versioned independently with `schemaVersion`; event payloads avoid copying resident message text or application answers into analytics. Public request paths are versioned as `/api/v1/…`. The Worker implements the local guest feedback receipt flow and the applicant-confirmed sample application flow; see [Guest civic feedback](guest-feedback.md) and [In-app applications](applications.md).
 
 `@civicresolve/i18n` exports matching `en` and `fr` catalogues and the `translate` helper. It replaces named placeholders as plain text and leaves an unresolved placeholder visible if a value is missing. Compile-time catalogue typing and tests enforce key and placeholder parity; the test suite also retains a long French privacy explanation. `@civicresolve/design-tokens` exports color, spacing, radius, and typography values as immutable TypeScript constants.
 
