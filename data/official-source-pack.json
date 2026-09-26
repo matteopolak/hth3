@@ -1,0 +1,154 @@
+{
+  "version": "2026-09-26",
+  "checkedAt": "2026-09-26T18:00:00.000Z",
+  "expiresAt": "2026-10-03T18:00:00.000Z",
+  "reviewMethod": "Official publisher pages reviewed for link metadata; summaries are original, and no vacancy, award availability, eligibility decision, or consultation opening is asserted.",
+  "records": [
+    {
+      "id": "toronto-city-jobs",
+      "area": "jobs",
+      "kind": "jobs_finder",
+      "title": "City of Toronto jobs",
+      "summary": "Search City of Toronto career opportunities on the City's official recruitment site.",
+      "url": "https://jobs.toronto.ca/jobsatcity/",
+      "publisher": "City of Toronto",
+      "jurisdiction": { "level": "municipal", "code": "CA-ON-TOR", "name": "Toronto, Ontario", "municipalityCode": "CA-ON-TOR", "municipalityName": "Toronto" },
+      "termsUrl": "https://www.toronto.ca/home/copyright-information/",
+      "termsReview": "Link and original short description only; no job listings or City text copied."
+    },
+    {
+      "id": "canada-student-grants-loans",
+      "area": "funding",
+      "title": "Canada Student Grants and Loans",
+      "summary": "Find federal student grants and loans, then apply through the participating province or territory's student aid service.",
+      "url": "https://www.canada.ca/en/services/benefits/education/student-aid/grants-loans/province-apply.html",
+      "publisher": "Employment and Social Development Canada",
+      "jurisdiction": { "level": "federal", "code": "CA", "name": "Canada" },
+      "termsUrl": "https://www.canada.ca/en/transparency/terms.html",
+      "termsReview": "Government of Canada link metadata and original short description only; no eligibility or intake status claim."
+    },
+    {
+      "id": "bc-access-grant-full-time",
+      "area": "funding",
+      "title": "B.C. Access Grant (Full-Time)",
+      "summary": "Learn about a needs-based grant for eligible full-time undergraduate study at B.C. public institutions. StudentAid BC assesses it with a student-aid application.",
+      "url": "https://studentaidbc.ca/explore/grants-scholarships/bc-access-grant-full-time",
+      "publisher": "StudentAid BC",
+      "jurisdiction": { "level": "provincial", "code": "CA-BC", "name": "British Columbia" },
+      "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
+      "termsReview": "Link and original short description only; B.C. site content is not reproduced."
+    },
+    {
+      "id": "bc-adult-upgrading-grant",
+      "area": "funding",
+      "title": "Adult Upgrading Grant",
+      "summary": "Explore help with eligible adult-upgrading costs at B.C. public institutions and contact the institution's financial aid office.",
+      "url": "https://studentaidbc.ca/explore/grants-scholarships/adult-upgrading-grant-application",
+      "publisher": "StudentAid BC",
+      "jurisdiction": { "level": "provincial", "code": "CA-BC", "name": "British Columbia" },
+      "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
+      "termsReview": "Link and original short description only; B.C. site content is not reproduced."
+    },
+    {
+      "id": "ontario-learn-stay-grant",
+      "area": "funding",
+      "title": "Ontario Learn and Stay Grant",
+      "summary": "Review grant support for selected Ontario programs and regions, including the related work commitment, on the province's official page.",
+      "url": "https://www.ontario.ca/page/ontario-learn-and-stay-grant",
+      "publisher": "Government of Ontario",
+      "jurisdiction": { "level": "provincial", "code": "CA-ON", "name": "Ontario" },
+      "termsUrl": "https://www.ontario.ca/page/terms-use",
+      "termsReview": "Ontario welcomes linking; original short description only, with no copied program text or current intake claim."
+    },
+    {
+      "id": "canada-apprentice-loan",
+      "area": "support",
+      "title": "Canada Apprentice Loan",
+      "summary": "Explore a federal interest-free loan for eligible Red Seal apprentices during technical training.",
+      "url": "https://www.canada.ca/en/services/jobs/training/support-skilled-trades-apprentices/loan.html",
+      "publisher": "Employment and Social Development Canada",
+      "jurisdiction": { "level": "federal", "code": "CA", "name": "Canada" },
+      "termsUrl": "https://www.canada.ca/en/transparency/terms.html",
+      "termsReview": "Government of Canada link metadata and original short description only; no eligibility decision."
+    },
+    {
+      "id": "canada-student-loan-forgiveness",
+      "area": "support",
+      "title": "Canada Student Loan Forgiveness",
+      "summary": "Check whether an eligible occupation and community may qualify for federal student loan forgiveness.",
+      "url": "https://www.canada.ca/en/services/benefits/education/student-aid/grants-loans/repay/assistance/student-loan-forgiveness.html",
+      "publisher": "Employment and Social Development Canada",
+      "jurisdiction": { "level": "federal", "code": "CA", "name": "Canada" },
+      "termsUrl": "https://www.canada.ca/en/transparency/terms.html",
+      "termsReview": "Government of Canada link metadata and original short description only; no eligibility decision."
+    },
+    {
+      "id": "ontario-better-jobs",
+      "area": "support",
+      "title": "Better Jobs Ontario",
+      "summary": "Explore Ontario training and related financial support through an Employment Ontario service provider.",
+      "url": "https://www.ontario.ca/page/better-jobs-ontario",
+      "publisher": "Government of Ontario",
+      "jurisdiction": { "level": "provincial", "code": "CA-ON", "name": "Ontario" },
+      "termsUrl": "https://www.ontario.ca/page/terms-use",
+      "termsReview": "Ontario welcomes linking; original short description only, with no eligibility or current intake claim."
+    },
+    {
+      "id": "serviceontario-ottawa-st-joseph",
+      "area": "nearby",
+      "kind": "service_location",
+      "title": "ServiceOntario — St. Joseph, Ottawa",
+      "summary": "ServiceOntario location at 2864 St. Joseph Boulevard, Ottawa. Check the official page for services and hours before visiting.",
+      "url": "https://www.ontario.ca/locations/serviceontario/st-joseph-ottawa",
+      "publisher": "Government of Ontario",
+      "jurisdiction": { "level": "municipal", "code": "CA-ON-OTT", "name": "Ottawa, Ontario", "municipalityCode": "CA-ON-OTT", "municipalityName": "Ottawa" },
+      "termsUrl": "https://www.ontario.ca/page/terms-use",
+      "termsReview": "Ontario welcomes linking; address verified on official location page; hours and services stay on publisher site."
+    },
+    {
+      "id": "toronto-city-hall-counters",
+      "area": "nearby",
+      "kind": "service_location",
+      "title": "Toronto City Hall service counters",
+      "summary": "City service counters at 100 Queen Street West, Toronto. Check the official page for offered services and hours.",
+      "url": "https://www.toronto.ca/services-payments/venues-facilities-bookings/booking-city-facilities/counter-services-at-city-hall-civic-centres/",
+      "publisher": "City of Toronto",
+      "jurisdiction": { "level": "municipal", "code": "CA-ON-TOR", "name": "Toronto, Ontario", "municipalityCode": "CA-ON-TOR", "municipalityName": "Toronto" },
+      "termsUrl": "https://www.toronto.ca/home/copyright-information/",
+      "termsReview": "Link and original short description only; address checked on official page; no hours or service guarantee."
+    },
+    {
+      "id": "bc-govtogetherbc",
+      "area": "participation",
+      "title": "govTogetherBC",
+      "summary": "Browse Government of British Columbia engagement opportunities and check each project for participation details.",
+      "url": "https://engage.gov.bc.ca/govtogetherbc",
+      "publisher": "Government of British Columbia",
+      "jurisdiction": { "level": "provincial", "code": "CA-BC", "name": "British Columbia" },
+      "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
+      "termsReview": "Link and original short description only; no individual engagement or opening status copied."
+    },
+    {
+      "id": "ontario-environmental-registry",
+      "area": "participation",
+      "title": "Environmental Registry of Ontario",
+      "summary": "Find Ontario environmental proposals and notices, then check the official notice for comment options and dates.",
+      "url": "https://ero.ontario.ca/",
+      "publisher": "Government of Ontario",
+      "jurisdiction": { "level": "provincial", "code": "CA-ON", "name": "Ontario" },
+      "termsUrl": "https://www.ontario.ca/page/terms-use",
+      "termsReview": "Ontario welcomes linking; original short description only; no individual comment period or deadline claimed."
+    },
+    {
+      "id": "toronto-have-your-say",
+      "area": "participation",
+      "title": "Have Your Say Toronto",
+      "summary": "Browse City of Toronto engagement projects and check each project page for ways to participate.",
+      "url": "https://haveyoursay.toronto.ca/",
+      "publisher": "City of Toronto",
+      "jurisdiction": { "level": "municipal", "code": "CA-ON-TOR", "name": "Toronto, Ontario", "municipalityCode": "CA-ON-TOR", "municipalityName": "Toronto" },
+      "termsUrl": "https://haveyoursay.toronto.ca/",
+      "termsReview": "Link and original short description only; engagement status remains on official project page."
+    }
+  ]
+}

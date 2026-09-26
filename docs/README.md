@@ -13,6 +13,7 @@ This repository contains the product plan and the shared workspace/CI foundation
 | [Source catalog and coverage](source-catalog.md)                             | Official starting sources, collection boundaries, freshness, and sample-data labeling.                                                                        |
 | [Source registry and provenance](data/source-registry.md)                    | D1 source metadata, honest sample visibility, terms review state, and public registry API.                                                                    |
 | [Official source ingestion](data/official-ingestion.md)                      | Federal finder links and Service BC locations, scheduled collection, provenance, and coverage limits.                                                         |
+| [Official link and practice issue pack](data/source-pack.md) | Reviewed government handoff pages, practice staff issues, provenance, expiry, and the idempotent D1 seed workflow. |
 | [Discovery search and handoff](discovery/search-and-handoff.md) | Source-backed search, official handoff, saved items, and private checklists. |
 | [In-app applications](applications.md)                                       | Applicant review, native versus external submission, employer scope, and résumé privacy.                                                                      |
 | [Employer workspace](applications/employer-workspace.md) | Posting lifecycle, applicant messages, and organization-scoped decisions. |

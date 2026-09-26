@@ -1,0 +1,17 @@
+{
+  "version": "2026-09-26",
+  "organizationId": "org_43G1B1RhPwac7EjS",
+  "municipality": { "name": "Toronto", "csdUid": "3520005", "source": "https://www23.statcan.gc.ca/imdb/p3VD.pl?CLV=4&CPV=3520005&CST=01012021&CVD=1341558&Function=getVD&MLV=4&TVD=1346772&dbg=1" },
+  "sample": true,
+  "label": "Practice issue in a fictional workspace; no submission to the City of Toronto",
+  "issues": [
+    { "id": "practice-toronto-pothole-01", "text": "[Practice] A deep pothole has formed near a pedestrian crossing on Bloor Street West. Could the road surface be checked?", "category": "roads_and_sidewalks", "categoryId": "roads_potholes", "intent": "complaint", "status": "submitted", "createdAt": "2026-09-23T13:15:00.000Z" },
+    { "id": "practice-toronto-sidewalk-02", "text": "[Practice] The curb ramp near a school crossing is blocked after construction. A wheelchair user has to enter the road to get around it.", "category": "roads_and_sidewalks", "categoryId": "sidewalks_crossings", "intent": "complaint", "status": "in_review", "createdAt": "2026-09-23T15:40:00.000Z" },
+    { "id": "practice-toronto-transit-03", "text": "[Practice] The shelter at a bus stop on Eglinton Avenue is missing route information. Please review how riders can find current service details.", "category": "public_transit", "categoryId": "transit_stops", "intent": "suggestion", "status": "acknowledged", "createdAt": "2026-09-24T09:25:00.000Z" },
+    { "id": "practice-toronto-waste-04", "text": "[Practice] Recycling bins on our block were missed twice this month. Can the collection route be checked?", "category": "waste_collection", "categoryId": "waste_recycling", "intent": "complaint", "status": "waiting_on_resident", "createdAt": "2026-09-24T11:10:00.000Z" },
+    { "id": "practice-toronto-park-05", "text": "[Practice] The drinking fountain in a neighbourhood park has stopped working. It would help to know when it can be inspected.", "category": "parks_and_trees", "categoryId": "parks_recreation", "intent": "complaint", "status": "submitted", "createdAt": "2026-09-25T10:05:00.000Z" },
+    { "id": "practice-toronto-drainage-06", "text": "[Practice] Water pools across a sidewalk after ordinary rain near a storm drain. Please check whether the drain is blocked.", "category": "water_and_wastewater", "categoryId": "water_drainage_sewer", "intent": "complaint", "status": "in_review", "createdAt": "2026-09-25T14:20:00.000Z" },
+    { "id": "practice-toronto-library-07", "text": "[Practice] The accessible entrance at a public library is difficult to find from the street. Could wayfinding signs be reviewed?", "category": "other_or_unsure", "categoryId": "public_facilities_libraries", "intent": "suggestion", "status": "acknowledged", "createdAt": "2026-09-25T16:35:00.000Z" },
+    { "id": "practice-toronto-light-08", "text": "[Practice] A streetlight is out along a walking route beside a park. Please inspect the lighting after dark.", "category": "roads_and_sidewalks", "categoryId": "streetlights_signals", "intent": "complaint", "status": "submitted", "createdAt": "2026-09-26T08:30:00.000Z" }
+  ]
+}
