@@ -119,7 +119,9 @@ const SceneFrame = ({ scene, index }: { scene: Scene; index: number }) => {
               marginTop: 28,
             }}
           >
-            {scene.caption}
+            {hasClip && "capturedCaption" in scene
+              ? scene.capturedCaption
+              : scene.caption}
           </p>
         </div>
 

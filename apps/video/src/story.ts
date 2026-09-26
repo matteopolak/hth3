@@ -53,6 +53,8 @@ export const scenes = [
     title: "Staff access has a boundary",
     caption:
       "The practice staff workspace is configured for Auth0 roles. Live token and role acceptance is still pending.",
+    capturedCaption:
+      "An authenticated staff role can respond within its own practice workspace; the resident sees the update.",
     capture: "Optional: accepted staff reply and resident update",
     required: false,
   },

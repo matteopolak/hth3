@@ -56,6 +56,34 @@ if (
   } catch {
     problems.push("narration: audio file is missing");
   }
+  if (Number.isNaN(Date.parse(narration.recordedAt))) {
+    problems.push("narration: recordedAt must be a valid date");
+  }
+}
+
+const staff = manifest.staff;
+if (staff?.status === "captured") {
+  if (
+    !staff.file ||
+    !staff.recordedAt ||
+    !staff.evidence ||
+    !/^captures\/[a-zA-Z0-9._-]+\.(mp4|mov|webm)$/.test(staff.file)
+  ) {
+    problems.push(
+      "staff: a captured optional scene needs a real clip and evidence",
+    );
+  } else {
+    try {
+      if (statSync(resolve(root, "public", staff.file)).size === 0) {
+        problems.push("staff: clip is empty");
+      }
+    } catch {
+      problems.push("staff: clip file is missing");
+    }
+    if (Number.isNaN(Date.parse(staff.recordedAt))) {
+      problems.push("staff: recordedAt must be a valid date");
+    }
+  }
 }
 
 if (problems.length > 0) {
