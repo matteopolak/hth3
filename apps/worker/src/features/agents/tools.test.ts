@@ -10,6 +10,8 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
   expect(resident).toContain("check_feedback_duplicate");
   expect(resident).not.toContain("staff_assign_feedback");
   expect(employee).toContain("staff_assign_feedback");
+  expect(employee).toContain("theme_candidates");
+  expect(resident).not.toContain("theme_candidates");
   expect(employee).not.toContain("save_external_preparation");
 
   expect(
@@ -52,6 +54,12 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
   );
   expect(duplicateCheck.path).toBe("/api/v1/feedback/duplicate-check");
   expect(duplicateCheck.tool.access).toBe("read");
+  const candidates = prepareTool("theme_candidates", {}, "employee", org);
+  expect(candidates.path).toBe(
+    `/api/v1/staff/organizations/${org}/themes/candidates`,
+  );
+  expect(candidates.tool.method).toBe("POST");
+  expect(candidates.tool.access).toBe("read");
   const feedback = prepareTool(
     "create_feedback",
     {

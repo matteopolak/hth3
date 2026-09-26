@@ -651,6 +651,15 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       `${organizationPath(org)}/themes/${themeId(args)}${discoveryQuery(args, ["limit", "offset"])}`,
     handler: handleThemesRequest,
   },
+  theme_candidates: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Inspect same-category similarity suggestions for staff review. Results never move a submission; a separate approved membership action is required.",
+    method: "POST",
+    path: (_args, org) => `${organizationPath(org)}/themes/candidates`,
+    handler: handleThemesRequest,
+  },
   refresh_feedback_themes: {
     mode: "employee",
     access: "write",
