@@ -6,7 +6,7 @@ The source registry records where public information comes from, while `source_r
 
 ## How it works
 
-Migration `0003_sources.sql` creates `source_registry` and seeds attributable official starting links as `official_external`, with `termsStatus: unreviewed` and `freshness: unknown`. Migration `0006_source_records.sql` creates the per-record provenance table. It seeds no official content; the only record is a clearly marked fictional Toronto sample using the real municipality's geography and an explicit statement that it is not a real event or City service.
+Migration `0003_sources.sql` creates `source_registry` and seeds attributable official starting links as `official_external`, with `termsStatus: unreviewed` and `freshness: unknown`. Migration `0006_source_records.sql` creates the per-record provenance table. Migration `0014_envoy_practice_labels.sql` gives the opt-in Toronto practice entry Envoy labels while retaining its sample flags and explicit statement that it is not a real event or City service. Official ingestion is described in [Official source ingestion](official-ingestion.md).
 
 `GET /api/v1/sources` returns the non-sample registry. `GET /api/v1/sources?includeSamples=true` includes fictional source entries and carries a `sampleLabel` on each. `GET /api/v1/source-records` lists records whose terms are explicitly `permitted`; `GET /api/v1/source-records/{id}` reads one such record. Add `?includeSamples=true` to either record endpoint to include sample records. Sample details always carry their fictional label and `verified: false`.
 
@@ -18,7 +18,7 @@ Register an official source only after confirming that its publisher and URL are
 
 ## Configuration
 
-Apply the normal D1 migration sequence through `0006_source_records.sql`. Samples are opt-in through `includeSamples=true`. This feature has no scraper, source credentials, or ingest schedule; source records remain empty for official data until a terms-reviewed import is implemented.
+Apply the normal D1 migration sequence through `0014_envoy_practice_labels.sql`. Samples are opt-in through `includeSamples=true`. Official ingestion runs from the Worker's scheduled handler; the registry itself needs no source credentials.
 
 ## Dependencies
 
