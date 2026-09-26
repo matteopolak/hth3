@@ -1,6 +1,13 @@
 import type { FeedbackStatus, Locale } from "@civicresolve/contracts/v1";
 import { staffRequest } from "./client.js";
-import { button, errorMessage, node, setError, text } from "./ui.js";
+import {
+  button,
+  errorMessage,
+  node,
+  performAction,
+  setError,
+  text,
+} from "./ui.js";
 
 export interface StaffFeedbackOperationsOptions {
   token: string;
@@ -159,8 +166,7 @@ export function staffFeedbackOperations(
         );
         return;
       }
-      save.disabled = true;
-      try {
+      await performAction(save, host, locale, async () => {
         await staffRequest(
           token,
           organizationId,
@@ -172,10 +178,7 @@ export function staffFeedbackOperations(
           },
         );
         await onChanged();
-      } catch (error) {
-        setError(host, errorMessage(error, locale));
-        save.disabled = false;
-      }
+      });
     }
   }
 
@@ -205,8 +208,7 @@ export function staffFeedbackOperations(
     async function save(): Promise<void> {
       const value = input.value.trim();
       if (!value) return;
-      submit.disabled = true;
-      try {
+      await performAction(submit, host, locale, async () => {
         await staffRequest(
           token,
           organizationId,
@@ -215,10 +217,7 @@ export function staffFeedbackOperations(
           { [field]: value },
         );
         await onChanged();
-      } catch (error) {
-        setError(host, errorMessage(error, locale));
-        submit.disabled = false;
-      }
+      });
     }
   }
 }

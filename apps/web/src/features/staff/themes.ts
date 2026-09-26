@@ -14,6 +14,7 @@ import {
   errorMessage,
   heading,
   node,
+  performAction,
   row,
   setError,
   status,
@@ -72,20 +73,17 @@ export async function mountThemes(context: StaffPageContext): Promise<void> {
       "staff-button secondary",
     );
     const actions = node("div", "staff-actions");
-    actions.append(
-      reviewButton,
-      button(
-        text(locale, "Refresh", "Actualiser"),
-        () => void refresh(),
-        "staff-button secondary",
-      ),
+    const refreshButton = button(
+      text(locale, "Refresh", "Actualiser"),
+      () =>
+        void performAction(refreshButton, host, locale, async () => {
+          await staffRequest(token, organizationId, "/themes/refresh", "POST");
+          await mountThemes(context);
+        }),
+      "staff-button secondary",
     );
-    host.append(
-      heading(
-        text(locale, "Themes", "Thèmes"),
-        actions,
-      ),
-    );
+    actions.append(reviewButton, refreshButton);
+    host.append(heading(text(locale, "Themes", "Thèmes"), actions));
     host.append(
       node(
         "p",
@@ -140,18 +138,10 @@ export async function mountThemes(context: StaffPageContext): Promise<void> {
   );
   host.append(asOf);
 
-  async function refresh(): Promise<void> {
-    try {
-      await staffRequest(token, organizationId, "/themes/refresh", "POST");
-      await mountThemes(context);
-    } catch (error) {
-      setError(host, errorMessage(error, locale));
-    }
-  }
-
   async function showCandidates(): Promise<void> {
     if (!reviewButton) return;
     reviewButton.disabled = true;
+    reviewButton.setAttribute("aria-busy", "true");
     candidatePanel.classList.add("is-visible");
     candidatePanel.replaceChildren(
       node(
@@ -167,7 +157,9 @@ export async function mountThemes(context: StaffPageContext): Promise<void> {
         "/themes/candidates",
         "POST",
       );
-      const knownThemes = new Map(overview.themes.map((theme) => [theme.id, theme]));
+      const knownThemes = new Map(
+        overview.themes.map((theme) => [theme.id, theme]),
+      );
       const missingIds = new Set(
         result.suggestions
           .flatMap((suggestion) => [
@@ -222,6 +214,7 @@ export async function mountThemes(context: StaffPageContext): Promise<void> {
       );
     } finally {
       reviewButton.disabled = false;
+      reviewButton.removeAttribute("aria-busy");
     }
   }
 }
@@ -272,9 +265,19 @@ function candidateRow(
   const item = node("article", "staff-theme-candidate");
   const change = node("div", "staff-theme-candidate-change");
   change.append(
-    node("span", "", current?.title[locale] ?? text(locale, "Theme unavailable", "Thème indisponible")),
+    node(
+      "span",
+      "",
+      current?.title[locale] ??
+        text(locale, "Theme unavailable", "Thème indisponible"),
+    ),
     node("span", "staff-theme-candidate-arrow", "→"),
-    node("strong", "", proposed?.title[locale] ?? text(locale, "Theme unavailable", "Thème indisponible")),
+    node(
+      "strong",
+      "",
+      proposed?.title[locale] ??
+        text(locale, "Theme unavailable", "Thème indisponible"),
+    ),
   );
   item.append(change);
   const sources = node("div", "staff-theme-candidate-sources");
@@ -326,8 +329,7 @@ function candidateRow(
 
   async function acceptSuggestion(): Promise<void> {
     if (!valid) return;
-    accept.disabled = true;
-    try {
+    await performAction(accept, host, locale, async () => {
       await staffRequest(
         token,
         organizationId,
@@ -347,10 +349,7 @@ function candidateRow(
           ),
         ),
       );
-    } catch (error) {
-      accept.disabled = false;
-      setError(host, errorMessage(error, locale));
-    }
+    });
   }
 }
 

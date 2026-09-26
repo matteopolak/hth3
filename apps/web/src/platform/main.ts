@@ -2,6 +2,7 @@ import {
   type ApplicationStatus,
   type FeedbackStatus,
   type Locale,
+  type StaffWorkspaceSummary,
 } from "@civicresolve/contracts/v1";
 import { tokens } from "@civicresolve/design-tokens";
 import { translate, type MessageKey } from "@civicresolve/i18n";
@@ -15,7 +16,7 @@ import { createExternalPreparationPage } from "../features/external-preparation/
 import { createResidentFeedbackCase } from "../features/feedback/resident-case.js";
 import { reopenResidentFeedback } from "../features/feedback/api.js";
 import { agentApprovalIntro, agentApprovalState, agentResult } from "../features/agent-results/index.js";
-import { staffFeedbackOperations, staffWorkspace } from "../features/staff/index.js";
+import { loadStaffWorkspaceSummary, staffFeedbackOperations, staffWorkspace, viewAllowed } from "../features/staff/index.js";
 import { webAuth } from "./auth0.js";
 import {
   Activity, ArrowUp, Blocks, BriefcaseBusiness, ChartNoAxesColumn,
@@ -39,7 +40,7 @@ import "../features/feedback/feedback.css";
 
 type Page = "assistant" | "feedback" | "applications" | "employee" | "discovery" | "profile" | "signin" | "programs" | "external-preparation";
 type EmployeePage = "assistant" | "feedback" | "applications";
-type StaffView = "issues" | "overview" | "themes" | "taxonomy" | "hiring" | "applicants" | "analytics";
+type StaffView = "issues" | "overview" | "themes" | "taxonomy" | "hiring" | "applicants" | "analytics" | "audit";
 type ChatMode = "resident" | "employee";
 
 interface ChatMessage {
@@ -237,6 +238,9 @@ let voiceStartSerial = 0;
 let voiceSessionToken: string | null = null;
 let voiceSessionTarget: "feedback" | ChatMode = "feedback";
 let lastAuthIdentity = "";
+let staffSummary: StaffWorkspaceSummary | null = null;
+let staffSummaryFor = "";
+let staffSummaryError = "";
 
 applyTokens();
 render();
@@ -247,6 +251,9 @@ webAuth.subscribe((snapshot) => {
     state.feedbackQueue = [];
     state.applicationQueue = [];
     state.applicantApplications = [];
+    staffSummary = null;
+    staffSummaryFor = "";
+    staffSummaryError = "";
     lastAuthIdentity = identity;
   }
   state.applicationListLoadedFor = "";
@@ -304,6 +311,7 @@ function continueAfterSignIn(): void {
 }
 
 function render(): void {
+  if (state.page === "employee" && currentToken()) void ensureStaffSummary();
   document.documentElement.lang = state.locale;
   root!.replaceChildren();
   const shell = el(
@@ -436,19 +444,24 @@ function navigation(): HTMLElement {
   const nav = el("nav", "primary-nav");
   nav.setAttribute("aria-label", t("app.name"));
   if (state.page === "employee") {
-    nav.append(
-      sidebarHeading(t("sidebar.workspace")),
+    nav.append(sidebarHeading(t("sidebar.workspace")), staffSidebarAction("assistant", "chat", "nav.assistant"));
+    const capabilities = staffSummary?.capabilities;
+    if (capabilities?.feedbackRead) nav.append(
       staffViewAction("issues", "inbox", "sidebar.inbox"),
-      staffSidebarAction("assistant", "chat", "nav.assistant"),
       staffViewAction("overview", "dashboard", "sidebar.overview"),
       staffViewAction("themes", "tags", "sidebar.themes"),
-      staffViewAction("hiring", "briefcase", "sidebar.hiring"),
-      staffViewAction("applicants", "users", "sidebar.applicants"),
       staffViewAction("analytics", "chart", "sidebar.analytics"),
+    );
+    if (capabilities?.postingManage) nav.append(
+      staffViewAction("hiring", "briefcase", "sidebar.hiring"),
       programButton("sponsor", "sidebar.programSponsor", "landmark"),
+    );
+    if (capabilities?.applicantReview) nav.append(staffViewAction("applicants", "users", "sidebar.applicants"));
+    if (capabilities?.taxonomyManage) nav.append(
       sidebarAction("files", t("sidebar.sources"), () => void openPluginTool("employee", "list_sources")),
       staffViewAction("taxonomy", "taxonomy", "sidebar.taxonomy"),
     );
+    if (capabilities?.auditRead) nav.append(staffViewAction("audit", "activity", "sidebar.analytics", state.locale === "fr" ? "Journal d’activité" : "Activity log"));
   } else {
     nav.append(
       sidebarHeading(t("sidebar.agent")),
@@ -608,8 +621,8 @@ function staffSidebarAction(page: EmployeePage, icon: string, key: MessageKey): 
   return result;
 }
 
-function staffViewAction(view: StaffView, icon: string, key: MessageKey): HTMLButtonElement {
-  const result = sidebarAction(icon, t(key), () => {
+function staffViewAction(view: StaffView, icon: string, key: MessageKey, label = t(key)): HTMLButtonElement {
+  const result = sidebarAction(icon, label, () => {
     state.page = "employee";
     state.employeePage = "feedback";
     state.staffView = view;
@@ -713,6 +726,9 @@ function devIdentityPanel(): HTMLElement | null {
     state.applicationListLoadedFor = "";
     state.feedbackQueueLoadedFor = "";
     state.applicationQueueLoadedFor = "";
+    staffSummary = null;
+    staffSummaryFor = "";
+    staffSummaryError = "";
     if (state.localIdentity) {
       if (state.signInIntent) continueAfterSignIn();
       else if (state.localIdentity === "dev-applicant") state.page = "profile";
@@ -2510,6 +2526,18 @@ function employeePage(): HTMLElement {
   }
   if (state.employeePage === "assistant") {
     main.append(chatPage("employee"));
+  } else if (!staffSummary) {
+    if (staffSummaryError) main.append(
+      alertBox(staffSummaryError, ""),
+      button(t("common.refresh"), "button-secondary", () => {
+        staffSummaryFor = "";
+        staffSummaryError = "";
+        render();
+      }),
+    );
+    else main.append(loadingState());
+  } else if (state.staffView === "issues" && !staffSummary.capabilities.feedbackRead) {
+    main.append(alertBox(state.locale === "fr" ? "Accès indisponible pour ce compte." : "This account cannot open this workspace.", ""));
   } else if (state.selectedFeedbackId) {
     main.append(button(t("feedback.backToInbox"), "button-quiet", () => {
       state.selectedFeedbackId = "";
@@ -2531,6 +2559,7 @@ function employeePage(): HTMLElement {
       token: currentToken(),
       organizationId: currentOrgId(),
       locale: state.locale,
+      summary: staffSummary,
       onOpenFeedback: (id) => {
         state.selectedFeedbackId = id;
         state.selectedFeedback = null;
@@ -2814,6 +2843,44 @@ function currentToken(): string {
 
 function currentOrgId(): string {
   return webAuth.snapshot().organizationId ?? "org_43G1B1RhPwac7EjS";
+}
+
+async function ensureStaffSummary(): Promise<void> {
+  const token = currentToken();
+  if (!token) return;
+  const organizationId = currentOrgId();
+  const identity = `${token}:${organizationId}`;
+  if (staffSummaryFor === identity) return;
+  staffSummaryFor = identity;
+  staffSummary = null;
+  staffSummaryError = "";
+  try {
+    const summary = await loadStaffWorkspaceSummary(token, organizationId);
+    if (staffSummaryFor !== identity) return;
+    staffSummary = summary;
+    if (!staffViewIsAllowed(state.staffView, summary)) {
+      state.staffView = firstStaffView(summary);
+      state.selectedFeedbackId = "";
+      state.selectedFeedback = null;
+    }
+  } catch (error) {
+    if (staffSummaryFor !== identity) return;
+    const status = error instanceof Error && "status" in error ? error.status : null;
+    staffSummaryError = status === 401
+      ? (state.locale === "fr" ? "Connectez-vous pour continuer." : "Sign in to continue.")
+      : status === 403
+        ? (state.locale === "fr" ? "Ce compte n’a pas accès à cet espace." : "This account cannot access this workspace.")
+        : error instanceof Error ? error.message : (state.locale === "fr" ? "Espace indisponible." : "Workspace unavailable.");
+  }
+  if (state.page === "employee") render();
+}
+
+function staffViewIsAllowed(view: StaffView, summary: StaffWorkspaceSummary): boolean {
+  return view === "issues" ? summary.capabilities.feedbackRead : viewAllowed(view, summary.capabilities);
+}
+
+function firstStaffView(summary: StaffWorkspaceSummary): StaffView {
+  return (["overview", "hiring", "applicants", "taxonomy", "audit"] as const).find((view) => viewAllowed(view, summary.capabilities)) ?? "overview";
 }
 
 function t(

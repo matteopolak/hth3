@@ -15,6 +15,7 @@ import {
   fieldValue,
   heading,
   node,
+  performAction,
   row,
   setError,
   status,
@@ -161,13 +162,11 @@ export async function mountApplicants(
       "Rédiger un message…",
     );
     messageInput.setAttribute("aria-label", messageInput.placeholder);
-    composer.append(
-      messageInput,
-      button(
-        text(locale, "Send", "Envoyer"),
-        () => void sendMessage(messageInput.value.trim()),
-      ),
+    const sendButton = button(
+      text(locale, "Send", "Envoyer"),
+      () => void sendMessage(messageInput.value.trim()),
     );
+    composer.append(messageInput, sendButton);
     composer.addEventListener("submit", (event) => {
       event.preventDefault();
       void sendMessage(messageInput.value.trim());
@@ -193,13 +192,12 @@ export async function mountApplicants(
         date(application.submittedAt, locale),
       ),
     );
-    properties.append(
-      button(
-        text(locale, "Download résumé", "Télécharger le CV"),
-        () => void downloadResume(),
-        "staff-button secondary",
-      ),
+    const resumeButton = button(
+      text(locale, "Download résumé", "Télécharger le CV"),
+      () => void downloadResume(),
+      "staff-button secondary",
     );
+    properties.append(resumeButton);
     const available = transitions[application.status];
     const decisionNote = field(
       text(
@@ -221,13 +219,12 @@ export async function mountApplicants(
       )
         group.append(decisionNote);
       for (const next of available) {
-        group.append(
-          button(
-            status(next, locale),
-            () => void changeStatus(next),
-            "staff-button secondary",
-          ),
+        const control = button(
+          status(next, locale),
+          () => void changeStatus(next, control),
+          "staff-button secondary",
         );
+        group.append(control);
       }
       properties.append(group);
     }
@@ -246,7 +243,7 @@ export async function mountApplicants(
 
     async function sendMessage(message: string): Promise<void> {
       if (!message) return;
-      try {
+      await performAction(sendButton, panel, locale, async () => {
         await staffRequest(
           token,
           organizationId,
@@ -255,12 +252,13 @@ export async function mountApplicants(
           { message },
         );
         await openApplication(id);
-      } catch (error) {
-        setError(panel, errorMessage(error, locale));
-      }
+      });
     }
 
-    async function changeStatus(next: ApplicationStatus): Promise<void> {
+    async function changeStatus(
+      next: ApplicationStatus,
+      control: HTMLButtonElement,
+    ): Promise<void> {
       const isDecision =
         next === "shortlisted" || next === "offer" || next === "declined";
       if (
@@ -269,7 +267,7 @@ export async function mountApplicants(
         )
       )
         return;
-      try {
+      await performAction(control, panel, locale, async () => {
         if (isDecision)
           await staffRequest(
             token,
@@ -292,26 +290,29 @@ export async function mountApplicants(
             { status: next },
           );
         await mountApplicants(context, id);
-      } catch (error) {
-        setError(panel, errorMessage(error, locale));
-      }
+      });
     }
 
     async function downloadResume(): Promise<void> {
-      try {
-        await downloadStaffResume(token, organizationId, id);
-      } catch (error) {
-        if (error instanceof Error && "status" in error && error.status === 404)
-          setError(
-            panel,
-            text(
-              locale,
-              "No résumé has been shared with this application.",
-              "Aucun CV n’a été partagé avec cette candidature.",
-            ),
-          );
-        else setError(panel, errorMessage(error, locale));
-      }
+      await performAction(resumeButton, panel, locale, async () => {
+        try {
+          await downloadStaffResume(token, organizationId, id);
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            "status" in error &&
+            error.status === 404
+          )
+            throw new Error(
+              text(
+                locale,
+                "No résumé has been shared with this application.",
+                "Aucun CV n’a été partagé avec cette candidature.",
+              ),
+            );
+          throw error;
+        }
+      });
     }
   }
 }

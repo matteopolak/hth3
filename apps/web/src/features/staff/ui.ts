@@ -1,4 +1,5 @@
 import type { Locale } from "@civicresolve/contracts/v1";
+import { StaffApiError } from "./client.js";
 
 export function node<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -78,6 +79,20 @@ export function date(value: string | null, locale: Locale): string {
 }
 
 export function errorMessage(error: unknown, locale: Locale): string {
+  if (error instanceof StaffApiError) {
+    if (error.status === 401)
+      return text(
+        locale,
+        "Sign in to continue.",
+        "Connectez-vous pour continuer.",
+      );
+    if (error.status === 403)
+      return text(
+        locale,
+        "This account does not have access to this action.",
+        "Ce compte n’a pas accès à cette action.",
+      );
+  }
   if (error instanceof Error) {
     if (error.message === "Failed to fetch")
       return text(locale, "Connection unavailable.", "Connexion indisponible.");
@@ -88,7 +103,34 @@ export function errorMessage(error: unknown, locale: Locale): string {
 
 export function setError(host: HTMLElement, message: string): void {
   host.querySelector(".staff-alert")?.remove();
-  host.prepend(node("p", "staff-alert", message));
+  const alert = node("p", "staff-alert", message);
+  alert.setAttribute("role", "alert");
+  host.prepend(alert);
+}
+
+export async function performAction(
+  control: HTMLButtonElement,
+  host: HTMLElement,
+  locale: Locale,
+  action: () => Promise<void>,
+): Promise<void> {
+  if (control.disabled) return;
+  const label = control.textContent ?? "";
+  control.disabled = true;
+  control.setAttribute("aria-busy", "true");
+  control.textContent = text(locale, "Working…", "En cours…");
+  host.querySelector(".staff-alert")?.remove();
+  try {
+    await action();
+  } catch (error) {
+    setError(host, errorMessage(error, locale));
+  } finally {
+    if (control.isConnected) {
+      control.disabled = false;
+      control.removeAttribute("aria-busy");
+      control.textContent = label;
+    }
+  }
 }
 
 export function status(value: string, locale: Locale = "en"): string {

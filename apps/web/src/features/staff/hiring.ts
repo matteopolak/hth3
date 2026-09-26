@@ -9,6 +9,7 @@ import {
   fieldValue,
   heading,
   node,
+  performAction,
   row,
   setError,
   status,
@@ -92,9 +93,11 @@ export async function mountHiring(
     const location = field(text(locale, "Location", "Lieu"), posting?.location);
     main.append(title, description, location);
     const controls = node("div", "staff-actions");
-    controls.append(
-      button(text(locale, "Save", "Enregistrer"), () => void save()),
+    const saveButton = button(
+      text(locale, "Save", "Enregistrer"),
+      () => void save(),
     );
+    controls.append(saveButton);
     controls.append(
       button(
         text(locale, "Cancel", "Annuler"),
@@ -117,20 +120,9 @@ export async function mountHiring(
         ),
       );
       if (posting.status === "draft")
-        properties.append(
-          button(
-            text(locale, "Publish", "Publier"),
-            () => void transition(posting, "publish", panel),
-          ),
-        );
+        properties.append(transitionButton(posting, "publish", panel));
       if (posting.status === "published")
-        properties.append(
-          button(
-            text(locale, "Close posting", "Fermer l’offre"),
-            () => void transition(posting, "close", panel),
-            "staff-button secondary",
-          ),
-        );
+        properties.append(transitionButton(posting, "close", panel));
     }
     panel.append(main, properties);
     collection.append(panel);
@@ -149,7 +141,7 @@ export async function mountHiring(
         );
         return;
       }
-      try {
+      await performAction(saveButton, panel, locale, async () => {
         const result = await staffRequest<{ posting: Posting }>(
           token,
           organizationId,
@@ -158,9 +150,7 @@ export async function mountHiring(
           input,
         );
         await mountHiring(context, result.posting.id);
-      } catch (error) {
-        setError(panel, errorMessage(error, locale));
-      }
+      });
     }
   }
 
@@ -196,20 +186,9 @@ export async function mountHiring(
       ),
     );
     if (posting.status === "draft")
-      properties.append(
-        button(
-          text(locale, "Publish", "Publier"),
-          () => void transition(posting, "publish", panel),
-        ),
-      );
+      properties.append(transitionButton(posting, "publish", panel));
     if (posting.status === "published")
-      properties.append(
-        button(
-          text(locale, "Close posting", "Fermer l’offre"),
-          () => void transition(posting, "close", panel),
-          "staff-button secondary",
-        ),
-      );
+      properties.append(transitionButton(posting, "close", panel));
     if (posting.sample)
       properties.append(
         node(
@@ -229,10 +208,26 @@ export async function mountHiring(
       item.classList.toggle("is-selected", item.dataset.id === id);
   }
 
+  function transitionButton(
+    posting: Posting,
+    action: "publish" | "close",
+    panel: HTMLElement,
+  ): HTMLButtonElement {
+    const control = button(
+      action === "publish"
+        ? text(locale, "Publish", "Publier")
+        : text(locale, "Close posting", "Fermer l’offre"),
+      () => void transition(posting, action, panel, control),
+      action === "publish" ? "staff-button" : "staff-button secondary",
+    );
+    return control;
+  }
+
   async function transition(
     posting: Posting,
     action: "publish" | "close",
     panel: HTMLElement,
+    control: HTMLButtonElement,
   ): Promise<void> {
     if (
       !window.confirm(
@@ -242,7 +237,7 @@ export async function mountHiring(
       )
     )
       return;
-    try {
+    await performAction(control, panel, locale, async () => {
       await staffRequest(
         token,
         organizationId,
@@ -250,8 +245,6 @@ export async function mountHiring(
         "POST",
       );
       await mountHiring(context, posting.id);
-    } catch (error) {
-      setError(panel, errorMessage(error, locale));
-    }
+    });
   }
 }

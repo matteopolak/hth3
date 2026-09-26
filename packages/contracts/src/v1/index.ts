@@ -1,4 +1,9 @@
 export const API_VERSION = "v1" as const;
+export type {
+  StaffAuditEvent,
+  StaffWorkspaceCapabilities,
+  StaffWorkspaceSummary,
+} from "./staff-workspace.js";
 
 export type Locale = "en" | "fr";
 export type ActorKind = "guest" | "applicant" | "staff" | "system";

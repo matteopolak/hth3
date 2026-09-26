@@ -1,4 +1,4 @@
-import type { Locale } from "@civicresolve/contracts/v1";
+import type { Locale, StaffWorkspaceSummary } from "@civicresolve/contracts/v1";
 
 export type StaffWorkspaceView =
   | "overview"
@@ -6,13 +6,15 @@ export type StaffWorkspaceView =
   | "taxonomy"
   | "hiring"
   | "applicants"
-  | "analytics";
+  | "analytics"
+  | "audit";
 
 export interface StaffWorkspaceOptions {
   view: StaffWorkspaceView;
   token: string;
   organizationId: string;
   locale: Locale;
+  summary?: StaffWorkspaceSummary;
   onOpenFeedback?: (id: string) => void;
 }
 

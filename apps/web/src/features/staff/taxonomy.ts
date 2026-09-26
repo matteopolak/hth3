@@ -13,6 +13,7 @@ import {
   fieldValue,
   heading,
   node,
+  performAction,
   setError,
   text,
 } from "./ui.js";
@@ -35,21 +36,25 @@ export async function mountTaxonomy(context: StaffPageContext): Promise<void> {
   const published = data.published;
   const active = draft ?? published;
   const actions = node("div", "staff-actions");
-  if (!draft && published)
-    actions.append(
-      button(
-        text(locale, "Create draft", "Créer un brouillon"),
-        () => void createDraft(),
-      ),
+  if (!draft && published) {
+    const createButton = button(
+      text(locale, "Create draft", "Créer un brouillon"),
+      () =>
+        void performAction(createButton, host, locale, async () => {
+          await staffRequest(token, organizationId, "/taxonomy/draft", "POST");
+          await mountTaxonomy(context);
+        }),
     );
-  if (draft)
-    actions.append(
-      button(
-        text(locale, "Publish", "Publier"),
-        () => void publish(),
-        "staff-button",
-      ),
+    actions.append(createButton);
+  }
+  if (draft) {
+    const publishButton = button(
+      text(locale, "Publish", "Publier"),
+      () => void publish(publishButton),
+      "staff-button",
     );
+    actions.append(publishButton);
+  }
   host.append(heading(text(locale, "Taxonomy", "Taxonomie"), actions));
   if (!active) {
     host.append(
@@ -134,18 +139,17 @@ export async function mountTaxonomy(context: StaffPageContext): Promise<void> {
           true,
         );
         details.append(english, french, englishDescription, frenchDescription);
-        details.append(
-          button(
-            text(locale, "Save category", "Enregistrer la catégorie"),
-            () => {
-              category.name.en = fieldValue(english);
-              category.name.fr = fieldValue(french);
-              category.description.en = fieldValue(englishDescription);
-              category.description.fr = fieldValue(frenchDescription);
-              void saveDocument(doc);
-            },
-          ),
+        const saveCategory = button(
+          text(locale, "Save category", "Enregistrer la catégorie"),
+          () => {
+            category.name.en = fieldValue(english);
+            category.name.fr = fieldValue(french);
+            category.description.en = fieldValue(englishDescription);
+            category.description.fr = fieldValue(frenchDescription);
+            void saveDocument(doc, saveCategory);
+          },
         );
+        details.append(saveCategory);
       } else
         details.append(node("p", "staff-muted", category.description[locale]));
       section.append(details);
@@ -162,14 +166,12 @@ export async function mountTaxonomy(context: StaffPageContext): Promise<void> {
       "",
       true,
     );
-    preview.append(
-      sample,
-      button(
-        text(locale, "Compare", "Comparer"),
-        () => void previewText(fieldValue(sample)),
-        "staff-button secondary",
-      ),
+    const compareButton = button(
+      text(locale, "Compare", "Comparer"),
+      () => void previewText(fieldValue(sample), compareButton),
+      "staff-button secondary",
     );
+    preview.append(sample, compareButton);
     const result = node("div", "staff-preview-result");
     preview.append(result);
     host.append(preview);
@@ -191,24 +193,31 @@ export async function mountTaxonomy(context: StaffPageContext): Promise<void> {
       "aria-label",
       text(locale, "Taxonomy JSON", "JSON de la taxonomie"),
     );
-    advanced.append(
-      editor,
-      button(text(locale, "Save document", "Enregistrer le document"), () => {
+    const saveAdvanced = button(
+      text(locale, "Save document", "Enregistrer le document"),
+      () => {
         try {
-          void saveDocument(JSON.parse(editor.value) as TaxonomyDocument);
+          void saveDocument(
+            JSON.parse(editor.value) as TaxonomyDocument,
+            saveAdvanced,
+          );
         } catch {
           setError(
             host,
             text(locale, "Enter valid JSON.", "Saisissez un JSON valide."),
           );
         }
-      }),
+      },
     );
+    advanced.append(editor, saveAdvanced);
     host.append(advanced);
 
-    async function previewText(value: string): Promise<void> {
+    async function previewText(
+      value: string,
+      control: HTMLButtonElement,
+    ): Promise<void> {
       if (!value) return;
-      try {
+      await performAction(control, host, locale, async () => {
         const comparison = await staffRequest<{
           current: { categoryId: string; intent: string; confidence: number };
           proposed: { categoryId: string; intent: string; confidence: number };
@@ -225,33 +234,23 @@ export async function mountTaxonomy(context: StaffPageContext): Promise<void> {
             `${text(locale, "Draft", "Brouillon")}: ${comparison.proposed.categoryId} · ${comparison.proposed.intent}`,
           ),
         );
-      } catch (error) {
-        setError(host, errorMessage(error, locale));
-      }
+      });
     }
   }
 
-  async function createDraft(): Promise<void> {
-    try {
-      await staffRequest(token, organizationId, "/taxonomy/draft", "POST");
-      await mountTaxonomy(context);
-    } catch (error) {
-      setError(host, errorMessage(error, locale));
-    }
-  }
-
-  async function saveDocument(document: TaxonomyDocument): Promise<void> {
-    try {
+  async function saveDocument(
+    document: TaxonomyDocument,
+    control: HTMLButtonElement,
+  ): Promise<void> {
+    await performAction(control, host, locale, async () => {
       await staffRequest(token, organizationId, "/taxonomy/draft", "PATCH", {
         document,
       });
       await mountTaxonomy(context);
-    } catch (error) {
-      setError(host, errorMessage(error, locale));
-    }
+    });
   }
 
-  async function publish(): Promise<void> {
+  async function publish(control: HTMLButtonElement): Promise<void> {
     if (
       !window.confirm(
         text(
@@ -262,11 +261,9 @@ export async function mountTaxonomy(context: StaffPageContext): Promise<void> {
       )
     )
       return;
-    try {
+    await performAction(control, host, locale, async () => {
       await staffRequest(token, organizationId, "/taxonomy/publish", "POST");
       await mountTaxonomy(context);
-    } catch (error) {
-      setError(host, errorMessage(error, locale));
-    }
+    });
   }
 }
