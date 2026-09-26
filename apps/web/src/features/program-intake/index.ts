@@ -26,6 +26,8 @@ const labels = {
     find: "Find support",
     mine: "My requests",
     sponsor: "Sponsor workspace",
+    sponsorAuthor: "Sponsor",
+    you: "You",
     search: "Search programs",
     empty: "No participating programs match this search.",
     choose: "Select a program to see the intake.",
@@ -57,6 +59,9 @@ const labels = {
     type: "Type",
     fields: "Intake questions",
     field: "Question",
+    shortAnswer: "Short answer",
+    longAnswer: "Long answer",
+    choice: "Choice",
     required: "Required",
     options: "Options, separated by commas",
     addField: "Add question",
@@ -87,6 +92,8 @@ const labels = {
     find: "Trouver de l’aide",
     mine: "Mes demandes",
     sponsor: "Espace du promoteur",
+    sponsorAuthor: "Promoteur",
+    you: "Vous",
     search: "Rechercher des programmes",
     empty: "Aucun programme participant ne correspond.",
     choose: "Choisissez un programme pour voir le formulaire.",
@@ -118,6 +125,9 @@ const labels = {
     type: "Type",
     fields: "Questions du formulaire",
     field: "Question",
+    shortAnswer: "Réponse courte",
+    longAnswer: "Réponse longue",
+    choice: "Choix",
     required: "Obligatoire",
     options: "Options séparées par des virgules",
     addField: "Ajouter une question",
@@ -355,11 +365,11 @@ export function createProgramIntakePage(
       )
       .join(
         "",
-      )}</section><section class="pi-section"><div class="pi-section-title"><h3>${h(text.updates)}</h3>${icon(MessageSquare)}</div><div class="pi-timeline">${messages.map((message) => `<div class="pi-message"><span>${h(message.author === "sponsor" ? text.sponsor : text.mine)} · ${h(date(message.createdAt, options.locale))}</span><p>${h(message.body)}</p></div>`).join("") || `<p class="pi-empty">${h(text.noMessages)}</p>`}</div><div class="pi-compose"><textarea id="pi-message" rows="2" placeholder="${h(text.response)}"></textarea><button class="pi-btn primary" data-action="send-message" ${busy ? "disabled" : ""} aria-label="${h(text.send)}">${icon(Send)}</button></div></section></article>`;
+      )}</section><section class="pi-section"><div class="pi-section-title"><h3>${h(text.updates)}</h3>${icon(MessageSquare)}</div><div class="pi-timeline">${messages.map((message) => `<div class="pi-message"><span>${h(message.author === "sponsor" ? text.sponsorAuthor : text.you)} · ${h(date(message.createdAt, options.locale))}</span><p>${h(message.body)}</p></div>`).join("") || `<p class="pi-empty">${h(text.noMessages)}</p>`}</div><div class="pi-compose"><textarea id="pi-message" rows="2" placeholder="${h(text.response)}"></textarea><button class="pi-btn primary" data-action="send-message" ${busy ? "disabled" : ""} aria-label="${h(text.send)}">${icon(Send)}</button></div></section></article>`;
   }
 
   function formEditor(): string {
-    return `<div class="pi-editor"><div class="pi-editor-head"><h2>${h(draftProgramId ? text.details : text.create)}</h2><button data-action="cancel-edit" class="pi-icon-button" aria-label="${h(text.cancel)}">${icon(X)}</button></div><div class="pi-editor-grid"><label>${h(text.type)}<select id="pi-kind"><option value="benefit" ${draft.kind === "benefit" ? "selected" : ""}>${h(text.benefit)}</option><option value="grant" ${draft.kind === "grant" ? "selected" : ""}>${h(text.grant)}</option></select></label><label>${h(text.titleField)}<input id="pi-title" value="${h(draft.title)}" maxlength="160" /></label></div><label>${h(text.summary)}<textarea id="pi-summary" rows="3" maxlength="4000">${h(draft.summary)}</textarea></label><div class="pi-section-title"><h3>${h(text.fields)}</h3><button class="pi-btn" data-action="add-question">${icon(Plus)}${h(text.addField)}</button></div><div class="pi-questions">${draft.questions.map((q, index) => `<div class="pi-question" data-index="${index}"><div class="pi-question-top"><span>${String(index + 1).padStart(2, "0")}</span><button class="pi-icon-button" data-action="remove-question" data-index="${index}" aria-label="${h(text.cancel)}">${icon(X)}</button></div><label>${h(text.field)}<input data-field="label" value="${h(q.label)}" maxlength="160" /></label><div class="pi-editor-grid"><label>${h(text.type)}<select data-field="type"><option value="short_text" ${q.type === "short_text" ? "selected" : ""}>Short answer</option><option value="long_text" ${q.type === "long_text" ? "selected" : ""}>Long answer</option><option value="select" ${q.type === "select" ? "selected" : ""}>Choice</option></select></label><label class="pi-check"><input type="checkbox" data-field="required" ${q.required ? "checked" : ""} />${h(text.required)}</label></div><label>${h(text.options)}<input data-field="options" value="${h(q.options?.join(", ") ?? "")}" /></label></div>`).join("")}</div><div class="pi-actions"><button class="pi-btn" data-action="cancel-edit">${h(text.cancel)}</button><button class="pi-btn primary" data-action="save-program" ${busy ? "disabled" : ""}>${h(text.save)}</button></div></div>`;
+    return `<div class="pi-editor"><div class="pi-editor-head"><h2>${h(draftProgramId ? text.details : text.create)}</h2><button data-action="cancel-edit" class="pi-icon-button" aria-label="${h(text.cancel)}">${icon(X)}</button></div><div class="pi-editor-grid"><label>${h(text.type)}<select id="pi-kind"><option value="benefit" ${draft.kind === "benefit" ? "selected" : ""}>${h(text.benefit)}</option><option value="grant" ${draft.kind === "grant" ? "selected" : ""}>${h(text.grant)}</option></select></label><label>${h(text.titleField)}<input id="pi-title" value="${h(draft.title)}" maxlength="160" /></label></div><label>${h(text.summary)}<textarea id="pi-summary" rows="3" maxlength="4000">${h(draft.summary)}</textarea></label><div class="pi-section-title"><h3>${h(text.fields)}</h3><button class="pi-btn" data-action="add-question">${icon(Plus)}${h(text.addField)}</button></div><div class="pi-questions">${draft.questions.map((q, index) => `<div class="pi-question" data-index="${index}"><div class="pi-question-top"><span>${String(index + 1).padStart(2, "0")}</span><button class="pi-icon-button" data-action="remove-question" data-index="${index}" aria-label="${h(text.cancel)}">${icon(X)}</button></div><label>${h(text.field)}<input data-field="label" value="${h(q.label)}" maxlength="160" /></label><div class="pi-editor-grid"><label>${h(text.type)}<select data-field="type"><option value="short_text" ${q.type === "short_text" ? "selected" : ""}>${h(text.shortAnswer)}</option><option value="long_text" ${q.type === "long_text" ? "selected" : ""}>${h(text.longAnswer)}</option><option value="select" ${q.type === "select" ? "selected" : ""}>${h(text.choice)}</option></select></label><label class="pi-check"><input type="checkbox" data-field="required" ${q.required ? "checked" : ""} />${h(text.required)}</label></div><label>${h(text.options)}<input data-field="options" value="${h(q.options?.join(", ") ?? "")}" /></label></div>`).join("")}</div><div class="pi-actions"><button class="pi-btn" data-action="cancel-edit">${h(text.cancel)}</button><button class="pi-btn primary" data-action="save-program" ${busy ? "disabled" : ""}>${h(text.save)}</button></div></div>`;
   }
 
   function sponsorPrograms(): string {
