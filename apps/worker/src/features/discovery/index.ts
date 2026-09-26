@@ -18,6 +18,32 @@ const AREAS = [
   "participation",
 ] as const;
 type Area = (typeof AREAS)[number];
+const TYPES = [
+  "jobs_finder",
+  "benefits_finder",
+  "funding_finder",
+  "service_location",
+  "consultation_finder",
+  "source_record",
+  "sample_record",
+] as const;
+type DiscoveryType = (typeof TYPES)[number];
+const AUDIENCES = [
+  "job_seekers",
+  "benefit_seekers",
+  "funding_seekers",
+  "service_visitors",
+  "civic_participants",
+] as const;
+type NavigationAudience = (typeof AUDIENCES)[number];
+const STATUSES = [
+  "verified",
+  "current",
+  "stale",
+  "expired",
+  "error",
+  "unknown",
+] as const;
 
 interface DetailRow {
   record_id: string;
@@ -91,6 +117,41 @@ async function search(url: URL, context: FeatureContext): Promise<Response> {
       "Unknown discovery area.",
       400,
     );
+  const type = url.searchParams.get("type");
+  if (type && !isOneOf(type, TYPES))
+    return featureError(context, "INVALID_FILTER", "Unknown record type.", 400);
+  const audience = url.searchParams.get("audience");
+  if (audience && !isOneOf(audience, AUDIENCES))
+    return featureError(
+      context,
+      "INVALID_FILTER",
+      "Unknown navigation audience.",
+      400,
+    );
+  const status = url.searchParams.get("status");
+  if (status && !isOneOf(status, STATUSES))
+    return featureError(
+      context,
+      "INVALID_FILTER",
+      "Unknown source status.",
+      400,
+    );
+  const source = url.searchParams.get("source")?.trim() ?? "";
+  if (source && !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(source))
+    return featureError(
+      context,
+      "INVALID_FILTER",
+      "Invalid source identifier.",
+      400,
+    );
+  const location = url.searchParams.get("location")?.trim() ?? "";
+  if (location.length > 80)
+    return featureError(
+      context,
+      "INVALID_FILTER",
+      "Location is too long.",
+      400,
+    );
   const q = url.searchParams.get("q")?.trim() ?? "";
   if (q.length > 120)
     return featureError(context, "INVALID_FILTER", "Search is too long.", 400);
@@ -120,15 +181,33 @@ async function search(url: URL, context: FeatureContext): Promise<Response> {
   const records = await listSourceRecords(context.env.DB, { includeSamples });
   const details = await loadDetails(context);
   const needle = q.toLocaleLowerCase();
+  const place = location.toLocaleLowerCase();
   const filtered = records
     .map((record) => discoveryItem(record, details.get(record.id)))
     .filter((item) => area === null || item.area === area)
+    .filter((item) => type === null || item.type === type)
+    .filter((item) => audience === null || item.navigationAudience === audience)
+    .filter(
+      (item) =>
+        status === null ||
+        (status === "verified" ? item.verified : item.freshness === status),
+    )
+    .filter((item) => !source || item.sourceId === source)
     .filter(
       (item) =>
         !needle ||
         `${item.title} ${item.summary} ${item.publisher} ${item.jurisdiction.name}`
           .toLocaleLowerCase()
           .includes(needle),
+    )
+    .filter(
+      (item) =>
+        !place ||
+        item.jurisdiction.code.toLocaleLowerCase() === place ||
+        (place.startsWith("ca-") && item.jurisdiction.code === "CA") ||
+        `${item.title} ${item.summary} ${item.jurisdiction.name} ${item.jurisdiction.municipality?.name ?? ""}`
+          .toLocaleLowerCase()
+          .includes(place),
     )
     .filter(
       (item) =>
@@ -378,6 +457,14 @@ function discoveryItem(
     kind: detail?.kind ?? null,
     coordinates,
   };
+  const type: DiscoveryType =
+    record.origin === "sample"
+      ? "sample_record"
+      : (detail?.kind ??
+        (record.sourceId === "federal-consultations-finder"
+          ? "consultation_finder"
+          : "source_record"));
+  const navigationAudience = audienceForArea(area);
   const handoff =
     record.origin !== "sample" &&
     record.termsStatus === "permitted" &&
@@ -390,7 +477,30 @@ function discoveryItem(
           externalSubmissionRecorded: false,
         }
       : null;
-  return { ...withDetails, area, handoff };
+  return {
+    ...withDetails,
+    area,
+    type,
+    navigationAudience,
+    audienceBasis: "navigation_only" as const,
+    handoff,
+  };
+}
+
+function audienceForArea(area: Area | null): NavigationAudience | null {
+  if (area === "jobs") return "job_seekers";
+  if (area === "support") return "benefit_seekers";
+  if (area === "funding") return "funding_seekers";
+  if (area === "nearby") return "service_visitors";
+  if (area === "participation") return "civic_participants";
+  return null;
+}
+
+function isOneOf<const Values extends readonly string[]>(
+  value: string,
+  values: Values,
+): value is Values[number] {
+  return values.includes(value);
 }
 
 function areaForKind(kind: OfficialRecordKind | null | undefined): Area | null {
