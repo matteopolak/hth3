@@ -3,7 +3,7 @@ import { handleSourceRequest } from "../src/features/sources/index.js";
 import type { FeatureContext } from "../src/features/shared.js";
 import type { D1Database, D1PreparedStatement } from "@civicresolve/db/d1";
 
-const sampleRow = {
+const sampleSourceRow = {
   id: "fictional-toronto-sample",
   origin: "sample",
   name: "Fictional Toronto demonstration source",
@@ -28,14 +28,59 @@ const sampleRow = {
   sample_label: "Fictional sample only",
 };
 
+const sampleRecordRow = {
+  id: "sample-toronto-community-resource",
+  source_id: "fictional-toronto-sample",
+  origin: "sample",
+  external_id: null,
+  title: "Sample: Neighbourhood resource information session",
+  summary:
+    "Fictional demonstration record. This is not an actual event or City of Toronto service.",
+  source_url: "sample://fictional/toronto-demo",
+  publisher:
+    "CivicResolve demo (fictional; unaffiliated with the City of Toronto)",
+  jurisdiction_level: "municipal",
+  jurisdiction_code: "CA-ON-TOR",
+  jurisdiction_name: "Toronto, Ontario",
+  municipality_code: "CA-ON-TOR",
+  municipality_name: "Toronto",
+  licence_name: null,
+  licence_url: null,
+  terms_url: null,
+  terms_status: "unreviewed",
+  language: "en",
+  fetched_at: null,
+  verified_at: null,
+  expires_at: null,
+  payload_hash: null,
+  evidence_url: null,
+  freshness_state: "unknown",
+  last_error_code: null,
+  sample_label: "Fictional sample only",
+};
+
 function context(): FeatureContext {
+  let query = "";
+  let bindings: unknown[] = [];
   const statement = {
-    bind: () => statement,
-    first: async () => null,
+    bind: (...values: unknown[]) => {
+      bindings = values;
+      return statement;
+    },
+    first: async () =>
+      query.includes("FROM source_records") &&
+      bindings[0] === sampleRecordRow.id &&
+      bindings.at(-1) === 1
+        ? sampleRecordRow
+        : null,
     run: async () => ({ success: true, results: [], meta: {} }),
     all: async () => ({
       success: true,
-      results: [sampleRow],
+      results: query.includes("FROM source_registry")
+        ? [sampleSourceRow]
+        : query.includes("FROM source_records") && bindings.at(-1) === 1
+          ? [sampleRecordRow]
+          : [],
       meta: {
         changes: 0,
         duration: 0,
@@ -46,7 +91,11 @@ function context(): FeatureContext {
     }),
   } as unknown as D1PreparedStatement;
   const database = {
-    prepare: () => statement,
+    prepare: (sql: string) => {
+      query = sql;
+      bindings = [];
+      return statement;
+    },
     batch: async () => [],
   } as unknown as D1Database;
   return {
@@ -66,12 +115,14 @@ describe("source registry route", () => {
     expect(result).toBeNull();
   });
 
-  it("exposes sample geography and label only with explicit opt-in", async () => {
-    const ctx = context();
+  it("exposes sample source geography and label only with explicit opt-in", async () => {
+    const url = new URL(
+      "https://example.test/api/v1/sources?includeSamples=true",
+    );
     const response = await handleSourceRequest(
-      new Request("https://example.test/api/v1/sources?includeSamples=true"),
-      new URL("https://example.test/api/v1/sources?includeSamples=true"),
-      ctx,
+      new Request(url),
+      url,
+      context(),
     );
     expect(response?.status).toBe(200);
     const body = (await response?.json()) as {
@@ -91,14 +142,45 @@ describe("source registry route", () => {
   });
 
   it("rejects writes to the read-only registry route", async () => {
+    const url = new URL("https://example.test/api/v1/sources");
     const response = await handleSourceRequest(
-      new Request("https://example.test/api/v1/sources", { method: "POST" }),
-      new URL("https://example.test/api/v1/sources"),
+      new Request(url, { method: "POST" }),
+      url,
       context(),
     );
     expect(response?.status).toBe(405);
     expect(await response?.json()).toMatchObject({
       error: { code: "METHOD_NOT_ALLOWED" },
+    });
+  });
+
+  it("returns record details only when sample access is opted in", async () => {
+    const hiddenUrl = new URL(
+      "https://example.test/api/v1/source-records/sample-toronto-community-resource",
+    );
+    const hidden = await handleSourceRequest(
+      new Request(hiddenUrl),
+      hiddenUrl,
+      context(),
+    );
+    expect(hidden?.status).toBe(404);
+
+    const visibleUrl = new URL(
+      "https://example.test/api/v1/source-records/sample-toronto-community-resource?includeSamples=true",
+    );
+    const visible = await handleSourceRequest(
+      new Request(visibleUrl),
+      visibleUrl,
+      context(),
+    );
+    expect(visible?.status).toBe(200);
+    expect(await visible?.json()).toMatchObject({
+      record: {
+        origin: "sample",
+        sampleLabel: "Fictional sample only",
+        verified: false,
+        jurisdiction: { municipality: { name: "Toronto" } },
+      },
     });
   });
 });
