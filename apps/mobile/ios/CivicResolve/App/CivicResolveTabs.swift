@@ -10,35 +10,35 @@ struct CivicResolveTabs: View {
                     .navigationTitle(copy("nav.discover"))
                     .toolbar { languageToolbar }
             }
-            .tabItem { Label(copy("nav.discover"), systemImage: "magnifyingglass") }
+            .tabItem { Image(systemName: "magnifyingglass").accessibilityLabel(copy("nav.discover")) }
 
             NavigationStack {
                 ResidentAssistantView()
                     .navigationTitle(copy("nav.assistant"))
                     .toolbar { languageToolbar }
             }
-            .tabItem { Label(copy("nav.assistant"), systemImage: "bubble.left") }
+            .tabItem { Image(systemName: "bubble.left").accessibilityLabel(copy("nav.assistant")) }
 
             NavigationStack {
                 FeedbackView()
                     .navigationTitle(copy("nav.feedback"))
                     .toolbar { languageToolbar }
             }
-            .tabItem { Label(copy("nav.feedback"), systemImage: "bubble.left.and.bubble.right") }
+            .tabItem { Image(systemName: "bubble.left.and.bubble.right").accessibilityLabel(copy("nav.feedback")) }
 
             NavigationStack {
                 ApplicationsView()
                     .navigationTitle(copy("nav.applications"))
                     .toolbar { languageToolbar }
             }
-            .tabItem { Label(copy("nav.applications"), systemImage: "briefcase") }
+            .tabItem { Image(systemName: "briefcase").accessibilityLabel(copy("nav.applications")) }
 
             NavigationStack {
                 ProfileView()
                     .navigationTitle(copy("nav.profile"))
                     .toolbar { languageToolbar }
             }
-            .tabItem { Label(copy("nav.profile"), systemImage: "person.crop.circle") }
+            .tabItem { Image(systemName: "person.crop.circle").accessibilityLabel(copy("nav.profile")) }
 
         }
         .tint(CivicTheme.accent)

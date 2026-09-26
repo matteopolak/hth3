@@ -6,7 +6,7 @@
 
 ## How it works
 
-The tab shell provides feedback, applications, and profile screens in English and French. Guests can review and submit feedback to the clearly labeled fictional Toronto sandbox, keep a private receipt token in Keychain, and check later replies. A distinct emergency action opens local 911 guidance and a phone link; it never submits a report and does not infer emergencies from message text.
+The tab shell provides Explore, Ask, Feedback, Applications, and Profile in English and French. Its bottom navigation uses SF Symbol icons with localized accessibility labels. Guests can review and submit feedback to the clearly labeled fictional Toronto sandbox, keep a private receipt token in Keychain, and check later replies. A distinct emergency action opens local 911 guidance and a phone link; it never submits a report and does not infer emergencies from message text.
 
 Native sign-in uses Auth0.swift’s PKCE Universal Login flow. It requests the CivicResolve API audience and applicant permissions; Auth0 credentials and refresh tokens are stored by the SDK in Keychain. The app does not ask for an employer organization during resident sign-in. Debug builds also include fixed local Worker identities for development; those values are not present in Release.
 
