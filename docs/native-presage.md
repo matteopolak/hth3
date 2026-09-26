@@ -6,15 +6,15 @@ The iPhone app has an optional camera check powered by Presage SmartSpectra. A s
 
 ## How it works
 
-The Accessibility tab asks for explicit consent, then a separate **Start camera check** action. `AccessibilityView` configures the SDK for breathing rate only, disables its optional session telemetry, starts the front camera, and waits for a sample marked `stable`. That SDK output makes the calmer-layout offer visible. Pressing the offer stores only the Boolean `envoy.calmWriting` preference in `UserDefaults`. Feedback then shows a larger message editor and hides the blank optional improvement field. The resident's message, category, destination, priority, and case status are unchanged.
+Profile → Accessibility asks for explicit consent, then a separate **Start camera check** action. `AccessibilityView` configures the SDK for breathing rate only, disables its optional session telemetry, starts the front camera, and waits for a sample marked `stable`. That SDK output makes the calmer-layout offer visible. Pressing the offer stores only the Boolean `envoy.calmWriting` preference in `UserDefaults`. Feedback then shows a larger message editor and hides the blank optional improvement field. The resident's message, category, destination, priority, and case status are unchanged.
 
-The SDK stops when the resident stops the check, revokes consent, or leaves the tab. The displayed rate is held only in view memory and cleared when consent is revoked or a new check starts. Envoy does not upload the camera image or metric through its Worker. The selected layout remains a separately adjustable preference even after the camera check stops.
+The SDK stops when the resident stops the check, revokes consent, or leaves the screen. The displayed rate is held only in view memory and cleared when consent is revoked or a new check starts. Envoy does not upload the camera image or metric through its Worker. The selected layout remains a separately adjustable preference even after the camera check stops.
 
 ## How to change it
 
 Edit `apps/mobile/ios/CivicResolve/Features/Accessibility/AccessibilityView.swift` for the consent, measurement, and offer flow. Edit `Features/Feedback/FeedbackView.swift` for the reading-layout effect. Keep the SDK result out of case and application payloads. Do not infer distress, emergency status, eligibility, complaint priority, or government routing from a breathing value. The camera check must remain optional and usable alternatives must remain available.
 
-The SDK requires a physical iPhone for live camera acceptance. A generic-device `xcodebuild` confirms Swift compilation and packaging but cannot verify a real camera result. Release acceptance needs a signed device build, the configured API key, explicit in-app consent, an actual stable SDK reading, and a visual check of the feedback layout before closing the Presage issue.
+The SDK requires a physical iPhone for live camera acceptance. Generic-device and ARM64 simulator `xcodebuild` builds confirm compilation and packaging; the simulator can inspect the layout but cannot verify a real camera result. Release acceptance needs a signed device build, the configured API key, explicit in-app consent, an actual stable SDK reading, and a visual check of the feedback layout before closing the Presage issue. On 2026-09-26, only an iPhone simulator was connected and this Mac had no local code-signing identity, so the live-device acceptance remains pending.
 
 ## Configuration
 
