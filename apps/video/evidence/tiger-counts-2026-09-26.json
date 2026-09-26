@@ -1,0 +1,40 @@
+{
+  "result_sets": [
+    {
+      "command_tag": "SELECT 1",
+      "columns": [
+        {
+          "name": "events",
+          "type": "int8"
+        },
+        {
+          "name": "latest_event",
+          "type": "timestamptz"
+        }
+      ],
+      "rows": [
+        [
+          "4",
+          "2026-09-26 19:38:45.194+00"
+        ]
+      ],
+      "rows_affected": 1
+    },
+    {
+      "command_tag": "SELECT 1",
+      "columns": [
+        {
+          "name": "aggregate_events",
+          "type": "numeric"
+        }
+      ],
+      "rows": [
+        [
+          "4"
+        ]
+      ],
+      "rows_affected": 1
+    }
+  ],
+  "execution_time": "27.203916ms"
+}

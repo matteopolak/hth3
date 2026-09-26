@@ -2,15 +2,15 @@
 
 ## What it is
 
-`apps/video` is a five-minute Remotion edit for Envoy's Civic Technology submission. It currently renders an unmistakable storyboard draft: missing footage is labeled “Capture required,” and the final render command stops until required real recordings and narration are documented. A draft is not submission footage.
+`apps/video` is a five-minute Remotion edit for Envoy's Civic Technology submission. Its review draft uses actual screenshots from the deployed Pages site and a dated, read-only Tiger query. Missing interactions remain labeled, and the final render command stops until real screen recordings and narration are documented. The review draft is not submission footage.
 
 ## How it works
 
-The `EnvoyEvidence` composition is 1920×1080 at 30 frames per second and exactly 300 seconds. Seven scenes follow [the storyboard](video-storyboard.md): deployed home, official BC sources, resident agent proposal, practice feedback and receipt, Tiger delivery, staff access boundary, and closing. Each scene uses a local screen recording from `apps/video/public/captures/` only when `capture-manifest.json` says `captured`; otherwise it shows a visible placeholder. The optional staff scene can remain an honest limitation card while live Auth0 role acceptance is pending. The remaining six video slots and a genuine narrated audio track are required for a final render.
+The `EnvoyEvidence` composition is 1920×1080 at 30 frames per second and exactly 300 seconds. A second `EnvoyReview` composition runs the same 300-second story at 15 frames per second for a faster review export. Seven scenes follow [the storyboard](video-storyboard.md): deployed home, official BC sources, resident agent proposal, practice feedback and receipt, Tiger delivery, staff access boundary, and closing. A scene uses a local screen recording from `apps/video/public/captures/` only when `capture-manifest.json` says `captured`; otherwise the review uses dated production screenshots, a dated Tiger query card, or an explicit placeholder. The optional staff scene remains an honest limitation card while live Auth0 role acceptance is pending. The remaining six video slots and a genuine narrated audio track are required for a final render.
 
 The final gate checks local file existence, nonempty content, a recording date, and a human evidence note. It cannot prove that a recording is authentic: review the actual media and narration against current product behavior before publishing. The composition mutes clip audio so the single voiceover and on-screen captions stay intelligible. Keep each clip at least as long as its scene (30, 55, 50, 50, 45, optional 45, and 25 seconds respectively) and the narration at least five minutes, or edit the scene timing and script together.
 
-As of 2026-09-26, there are no screen recordings or narration files in the repository. A production Pages HTTP 200, 65 live Service BC office records, three current BC finder links, a reviewable Workers AI guest proposal, and two delivered Tiger events have been observed. Those observations are leads for capture, not substitute clips. Auth0 role-token acceptance, ElevenLabs live voice submission, and a physical-device Presage result remain pending; no scene depicts them as completed. The stale federal consultation finder must remain labeled stale if shown.
+The current review assets were captured on 2026-09-26: production Pages home; the official BC Jobs finder; Nearby with 65 Service BC locations; a live Workers AI Toronto streetlight proposal; the practice feedback intake; the completed guest action; and the private practice receipt with its secret token hidden. The Tiger evidence files contain a read-only query taken at 19:41 UTC: four delivered events and four aggregate events, including two sample events (`feedback.submitted` and `feedback.classified`) for the newly captured report. This is a dated query result, not staff dashboard footage. There are still no interaction recordings or narration files in the repository. Auth0 role-token acceptance, ElevenLabs live voice submission, and a physical-device Presage result remain pending; no scene depicts them as completed. The stale federal consultation finder must remain labeled stale if shown.
 
 ## How to change it
 
@@ -27,7 +27,14 @@ pnpm --filter @envoy/video render:draft
 pnpm --filter @envoy/video render:final
 ```
 
-The draft deliberately contains capture placeholders. `render:final` exits before Remotion if required files are missing. Do not upload or present the draft as a working-product video. For a single-frame layout check, use `pnpm --filter @envoy/video still`. Remotion may need a local Chrome or its own headless-shell download to render; its CLI accepts `--browser-executable` when using an installed compatible browser.
+The review export is `apps/video/out/envoy-review.mp4`; it has real stills, dated query evidence, explicit missing-footage labels, and no narration. `render:final` exits before Remotion if required clips are missing. Do not upload or present the review draft as a working-product video. For a single-frame layout check, use `pnpm --filter @envoy/video still`. Remotion may need a local Chrome or its own headless-shell download to render. On this Mac, a direct local render command is:
+
+```sh
+cd apps/video
+./node_modules/.bin/remotion render src/index.ts EnvoyReview out/envoy-review.mp4 --codec h264 --x264-preset veryfast --browser-executable '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+```
+
+The six missing interaction recordings are for home, sources, agent, feedback/receipt, Tiger dashboard or terminal, and closing. A real five-minute narration track is also missing. The staff recording stays optional until Auth0 role acceptance; the current scene states that limitation.
 
 ## Configuration
 

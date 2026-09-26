@@ -12,21 +12,21 @@ This is the release and evidence checklist for the Civic Technology submission. 
 - [ ] Confirm the production Worker responds from the Pages origin and the guest chat, source search, feedback, and receipt paths work end to end.
 - [ ] Recheck source freshness. The 2026-09-26 snapshot had 65 Service BC office records, three current BC finder links, and one stale federal consultation finder. Do not call a finder an individual vacancy, award, or eligibility result.
 - [ ] Submit one new, clearly labeled practice report, confirm its private receipt, and verify persistence after refresh. Keep the token private.
-- [ ] Verify a new outbox event reaches Tiger; note synchronization time. The last read-only check showed two delivered events and two aggregate events, but a fresh report should change that count after delivery.
+- [ ] Verify a new outbox event reaches Tiger; note synchronization time. The 2026-09-26 19:41 UTC read-only check showed four delivered and four aggregate events, including two sample events from the newly captured practice report. Recheck before presenting.
 - [ ] Verify Workers AI in a new production conversation and retain a redacted capture of the reviewable proposal. The Toronto streetlight prompt was previously accepted; verify the final deployed build again.
 - [ ] Check the English presentation path visually at desktop and mobile widths. Check the French critical flow for missing strings without delaying the English demo for cosmetic polish.
 - [ ] If showing native iOS, complete the exact recorded journey on a physical device against production. A generic build alone is insufficient.
 
 ### Claim gates
 
-| Claim or prize selection | Evidence required before selecting it                                                                                                                                                          |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Civic Technology         | A live resident-to-practice-workspace report and receipt, with explicit non-affiliation.                                                                                                       |
-| Tiger Data               | A real feedback event in the hypertable and continuous aggregate, plus the deployed trend view if the video shows it. Two events were read from Tiger on 2026-09-26; capture the fresh result. |
-| Auth0                    | A real hosted sign-in, accepted Worker token, one permitted scoped action, and one denied unauthorized action. Hosted login appearance alone is insufficient.                                  |
-| ElevenLabs               | A real voice session with follow-up, transcript review, and a submitted feedback record. The current agent configuration alone is insufficient; the Worker still needs a durable API key.      |
-| Presage                  | A consented, stable physical-iPhone SDK signal that changes the mobile writing interface. Compilation alone is insufficient.                                                                   |
-| UI/UX                    | Deployed, visually checked resident and employee paths, with accessible text alternatives and clear practice/source labels.                                                                    |
+| Claim or prize selection | Evidence required before selecting it                                                                                                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Civic Technology         | A live resident-to-practice-workspace report and receipt, with explicit non-affiliation.                                                                                                                                  |
+| Tiger Data               | A real feedback event in the hypertable and continuous aggregate, plus the deployed trend view if the video shows it. Four events were read from Tiger at 19:41 UTC on 2026-09-26; capture a fresh result before judging. |
+| Auth0                    | A real hosted sign-in, accepted Worker token, one permitted scoped action, and one denied unauthorized action. Hosted login appearance alone is insufficient.                                                             |
+| ElevenLabs               | A real voice session with follow-up, transcript review, and a submitted feedback record. The current agent configuration alone is insufficient; the Worker still needs a durable API key.                                 |
+| Presage                  | A consented, stable physical-iPhone SDK signal that changes the mobile writing interface. Compilation alone is insufficient.                                                                                              |
+| UI/UX                    | Deployed, visually checked resident and employee paths, with accessible text alternatives and clear practice/source labels.                                                                                               |
 
 Workers AI is part of the core product story and has a production proposal result; it is not listed as a separate prize in the current plan. Do not select an optional side challenge merely because its SDK, agent, UI, or configuration exists.
 
