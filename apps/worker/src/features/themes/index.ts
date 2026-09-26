@@ -405,17 +405,13 @@ export async function refreshThemesForOrganization(
       fr: humanize(categoryId),
     };
     const title =
-      topicKey === "general"
+      topicKey === "general" ||
+      categoryName.en.toLocaleLowerCase("en-CA").includes(topicKey)
         ? categoryName
-        : topicKey.startsWith("semantic_")
-          ? {
-              en: `${commonTerms(submissions)[0] ? humanize(commonTerms(submissions)[0]!) : "Shared concern"} · ${categoryName.en}`,
-              fr: `${categoryName.fr} · préoccupation commune`,
-            }
-          : {
-              en: `${humanize(topicKey)} · ${categoryName.en}`,
-              fr: `${categoryName.fr} · ${topicKey}`,
-            };
+        : {
+            en: `${humanize(topicKey)} · ${categoryName.en}`,
+            fr: categoryName.fr,
+          };
     let sourceIds = canDescribeThemeSources(categoryId, submissions.length)
       ? submissions.slice(0, 5).map((row) => row.id)
       : [];
@@ -900,7 +896,9 @@ function summarize(
       en: `${count} ${count === 1 ? "submission concerns" : "submissions concern"} ${title.en.toLowerCase()}. Open the linked feedback to review details and requested changes.`,
       fr: `${count} ${count === 1 ? "signalement concerne" : "signalements concernent"} ${title.fr.toLowerCase()}. Ouvrez les commentaires liés pour examiner les détails et les changements demandés.`,
     };
-  const terms = commonTerms(rows);
+  const terms = commonTerms(rows).filter(
+    (term) => !title.en.toLocaleLowerCase("en-CA").includes(term),
+  );
   const suffixEn = terms.length
     ? ` Common topics include ${terms.join(", ")}.`
     : "";
