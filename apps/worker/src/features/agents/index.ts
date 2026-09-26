@@ -323,7 +323,9 @@ async function sendMessage(
   let assistantText = instruction.message;
   let toolResult: unknown;
   let proposal: unknown;
-  if (instruction.tool) {
+  const residentServiceIssue =
+    conversation.mode === "resident" && suggestsServiceIssue(safeMessage);
+  if (instruction.tool && !residentServiceIssue) {
     const outcome = await callTool(
       request,
       conversation,
@@ -370,13 +372,17 @@ async function sendMessage(
       }
     }
   }
-  if (conversation.mode === "resident" && suggestsServiceIssue(safeMessage)) {
+  if (residentServiceIssue) {
     if (appearsEmergency(safeMessage)) {
-      assistantText +=
+      assistantText =
         conversation.locale === "fr"
-          ? " En cas de danger immédiat, appelez le 911."
-          : " If there is immediate danger, call 911.";
-    } else if (!proposal && /\bToronto\b/i.test(safeMessage)) {
+          ? "En cas de danger immédiat, appelez le 911. Je peux vous aider à préparer un signalement ensuite."
+          : "If there is immediate danger, call 911. I can help prepare a report afterward.";
+    } else if (/\bToronto\b/i.test(safeMessage)) {
+      assistantText =
+        conversation.locale === "fr"
+          ? "Je peux vous aider à préparer un signalement pour ce problème."
+          : "I can help prepare a report about this problem.";
       const draft = await callTool(
         request,
         conversation,
@@ -391,21 +397,21 @@ async function sendMessage(
       );
       if (!(draft instanceof Response) && "proposal" in draft) {
         proposal = draft.proposal;
-        assistantText +=
+        assistantText =
           conversation.locale === "fr"
-            ? " J'ai préparé un signalement à vérifier. Il sera envoyé seulement à la file fictive d'Envoy après votre confirmation."
-            : " I prepared a report for you to review. It will go only to Envoy's fictional queue after your approval.";
+            ? "Je peux vous aider à signaler ce problème. Vérifiez le brouillon avant de l'envoyer."
+            : "You can report this problem through Envoy. Review the draft before sending it.";
       }
-    } else if (
-      !proposal &&
-      !/feedback|complaint|report|signalement|plainte/i.test(assistantText)
-    ) {
-      assistantText +=
+    } else {
+      assistantText =
         conversation.locale === "fr"
-          ? " Si cela s'est passé à Toronto, je peux préparer un signalement que vous pourrez vérifier avant de l'envoyer."
-          : " If this happened in Toronto, I can prepare a complaint or suggestion for you to review before sending it.";
+          ? "Dans quelle municipalité cela s'est-il passé? Je peux vous aider à préparer un signalement."
+          : "Which municipality did this happen in? I can help prepare a report.";
     }
   }
+  assistantText = assistantText
+    .replace(/\p{Extended_Pictographic}/gu, "")
+    .trim();
   await storeMessage(conversation.id, "assistant", assistantText, context);
   return featureJson(context, {
     apiVersion: API_VERSION,
@@ -490,7 +496,7 @@ async function callTool(
     ...(name === "create_feedback"
       ? {
           destinationNotice:
-            "This report goes only to Envoy's fictional Toronto sandbox queue, not a government office.",
+            "This report goes only to Envoy's Toronto intake queue. It is not connected to a government office.",
         }
       : {}),
     ...(await recordVersion(request, name, args, conversation, context)),
@@ -617,7 +623,7 @@ async function approveProposal(
     return featureError(
       context,
       "SANDBOX_ACK_REQUIRED",
-      "Confirm that this report goes only to the fictional Envoy queue.",
+      "Confirm that this report stays in Envoy's own queue and does not go to a government office.",
       409,
     );
   if (
@@ -853,7 +859,7 @@ function systemPrompt(conversation: ConversationRow): string {
   const tools = visibleTools(conversation.mode)
     .map((tool) => `${tool.name} (${tool.access}): ${tool.description}`)
     .join("\n");
-  return `You are Envoy's ${conversation.mode} assistant. Reply in ${conversation.locale === "fr" ? "French" : "English"}. Be brief, factual and helpful. The Toronto Envoy queue and employer are fictional and unaffiliated with government. Do not claim a report reached a real government office or an external application was submitted. Never fabricate a source record, location, eligibility, posting, case status or tool result. Never ask for or print access tokens. For emergencies direct the user to 911. If a resident describes an unresolved service problem, proactively offer to prepare feedback. Do not submit or change anything without an explicit approval card. Employee tools only access the authenticated organization and current role.\nAvailable tools:\n${tools}\nRespond as compact JSON: {"message":"plain answer","tool":{"name":"one exact tool name","args":{}}}. Omit tool if none is needed. Use at most one tool per turn. If required details are missing, ask a brief question. For write tools, the server will create a proposal card, not execute the action.`;
+  return `You are Envoy's ${conversation.mode} assistant. Reply in ${conversation.locale === "fr" ? "French" : "English"} with at most two short, natural sentences. No emoji. Never invent URLs, menu names, click paths, official processes, source records, eligibility, locations, case status, or tool results. Do not claim an external application or report was submitted. Envoy is unaffiliated with government; the action preview discloses the queue destination. Avoid discussing demo, sample, sandbox, or fictional status in ordinary chat. Never ask for or print access tokens. Direct emergencies to 911. Offer to prepare feedback when a resident describes an unresolved service problem. Do not execute writes without the approval card. Employee tools access only the current role and organization.\nAvailable tools:\n${tools}\nRespond as compact JSON: {"message":"plain answer","tool":{"name":"one exact tool name","args":{}}}. Omit tool if none is needed. Use at most one tool per turn. Ask for missing details. For write tools, the server creates a proposal card.`;
 }
 
 function parseInstruction(raw: string | undefined): {
@@ -895,7 +901,7 @@ function appearsEmergency(message: string): boolean {
 }
 
 function suggestsServiceIssue(message: string): boolean {
-  return /\b(broken|unsafe|complaint|problem|issue|not working|service failed|pothole|garbage|water|noise|streetlight|défectueux|problème|plainte|service)\b/i.test(
+  return /\b(broken|unsafe|complaint|not working|service failed|pothole|missed garbage|water outage|noise complaint|streetlight|défectueux|problème|plainte|service en panne)\b/i.test(
     message,
   );
 }
