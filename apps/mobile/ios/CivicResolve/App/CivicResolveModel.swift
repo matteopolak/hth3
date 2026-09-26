@@ -315,6 +315,23 @@ final class CivicResolveModel: ObservableObject {
         } catch { self.error = localizedError(error) }
     }
 
+    func reopenFeedback() async {
+        guard let credentials,
+              let currentReceipt = feedbackReceipt,
+              ["closed", "outcome_recorded"].contains(currentReceipt.status),
+              !replyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        isWorking = true
+        error = nil
+        notice = nil
+        defer { isWorking = false }
+        do {
+            try await api.reopen(credentials, message: replyDraft)
+            replyDraft = ""
+            feedbackReceipt = try await api.receipt(credentials)
+            notice = copy("feedback.reopened")
+        } catch { self.error = localizedError(error) }
+    }
+
     func submitApplication() async {
         guard applicationConfirmed else { return }
         guard let token = accessToken else { error = copy("auth.unavailable"); return }

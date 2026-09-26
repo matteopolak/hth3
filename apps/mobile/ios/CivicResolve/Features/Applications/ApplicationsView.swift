@@ -102,7 +102,7 @@ private struct ApplicationComposerView: View {
                     InlineNotice(message: copy("application.practiceNotice"))
                 }
                 if let sent {
-                    InlineNotice(message: copy("application.sent"))
+                    InlineNotice(message: copy(posting.sample ? "application.sentEnvoyOnly" : "application.sent"))
                     NavigationLink(copy("application.viewApplication")) {
                         ApplicationDetailView(application: sent)
                     }
@@ -164,27 +164,44 @@ private struct ApplicationComposerView: View {
 private struct ApplicationDetailView: View {
     @EnvironmentObject private var model: CivicResolveModel
     let application: CivicApplication
+    @State private var liveApplication: CivicApplication?
     @State private var messages: [ApplicationMessage] = []
     @State private var draft = ""
     @State private var error: String?
     @State private var sending = false
+    @State private var loading = false
     private let api = WorkerAPI()
+
+    private var current: CivicApplication { liveApplication ?? application }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text(application.postingTitle ?? application.postingId).font(.title2.weight(.semibold))
-                Text(model.statusCopy(application.status))
+                Text(current.postingTitle ?? current.postingId).font(.title2.weight(.semibold))
+                Text(model.statusCopy(current.status))
                     .font(.subheadline).foregroundStyle(CivicTheme.muted)
-                if application.sample {
+                HStack(spacing: 16) {
+                    Text("\(copy("application.submittedAt")): \(String(current.submittedAt.prefix(10)))")
+                    Text("\(copy("application.updatedAt")): \(String(current.updatedAt.prefix(10)))")
+                }
+                .font(.caption).foregroundStyle(CivicTheme.muted)
+                Button {
+                    Task { await load() }
+                } label: {
+                    Label(copy("application.refreshStatus"), systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+                .disabled(loading)
+                if loading { ProgressView(copy("common.loading")) }
+                if current.sample {
                     InlineNotice(message: copy("application.practiceNotice"))
                 }
                 VStack(alignment: .leading, spacing: 9) {
                     Text(copy("application.answers")).font(.headline)
-                    ForEach(application.answers.keys.sorted(), id: \.self) { key in
+                    ForEach(current.answers.keys.sorted(), id: \.self) { key in
                         VStack(alignment: .leading, spacing: 3) {
                             Text(key.capitalized).font(.caption).foregroundStyle(CivicTheme.muted)
-                            Text(application.answers[key] ?? "")
+                            Text(current.answers[key] ?? "")
                         }
                     }
                 }
@@ -224,11 +241,24 @@ private struct ApplicationDetailView: View {
         .background(CivicTheme.canvas)
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
+        .refreshable { await load() }
     }
 
     private func load() async {
         guard let token = model.accessToken else { return }
-        do { messages = try await api.applicationMessages(id: application.id, token: token) }
+        loading = true
+        error = nil
+        defer { loading = false }
+        do {
+            async let detail = api.application(id: application.id, token: token)
+            async let conversation = api.applicationMessages(id: application.id, token: token)
+            let (updated, latestMessages) = try await (detail, conversation)
+            liveApplication = updated
+            messages = latestMessages
+            if let index = model.applications.firstIndex(where: { $0.id == updated.id }) {
+                model.applications[index] = updated
+            }
+        }
         catch { self.error = error.localizedDescription }
     }
 
@@ -239,7 +269,7 @@ private struct ApplicationDetailView: View {
         sending = true
         defer { sending = false }
         do {
-            let message = try await api.sendApplicationMessage(id: application.id, text: text, token: token)
+            let message = try await api.sendApplicationMessage(id: current.id, text: text, token: token)
             messages.append(message)
             draft = ""
         } catch { self.error = error.localizedDescription }

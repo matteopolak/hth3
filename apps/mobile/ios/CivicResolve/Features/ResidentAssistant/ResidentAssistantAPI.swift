@@ -142,7 +142,7 @@ struct ResidentAssistantAPI {
 
     init(session: URLSession = .shared) {
         let configured = Bundle.main.object(forInfoDictionaryKey: "CIVICRESOLVE_API_BASE_URL") as? String
-        baseURL = URL(string: configured ?? "") ?? URL(string: "http://127.0.0.1:8787/api/v1")!
+        baseURL = URL(string: configured ?? "") ?? URL(string: "http://127.0.0.1:5173/api/v1")!
         self.session = session
     }
 

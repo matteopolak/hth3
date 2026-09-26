@@ -16,19 +16,14 @@ struct FeedbackView: View {
                 if model.emergencyGuidanceShowing {
                     emergencyGuidance
                 } else {
-                    SandboxBadge(title: copy("sandbox.title"))
-                    if !calmWriting {
-                        Text(copy("feedback.intro"))
-                            .font(.subheadline)
-                            .foregroundStyle(CivicTheme.muted)
+                    if let receipt = model.feedbackReceipt {
+                        receiptCard(receipt)
                     }
                     CivicTheme.card {
                         VStack(alignment: .leading, spacing: 16) {
                             if model.feedbackReviewing {
                                 review
                             } else {
-                                Text(copy("feedback.title"))
-                                    .font(.title2.weight(.semibold))
                                 field(copy("feedback.message"), hint: copy("feedback.messageHint"), text: $model.feedbackDraft, minHeight: calmWriting ? 230 : 124)
                                 if !calmWriting || !model.improvementDraft.isEmpty {
                                     field(copy("feedback.improvement"), hint: copy("feedback.improvementHint"), text: $model.improvementDraft, minHeight: 84)
@@ -49,7 +44,6 @@ struct FeedbackView: View {
                             }
                         }
                     }
-                    InlineNotice(message: copy("sandbox.body"))
                     Button {
                         model.emergencyGuidanceShowing = true
                     } label: {
@@ -60,13 +54,6 @@ struct FeedbackView: View {
                     .tint(CivicTheme.warning)
                     if let error = model.error { InlineNotice(message: error, isError: true) }
                     if let notice = model.notice { InlineNotice(message: notice) }
-                    if let receipt = model.feedbackReceipt {
-                        receiptCard(receipt)
-                    } else if model.credentials == nil {
-                        Text(copy("feedback.noReceipt"))
-                            .font(.footnote)
-                            .foregroundStyle(CivicTheme.muted)
-                    }
                     if model.isWorking { ProgressView(copy("common.loading")) }
                 }
             }
@@ -75,7 +62,8 @@ struct FeedbackView: View {
             .frame(maxWidth: .infinity)
         }
         .background(CivicTheme.canvas)
-        .task { await model.refreshReceipt() }
+        .task { await restoreReceipt() }
+        .refreshable { await model.refreshReceipt() }
     }
 
     private var emergencyGuidance: some View {
@@ -237,12 +225,18 @@ struct FeedbackView: View {
                 }
                 Button(copy("feedback.refresh")) { Task { await model.refreshReceipt() } }
                     .buttonStyle(.bordered)
-                if receipt.status != "closed" {
-                    field(copy("feedback.reply"), hint: copy("feedback.replyHint"), text: $model.replyDraft, minHeight: 78)
-                    Button(copy("feedback.replySend")) { Task { await model.sendReply() } }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(model.replyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isWorking)
+                let needsReopen = ["closed", "outcome_recorded"].contains(receipt.status)
+                field(copy(needsReopen ? "feedback.reopen" : "feedback.reply"),
+                      hint: copy(needsReopen ? "feedback.reopenHint" : "feedback.replyHint"),
+                      text: $model.replyDraft, minHeight: 78)
+                Button(copy(needsReopen ? "feedback.reopen" : "feedback.replySend")) {
+                    Task {
+                        if needsReopen { await model.reopenFeedback() }
+                        else { await model.sendReply() }
+                    }
                 }
+                .buttonStyle(.borderedProminent)
+                .disabled(model.replyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isWorking)
             }
         }
     }
@@ -262,6 +256,13 @@ struct FeedbackView: View {
     }
 
     private func copy(_ key: String) -> String { model.copy(key) }
+
+    private func restoreReceipt() async {
+        if let latest = KeychainReceiptStore.load(), latest != model.credentials {
+            model.credentials = latest
+        }
+        await model.refreshReceipt()
+    }
 
     private func previewCopy(_ key: String) -> String {
         let english: [String: String] = [

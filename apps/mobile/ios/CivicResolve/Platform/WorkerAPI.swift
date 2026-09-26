@@ -260,6 +260,10 @@ struct WorkerAPI {
         try await get("/applications", token: token, as: ApplicationsEnvelope.self).applications
     }
 
+    func application(id: String, token: String) async throws -> CivicApplication {
+        try await get("/applications/\(id)", token: token, as: ApplicationEnvelope.self).application
+    }
+
     func profile(token: String) async throws -> ApplicantProfile {
         try await get("/profile", token: token, as: ProfileEnvelope.self).profile
     }
@@ -334,6 +338,12 @@ struct WorkerAPI {
         let body = MessageSubmission(message: message)
         let path = "/feedback/receipts/\(credentials.submissionId)/messages"
         let _: MessageEnvelope = try await send(path, method: "POST", receiptToken: credentials.receiptToken, idempotent: true, body: body)
+    }
+
+    func reopen(_ credentials: ReceiptCredentials, message: String) async throws {
+        let path = "/feedback/receipts/\(credentials.submissionId)/reopen"
+        let _: ReceiptEnvelope = try await send(path, method: "POST", receiptToken: credentials.receiptToken,
+                                                idempotent: true, body: MessageSubmission(message: message))
     }
 
     private func get<Response: Decodable>(_ path: String, token: String? = nil, as type: Response.Type) async throws -> Response {
