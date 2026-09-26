@@ -29,6 +29,8 @@ const labels = {
     sponsorAuthor: "Sponsor",
     you: "You",
     search: "Search programs",
+    programSingular: "program",
+    programPlural: "programs",
     empty: "No participating programs match this search.",
     choose: "Select a program to see the intake.",
     benefit: "Support",
@@ -95,6 +97,8 @@ const labels = {
     sponsorAuthor: "Promoteur",
     you: "Vous",
     search: "Rechercher des programmes",
+    programSingular: "programme",
+    programPlural: "programmes",
     empty: "Aucun programme participant ne correspond.",
     choose: "Choisissez un programme pour voir le formulaire.",
     benefit: "Soutien",
@@ -286,7 +290,7 @@ export function createProgramIntakePage(
         .toLowerCase()
         .includes(search),
     );
-    return `<div class="pi-list-head"><label class="pi-search">${icon(Search)}<input id="pi-search" type="search" placeholder="${h(text.search)}" value="${h(search)}" /></label><span>${visible.length}</span></div><div class="pi-list">${visible.map((item) => `<button class="pi-list-row ${selectedProgram === item.id ? "selected" : ""}" data-action="select-program" data-id="${h(item.id)}"><span class="pi-row-category">${h(item.kind === "grant" ? text.grant : text.benefit)}${item.sample ? ` · ${h(text.practice)}` : ""}</span><strong>${h(item.title)}</strong><span class="pi-row-meta">${h(item.sponsor)}</span>${icon(ChevronRight)}</button>`).join("") || `<p class="pi-empty">${h(text.empty)}</p>`}</div>`;
+    return `<div class="pi-list-head"><label class="pi-search">${icon(Search)}<input id="pi-search" type="search" aria-label="${h(text.search)}" placeholder="${h(text.search)}" value="${h(search)}" /></label><span class="pi-result-count">${visible.length} ${h(visible.length === 1 ? text.programSingular : text.programPlural)}</span></div><div class="pi-list">${visible.map((item) => `<button class="pi-list-row ${selectedProgram === item.id ? "selected" : ""}" data-action="select-program" data-id="${h(item.id)}"><span class="pi-row-category">${h(item.kind === "grant" ? text.grant : text.benefit)}${item.sample ? ` · ${h(text.practice)}` : ""}</span><strong>${h(item.title)}</strong><span class="pi-row-meta">${h(item.sponsor)}</span>${icon(ChevronRight)}</button>`).join("") || `<p class="pi-empty">${h(text.empty)}</p>`}</div>`;
   }
 
   function questionInputs(program: Program): string {
