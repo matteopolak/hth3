@@ -286,7 +286,7 @@ export function createProgramIntakePage(
         .toLowerCase()
         .includes(search),
     );
-    return `<div class="pi-list-head"><label class="pi-search">${icon(Search)}<input id="pi-search" type="search" placeholder="${h(text.search)}" value="${h(search)}" /></label><span>${visible.length}</span></div><div class="pi-list" role="list">${visible.map((item) => `<button class="pi-list-row ${selectedProgram === item.id ? "selected" : ""}" data-action="select-program" data-id="${h(item.id)}" role="listitem"><span class="pi-row-category">${h(item.kind === "grant" ? text.grant : text.benefit)}${item.sample ? ` · ${h(text.practice)}` : ""}</span><strong>${h(item.title)}</strong><span class="pi-row-meta">${h(item.sponsor)}</span>${icon(ChevronRight)}</button>`).join("") || `<p class="pi-empty">${h(text.empty)}</p>`}</div>`;
+    return `<div class="pi-list-head"><label class="pi-search">${icon(Search)}<input id="pi-search" type="search" placeholder="${h(text.search)}" value="${h(search)}" /></label><span>${visible.length}</span></div><div class="pi-list">${visible.map((item) => `<button class="pi-list-row ${selectedProgram === item.id ? "selected" : ""}" data-action="select-program" data-id="${h(item.id)}"><span class="pi-row-category">${h(item.kind === "grant" ? text.grant : text.benefit)}${item.sample ? ` · ${h(text.practice)}` : ""}</span><strong>${h(item.title)}</strong><span class="pi-row-meta">${h(item.sponsor)}</span>${icon(ChevronRight)}</button>`).join("") || `<p class="pi-empty">${h(text.empty)}</p>`}</div>`;
   }
 
   function questionInputs(program: Program): string {
