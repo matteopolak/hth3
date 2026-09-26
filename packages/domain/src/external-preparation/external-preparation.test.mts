@@ -35,6 +35,18 @@ describe("external application preparation", () => {
     expect(document).toContain(
       "Envoy has not recorded an external submission.",
     );
+
+    const participationDocument = formatPreparationDocument({
+      title: "Public consultation",
+      publisher: "Publisher",
+      officialUrl: "https://example.org/consultation",
+      preparation: preparation!,
+      locale: "fr",
+      purpose: "participation",
+    });
+    expect(participationDocument).toContain("participation externe");
+    expect(participationDocument).toContain("aucune contribution externe");
+    expect(participationDocument).not.toContain("demande externe");
   });
 
   it("rejects malformed or oversized answer collections", () => {

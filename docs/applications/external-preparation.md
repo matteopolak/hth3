@@ -8,6 +8,8 @@ An applicant can organize answers and a personal checklist for a sourced externa
 
 `GET /api/v1/external-preparations/{recordId}` is public. It returns a blank preparation for guests and the caller’s saved draft when a valid applicant token is present. The record must be an `official_external` source with reviewed permitted terms and an HTTPS URL. Source attribution, jurisdiction, freshness, and the destination come from the source record; Envoy does not infer requirements or eligibility.
 
+The response exposes a presentation `purpose` based on the record's discovery area or kind. Consultation records use participation/contribution copy in English and French, including the exported document. Application records retain application copy. Both use the same `prepared-for-external` stored status and record no external submission or contribution.
+
 Authenticated applicants use `PUT` and `DELETE` on that path to save or remove a draft. `GET /api/v1/external-preparations` lists the caller’s preparations. `GET /api/v1/external-preparations/{recordId}/export?locale=en|fr` returns a plain text document from the saved draft, or a blank template for guests. The browser also downloads its current unsaved notes, so signing in is only necessary for private persistence.
 
 Reusable answers are private to the applicant: `GET /api/v1/external-preparations/answers`, `PUT /api/v1/external-preparations/answers/{id}`, and `DELETE /api/v1/external-preparations/answers/{id}`. The web drawer inserts a saved answer into the current draft, where the applicant can edit it before export or save.

@@ -24,6 +24,10 @@ interface PreparationRow {
   updated_at: string;
 }
 
+type ExternalRecord = SourceRecord & {
+  purpose: "application" | "participation";
+};
+
 export async function handleExternalPreparationRequest(
   request: Request,
   url: URL,
@@ -182,6 +186,7 @@ async function exportPreparation(
     officialUrl: record.sourceUrl,
     preparation: row ? preparationFromRow(row) : emptyPreparation(),
     locale,
+    purpose: record.purpose,
   });
   const headers = new Headers(context.cors);
   headers.set("Content-Type", "text/plain; charset=utf-8");
@@ -341,7 +346,7 @@ async function applicantSubject(
 async function externalRecord(
   id: string,
   context: FeatureContext,
-): Promise<SourceRecord | null> {
+): Promise<ExternalRecord | null> {
   const record = await getSourceRecord(context.env.DB, id);
   if (
     !record ||
@@ -349,7 +354,21 @@ async function externalRecord(
     !safeOfficialUrl(record.sourceUrl)
   )
     return null;
-  return record;
+  const detail = await context.env.DB.prepare(
+    `SELECT a.area, d.kind FROM source_records AS r
+     LEFT JOIN discovery_record_areas AS a ON a.record_id = r.id
+     LEFT JOIN source_record_details AS d ON d.record_id = r.id
+     WHERE r.id = ?`,
+  )
+    .bind(id)
+    .first<{ area: string | null; kind: string | null }>();
+  return {
+    ...record,
+    purpose:
+      detail?.area === "participation" || detail?.kind === "consultation_finder"
+        ? "participation"
+        : "application",
+  };
 }
 
 function safeOfficialUrl(value: string): boolean {
@@ -360,7 +379,7 @@ function safeOfficialUrl(value: string): boolean {
   }
 }
 
-function recordView(record: SourceRecord) {
+function recordView(record: ExternalRecord) {
   return {
     id: record.id,
     title: record.title,
@@ -370,6 +389,7 @@ function recordView(record: SourceRecord) {
     officialUrl: record.sourceUrl,
     verifiedAt: record.verifiedAt,
     freshness: record.freshness,
+    purpose: record.purpose,
     handoff: {
       url: record.sourceUrl,
       publisher: record.publisher,

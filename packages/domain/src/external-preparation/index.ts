@@ -104,8 +104,10 @@ export function formatPreparationDocument(input: {
   officialUrl: string;
   preparation: ExternalPreparation;
   locale: "en" | "fr";
+  purpose?: "application" | "participation";
 }): string {
   const fr = input.locale === "fr";
+  const participation = input.purpose === "participation";
   const lines = [
     input.title,
     `${fr ? "Éditeur" : "Publisher"}: ${input.publisher}`,
@@ -122,9 +124,13 @@ export function formatPreparationDocument(input: {
       (step) => `${step.done ? "[x]" : "[ ]"} ${step.text}`,
     ),
     "",
-    fr
-      ? "Préparé pour une demande externe. Vérifiez les exigences et soumettez vous-même sur le site officiel. Envoy n'a enregistré aucune soumission externe."
-      : "Prepared for an external application. Check requirements and submit yourself on the official site. Envoy has not recorded an external submission.",
+    participation
+      ? fr
+        ? "Préparé pour une participation externe. Vérifiez les renseignements actuels et contribuez vous-même sur le site officiel. Envoy n'a enregistré aucune contribution externe."
+        : "Prepared for external participation. Check current details and contribute yourself on the official site. Envoy has not recorded an external contribution."
+      : fr
+        ? "Préparé pour une demande externe. Vérifiez les exigences et soumettez vous-même sur le site officiel. Envoy n'a enregistré aucune soumission externe."
+        : "Prepared for an external application. Check requirements and submit yourself on the official site. Envoy has not recorded an external submission.",
   ];
   return `${lines.join("\n").trimEnd()}\n`;
 }

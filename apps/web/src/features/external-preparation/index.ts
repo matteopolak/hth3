@@ -41,6 +41,7 @@ interface OfficialRecord {
   officialUrl: string;
   verifiedAt: string | null;
   freshness: string;
+  purpose: "application" | "participation";
 }
 interface PreparationResponse {
   record: OfficialRecord;
@@ -145,6 +146,39 @@ const copy = {
   },
 } as const;
 
+const participationCopy = {
+  en: {
+    prepared: "Prepared for external participation",
+    description:
+      "Bring your thoughts together, then contribute on the publisher’s site.",
+    questions: "Your contributions",
+    addQuestion: "Add point",
+    question: "Topic or prompt",
+    questionPlaceholder: "What would you like to contribute?",
+    answer: "Your contribution",
+    answerPlaceholder: "Write your thoughts here",
+    officialHint:
+      "Check the latest details there. Envoy has not sent a contribution.",
+    complete: "Participate on official site",
+    noSubmit: "This workspace does not submit a contribution.",
+  },
+  fr: {
+    prepared: "Préparé pour une participation externe",
+    description:
+      "Rassemblez vos idées, puis contribuez sur le site de l’éditeur.",
+    questions: "Vos contributions",
+    addQuestion: "Ajouter une idée",
+    question: "Sujet ou question",
+    questionPlaceholder: "Qu’aimeriez-vous apporter?",
+    answer: "Votre contribution",
+    answerPlaceholder: "Écrivez vos idées ici",
+    officialHint:
+      "Vérifiez les renseignements actuels. Envoy n’a envoyé aucune contribution.",
+    complete: "Participer sur le site officiel",
+    noSubmit: "Cet espace ne soumet aucune contribution.",
+  },
+} as const;
+
 export function createExternalPreparationPage({
   recordId,
   locale,
@@ -167,6 +201,10 @@ export function createExternalPreparationPage({
   let libraryTargetId: string | null = null;
   let notice = "";
   let error = "";
+  const wording = () =>
+    record?.purpose === "participation"
+      ? { ...t, ...participationCopy[locale] }
+      : t;
 
   async function load(): Promise<void> {
     root.replaceChildren(node("p", "external-prep-loading", t.loading));
@@ -198,33 +236,42 @@ export function createExternalPreparationPage({
       root.append(button(t.retry, "external-prep-button", () => void load()));
       return;
     }
+    const content = wording();
     const nav = node("div", "external-prep-nav");
     if (onBack)
       nav.append(
         buttonWithIcon(ChevronLeft, t.back, "external-prep-back", onBack),
       );
-    nav.append(node("span", "external-prep-status", t.prepared));
+    nav.append(node("span", "external-prep-status", content.prepared));
     root.append(nav);
 
     const header = node("header", "external-prep-header");
-    header.append(node("h1", "", record.title), node("p", "", t.description));
+    header.append(
+      node("h1", "", record.title),
+      node("p", "", content.description),
+    );
     root.append(header);
 
     const layout = node("div", "external-prep-layout");
     const editor = node("main", "external-prep-editor");
     const answersHeading = node("div", "external-prep-section-heading");
     answersHeading.append(
-      node("h2", "", t.questions),
-      buttonWithIcon(Plus, t.addQuestion, "external-prep-text-button", () => {
-        preparation.answers.push({ id: uid(), question: "", response: "" });
-        dirty = true;
-        render();
-      }),
+      node("h2", "", content.questions),
+      buttonWithIcon(
+        Plus,
+        content.addQuestion,
+        "external-prep-text-button",
+        () => {
+          preparation.answers.push({ id: uid(), question: "", response: "" });
+          dirty = true;
+          render();
+        },
+      ),
     );
     editor.append(answersHeading);
     if (preparation.answers.length === 0) {
       const blank = node("div", "external-prep-blank");
-      blank.append(icon(FileText), node("p", "", t.questionPlaceholder));
+      blank.append(icon(FileText), node("p", "", content.questionPlaceholder));
       editor.append(blank);
     }
     for (const answer of preparation.answers)
@@ -298,19 +345,26 @@ export function createExternalPreparationPage({
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.append(document.createTextNode(t.open), icon(ArrowUpRight));
-    aside.append(link, node("p", "external-prep-source-note", t.officialHint));
+    aside.append(
+      link,
+      node("p", "external-prep-source-note", content.officialHint),
+    );
     const marker = node("div", "external-prep-sequence");
     marker.append(
-      node("span", "is-complete", t.prepared),
-      node("span", "", t.complete),
+      node("span", "is-complete", content.prepared),
+      node("span", "", content.complete),
     );
-    aside.append(marker, node("p", "external-prep-source-note", t.noSubmit));
+    aside.append(
+      marker,
+      node("p", "external-prep-source-note", content.noSubmit),
+    );
     layout.append(editor, aside);
     root.append(layout);
     if (libraryOpen) root.append(libraryPanel());
   }
 
   function answerEditor(answer: Answer): HTMLElement {
+    const content = wording();
     const card = node("div", "external-prep-answer");
     const top = node("div", "external-prep-answer-top");
     top.append(
@@ -336,8 +390,8 @@ export function createExternalPreparationPage({
     );
     card.append(top);
     const question = labeledInput(
-      t.question,
-      t.questionPlaceholder,
+      content.question,
+      content.questionPlaceholder,
       answer.question,
       (value) => {
         answer.question = value;
@@ -345,8 +399,8 @@ export function createExternalPreparationPage({
       },
     );
     const response = labeledTextarea(
-      t.answer,
-      t.answerPlaceholder,
+      content.answer,
+      content.answerPlaceholder,
       answer.response,
       (value) => {
         answer.response = value;
@@ -529,20 +583,21 @@ export function createExternalPreparationPage({
 
   function download(): void {
     if (!record) return;
+    const content = wording();
     const title = record.title;
     const lines = [
       title,
       `${t.source}: ${record.publisher}`,
       `${t.open}: ${record.officialUrl}`,
       "",
-      t.questions,
+      content.questions,
     ];
     for (const answer of preparation.answers)
       lines.push(answer.question, answer.response, "");
     lines.push(t.checklist);
     for (const step of preparation.checklist)
       lines.push(`${step.done ? "[x]" : "[ ]"} ${step.text}`);
-    lines.push("", t.officialHint);
+    lines.push("", content.officialHint);
     const blob = new Blob([`${lines.join("\n")}\n`], {
       type: "text/plain;charset=utf-8",
     });
