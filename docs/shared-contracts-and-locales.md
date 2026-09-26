@@ -1,0 +1,23 @@
+# Shared contracts, language catalogues, and tokens
+
+## What it is
+
+These packages define the versioned API vocabulary, the English/French interface messages, and the shared visual token values used by web and mobile. The first contract version covers guest feedback receipts and the participating-employer application loop.
+
+## How it works
+
+`@civicresolve/contracts/v1` exports typed request/response shapes, public receipt and posting views, application and feedback statuses, and privacy-conscious outbox events. The event union is versioned independently with `schemaVersion`; event payloads avoid copying resident message text into analytics. Public request paths are versioned as `/api/v1/…`.
+
+`@civicresolve/i18n` exports matching `en` and `fr` catalogues and the `translate` helper. It replaces named placeholders as plain text and leaves an unresolved placeholder visible if a value is missing. Compile-time catalogue typing and tests enforce key and placeholder parity; the test suite also retains a long French privacy explanation. `@civicresolve/design-tokens` exports color, spacing, radius, and typography values as immutable TypeScript constants.
+
+## How to change it
+
+Add a new API field or state to the versioned contract and update its producer and consumer together. For incompatible changes, add a new versioned route/package entry instead of silently changing the meaning of an existing field. Every user-facing message needs both translations with the same placeholder names. Keep descriptions of samples explicit in both languages. Add shared token values here before styling web and native screens.
+
+## Configuration
+
+The base API prefix is `/api/v1`. Locale is the explicit `en` or `fr` value carried by the client preference; source text retains its own provenance and is not translated by these catalogues. Design-token values are compile-time constants and require no runtime configuration.
+
+## Dependencies
+
+The contracts and token packages have no runtime dependencies. The language package depends on the contracts package for its locale type. Vitest verifies catalogue parity, and the root pnpm/TypeScript workspace supplies the build and typecheck tools.

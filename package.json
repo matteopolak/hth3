@@ -7,14 +7,15 @@
     "node": ">=22.14.0"
   },
   "scripts": {
-    "lint": "prettier --check .github/workflows/check.yml packages/config package.json pnpm-workspace.yaml tsconfig.json docs/README.md docs/workspace-and-ci.md",
+    "lint": "prettier --check .github/workflows/check.yml packages/config packages/contracts packages/i18n packages/design-tokens package.json pnpm-workspace.yaml tsconfig.json docs/README.md docs/workspace-and-ci.md docs/shared-contracts-and-locales.md",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test",
+    "test": "pnpm exec vitest run",
     "build": "pnpm -r --if-present build",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
     "prettier": "3.6.2",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
   }
 }
