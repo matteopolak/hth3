@@ -4,29 +4,30 @@
 
 **Main track: Civic Technology.** A team may enter only one of Civic Technology, General, or CGI. CivicResolve will enter Civic Technology and the side challenges for which its finished product qualifies. The product will not claim a CGI or General entry.
 
-CivicResolve is a working civic service-request platform. A resident reports an issue by text or voice, reviews what was collected, submits it, receives a case number, and follows its status. Staff receive the case, correct or assign it, communicate with the resident, and resolve it. Authorized staff can configure categories and routing through manual screens or an agentic conversation. The system records every consequential action and shows operational trends.
+CivicResolve is a working civic feedback platform for constructive criticism, complaints, and improvement suggestions. A resident explains what happened and what should change in their own words, by text or voice. The platform asks only useful follow-up questions, creates a trackable submission, and routes it to the appropriate public-service team. Staff see a counted, summarized view of recurring issues before opening individual submissions. Authorized administrators can add, edit, retire, and route categories through manual screens or an agentic conversation. The system records consequential actions and shows whether concerns are acknowledged and addressed.
 
 The end-to-end path is:
 
 ```text
-Resident intake → confirmation → persisted case → classification → staff review
-→ department assignment → resident update → resolution → measured outcome
+Resident feedback → clarification → persisted submission → Jev categorization
+→ aggregated themes → staff review/action → resident update → measured outcome
 ```
 
-The civic connection must be visible in the running product: a named public department owns the case, staff can act on it, and the resident can see the result. Use a clearly fictional municipality for the hackathon rather than imply that a real city has integrated its systems.
+The civic connection must be visible in the running product: a named public department owns a concern, staff can acknowledge or act on it, and the resident can see an outcome. Use a clearly fictional municipality for the hackathon rather than imply that a real city has integrated its systems.
 
 ### What “fully functional” means
 
 Every feature presented as working must execute against the deployed application and persist the result. Specifically:
 
 - Resident and staff interfaces call the same live Cloudflare Worker API.
-- Submitted cases, messages, taxonomy versions, assignments, and audit events survive refresh and sign-in.
+- Submitted feedback, messages, taxonomy versions, theme memberships, assignments, and audit events survive refresh and sign-in.
 - Role restrictions are enforced by the Worker, not only hidden in the UI.
-- Voice intake submits a real case through the same API as text intake.
+- Voice intake submits real feedback through the same API as text intake.
 - The admin agent uses the same authorized commands as manual controls.
-- Published taxonomy changes affect later classifications.
-- The dashboard queries Tiger Data events written by actual case activity.
-- A resident can see an assigned department, status changes, messages, and resolution.
+- Published taxonomy changes affect later Jev classifications without code changes.
+- The dashboard queries Tiger Data events written by actual feedback activity.
+- Staff can see accurate category counts, trends, grouped themes, and evidence-linked summaries built from persisted feedback.
+- A resident can see an assigned department, status changes, messages, and an outcome using an authenticated account or secure guest receipt link.
 - Any Presage feature shown uses the actual SDK and changes the mobile interaction.
 - The React Native app performs the flows shown in the video against the live API.
 - The Remotion video records or composes evidence from functioning product flows; it does not invent successful calls or display fabricated integration results.
@@ -41,9 +42,9 @@ Civic and General use the same **45-point** rubric:
 
 | Criterion | Points | Product evidence |
 | --- | ---: | --- |
-| Technical execution | 15 | Complete live case flow, provider integrations, authorization, persistence, and audit trail. |
-| Idea and impact | 10 | Easier reporting and clearer public-service accountability for residents and staff. |
-| Design and usability | 10 | Plain-language intake, clear status timeline, accessible alternatives, and useful staff workspace. |
+| Technical execution | 15 | Live feedback intake, Jev taxonomy decisions, aggregated staff view, authorization, persistence, and audit trail. |
+| Idea and impact | 10 | A lower barrier to constructive civic feedback and a faster way for public teams to understand recurring concerns. |
+| Design and usability | 10 | Plain-language intake, optional identity, clear status timeline, accessible alternatives, and a useful staff overview. |
 | Learning and technical decisions | 5 | Explain model boundaries, workflow safety, provider failures, and trade-offs made during the event. |
 | Presentation | 5 | Timed live demonstration and direct answers during questions. |
 
@@ -53,11 +54,11 @@ Depth matters more than feature count. Judges assess what actually works in the 
 
 | Challenge | Required working evidence |
 | --- | --- |
-| Best Project Built with ElevenLabs / MLH Best Use of ElevenLabs | A real conversational voice session asks for missing details, confirms the report, and creates a case. The guide combines these into one challenge. |
-| MLH Best Use of Tiger Data | Case events enter a Tiger hypertable; a continuous aggregate powers a visible operations chart. |
+| Best Project Built with ElevenLabs / MLH Best Use of ElevenLabs | A real conversational voice session asks what happened and what should change, confirms the feedback, and submits it. The guide combines these into one challenge. |
+| MLH Best Use of Tiger Data | Feedback events enter a Tiger hypertable; continuous aggregates power category, volume, and trend charts. |
 | MLH Best Use of Auth0 | Real staff login, role checks, protected API actions, and a denied unauthorized action. |
-| MLH Best Use of Presage | A consented mobile interaction uses a real Presage SDK output to offer an accessibility adjustment, without changing case priority or eligibility. |
-| Best UI/UX | A coherent, tested resident journey and staff workspace with clear states and accessible controls. |
+| MLH Best Use of Presage | A consented mobile interaction uses a real Presage SDK output to offer an accessibility adjustment, without changing feedback priority or eligibility. |
+| Best UI/UX | A low-friction resident journey and evidence-linked aggregate staff workspace with clear states and accessible controls. |
 
 Cloudflare Workers AI and Jev are product technologies rather than prize entries. Do not enter Gemini, Solana, Vultr, or GoDaddy. The planned proprietary services make Best FOSS inapplicable. The current product does not qualify for Best Hardware Hack or MathemaTech; do not add token features just to enter them.
 
@@ -65,33 +66,47 @@ Only select a side challenge on Devpost after its working evidence exists. If a 
 
 ## 3. Scope and complete user journeys
 
-### Initial municipal scope
+### Default civic taxonomy
 
-Start with three concrete request types, such as sidewalk hazards, missed waste collection, and damaged streetlights. Each needs a department, a small set of required fields, an example routing rule, and a meaningful status timeline. Administrators may add categories after the initial set works.
+Ship a broad, editable municipal starter taxonomy. Residents do not need to browse or understand it before submitting. Each published category has a stable ID, group, display name, description, inclusion/exclusion examples, optional follow-up fields, default department, and version. Initial groups and categories should cover:
 
-This focused scope makes classification, routing, and progress understandable in five minutes. The platform remains category-driven so the architecture can support more services later.
+| Group | Default categories |
+| --- | --- |
+| Streets and mobility | Roads and potholes; sidewalks and crossings; streetlights and traffic signals; transit and bus stops; cycling and parking. |
+| Environment and public space | Waste and recycling; parks and recreation spaces; trees and landscaping; noise and pollution; water, drainage, and sewer. |
+| Buildings and community | Housing and property standards; public facilities and libraries; community programs; public health and social services; community safety and bylaw enforcement. |
+| Access and administration | Accessibility and language access; permits and licensing; fees and billing; websites and digital services; staff conduct and service quality. |
+| Civic decisions | Policy and planning; budget and spending; communication and transparency; other or unsure. |
+
+Treat these as starter labels, not claims about any real municipality's jurisdiction. Include `other_or_unsure` and staff review so every submission has a safe route. Seed descriptions, examples, exclusions, and department mappings, not just category names. The starter set is inspired by the breadth of real [NYC311 report topics](https://portal.311.nyc.gov/report-problems/), which include both physical service issues and feedback about agencies and workers.
+
+Track **intent** separately from category: complaint, improvement suggestion, question/request, or positive feedback. A complaint about a public service and a suggestion to improve it can share a service category while remaining distinguishable in analytics.
+
+Administrators can add, edit, reorder, and remove categories in the dashboard or through the agent. Removal means *retire from future classification*; historical submissions retain their original category ID and taxonomy version. Publishing a version updates the live classifier without a deployment. Preview the effect on example submissions before publication. An admin can also recategorize a submission with an audit trail.
+
+Publishing validates unique IDs, nonempty descriptions, a valid group, a real destination department, and an active `other_or_unsure` route. The editor should show whether a category is draft, published, or retired and which taxonomy version classified each historical submission.
 
 ### Resident journey
 
-1. Sign in through Auth0 on web or mobile, then choose text or voice.
-2. Describe the issue and provide location and optional evidence.
-3. Answer context-specific follow-up questions for missing required fields.
-4. Review and correct the extracted summary and location.
-5. Submit and receive a persistent case number in the resident account.
-6. See category, responsible department, expected next step, and status history.
+1. Open the public site or mobile app and start writing or speaking without an account or category selection.
+2. Describe what happened, why it matters, and what change would help. Location and evidence are optional unless essential to the specific issue.
+3. Answer a small number of relevant follow-up questions; allow “I don't know” and skip nonessential fields.
+4. Review and correct the summary before submission; show the original words alongside it.
+5. Submit and receive a case number and a secure private receipt link. An optional Auth0 account can organize multiple submissions.
+6. See the status, responsible public-service team, next step, and any staff response.
 7. Add information or reply when staff request clarification.
-8. Receive a visible resolution and reopen the case when appropriate.
+8. See a concrete outcome, including an explanation if the institution cannot act, and reopen when appropriate.
 
-A resident should be able to complete the journey without a microphone or camera. The app must explain when the report has not yet been submitted and when a department has actually accepted it.
+The intake must work without a microphone, camera, address, or sign-in. Ask for contact details only if needed for follow-up, explain their use, and permit anonymous feedback. Protect guest receipt access with a high-entropy token stored hashed server-side; do not use the public case number as an access credential. Apply rate limits and an abuse-review path without putting an unnecessary form in front of every resident. Urgent emergencies must be directed to the appropriate emergency channel rather than treated as ordinary feedback.
 
 ### Staff journey
 
 1. Sign in through Auth0 and see only authorized organization/department data.
-2. Review the inbox, filter cases, and inspect evidence and history.
-3. Accept, correct, categorize, assign, or request more information.
-4. Send a case update to the resident and move the case through valid states.
-5. Resolve the case with a reason, then handle a later reopening.
-6. Inspect backlog, intake, routing, and resolution trends from Tiger Data.
+2. Start on an aggregate overview: volume by category and intent, change over time, recurring themes, and unanswered concerns.
+3. Read a short evidence-linked summary for a category or theme, then drill down only when detail is needed.
+4. Review the individual submission, original text, classification, evidence, and history.
+5. Accept, correct, recategorize, assign, or request more information.
+6. Send a response and move the concern through valid states; record an outcome and later reopening.
 7. Draft, preview, and publish a taxonomy or routing change when authorized.
 
 The manual UI must support these operations even when the admin agent is unavailable.
@@ -100,7 +115,7 @@ Do not expose a button, tab, or action as available unless it has a working API 
 
 ### Agentic staff journey
 
-The ChatGPT-like interface can operate the entire **authorized** staff workspace through typed tools. It can search cases, explain backlog trends, open a filtered tab, draft a category, prepare a reply, propose reassignment, preview a taxonomy diff, and request approval for a write. Staff can edit the same objects manually in adjacent tabs.
+The ChatGPT-like interface can operate the entire **authorized** staff workspace through typed tools. It can summarize grouped feedback, show counts and trends, open a filtered theme or submission tab, draft or retire a category, prepare a reply, propose reassignment, preview a taxonomy diff, and request approval for a write. Staff can edit the same objects manually in adjacent tabs.
 
 Read tools may run immediately. Writes require a rich preview card with affected records, changes, and an explicit approval action. The Worker rechecks Auth0 claims, record versions, organization scope, and idempotency keys at execution time. The agent cannot bypass permissions or silently publish a change.
 
@@ -110,10 +125,10 @@ The agent tool set must cover the same useful operations as the manual workspace
 
 | Area | Read tools | Write tools requiring preview and approval |
 | --- | --- | --- |
-| Cases | Search, open, inspect history and evidence | Correct fields, categorize, assign, change status, resolve, reopen. |
-| Residents | Read case conversation | Draft and send a message; request more information. |
-| Taxonomy | List categories and versions; compare changes | Draft, edit, and publish categories and routing rules. |
-| Analytics | Query backlog, trends, and department metrics | Save a filtered view or report. |
+| Feedback | Search, open, inspect history and evidence | Correct fields, categorize, assign, change status, respond, resolve, reopen. |
+| Residents | Read feedback conversation | Draft and send a message; request more information. |
+| Taxonomy | List categories and versions; compare changes | Add, edit, retire, restore, and publish categories and routing rules. |
+| Aggregates | Query exact counts, trends, and theme source links | Refresh summaries, correct a theme membership, save a view or report. |
 | Workspace | Open tabs and inspect current context | Save or close a tab. |
 
 Tools must return typed data for rich cards. A card should state its source, affected record/version, proposed edit, approval status, and final result. An employee can refuse, revise, or carry out the change manually.
@@ -128,13 +143,15 @@ Prioritize meaningful states: empty, loading, listening, missing detail, awaitin
 
 ### Staff web workspace
 
-Use a left rail with recent agent threads and manual tabs for Inbox, Cases, Analytics, Taxonomy, Policies, and Settings. The central surface shows a conversation or working tab. A context panel shows the selected case, sources, audit history, and tool results.
+Use a left rail with recent agent threads and manual tabs for Overview, Themes, Inbox, Submissions, Taxonomy, and Settings. The central surface shows a conversation or working tab. A context panel shows the selected theme or submission, source reports, audit history, and tool results.
 
-Agent responses may render case cards, tables, charts, citations, taxonomy diffs, and approval cards. Every card should show its status and let the employee open the underlying object for manual editing. Keyboard navigation, search, visible focus, and clear error recovery are required.
+The default overview should answer “What are people telling us?” before showing a queue: total submissions in the selected period, category and intent distribution, rising topics, repeated requests, unanswered volume, and a short summary of each theme. Counts come from database queries; summaries link to the submissions that support them. Staff can change time range, category, department, and status, and drill from a theme into original feedback.
+
+Agent responses may render theme cards, submission cards, tables, charts, source links, taxonomy diffs, and approval cards. Every card should show its status and let the employee open the underlying object for manual editing. Keyboard navigation, search, visible focus, and clear error recovery are required.
 
 ### Resident web experience
 
-Use a modern service-ticket layout with one primary “Report an issue” action, short progressive intake, clear review-before-submit, and a case timeline. Show department ownership and next steps in plain language. Keep internal confidence scores, model names, and routing rules out of the resident view.
+Use a modern, calm feedback layout with one primary “Share feedback” action. Prompt for a concrete experience and an improvement that would help; let residents submit criticism without forcing a category, account, or location. Show the original wording and editable summary before submission. After submission, use a ticket-style receipt and timeline with department ownership and next steps in plain language. Keep internal confidence scores, model names, and routing rules out of the resident view.
 
 ### React Native app
 
@@ -144,10 +161,12 @@ Use Expo/React Native for the resident mobile experience. It can cover a narrowe
 - Follow-up questions.
 - Review and correction.
 - Submission through the live Worker API.
-- Case receipt and status timeline loaded from the API.
+- Secure guest receipt and status timeline loaded from the API.
 - Optional Presage consent and accessibility adjustment, if entered for that prize.
 
 Do not use local mock responses or a prerecorded success state in the shipped app. Mobile can be less polished outside the recorded flow, but the demonstrated path must be complete.
+
+Store the guest receipt secret in secure device storage on mobile. The web app should present the private link clearly at submission time and avoid exposing its secret to analytics, logs, or public pages.
 
 ### Accessibility
 
@@ -159,38 +178,47 @@ Target WCAG 2.2 AA patterns where relevant: keyboard access and visible focus on
 Resident web + React Native app       Staff web workspace
                  \                     /
                   Cloudflare Worker API
-                  ├─ Auth0 token/role checks
+                  ├─ Auth0 staff roles / optional resident account
+                  ├─ secure guest receipts and rate limits
                   ├─ domain commands and agent tools
-                  ├─ Workers AI extraction and staff agent
-                  ├─ Jev bounded category/routing decision
-                  ├─ Tiger Cloud cases, taxonomy, events, analytics
+                  ├─ Workers AI extraction, theme summaries, staff agent
+                  ├─ Jev intent and category decisions
+                  ├─ Tiger Cloud feedback, taxonomy, themes, events
                   ├─ R2 attachments and transcripts
-                  ├─ Vectorize policy/category retrieval if used
+                  ├─ Vectorize similar-feedback candidates
                   ├─ ElevenLabs voice agent webhooks
                   └─ Presage client data only when consented
 ```
 
-The Worker owns authorization, validation, orchestration, and external secrets. Clients do not call privileged providers directly. Tiger Cloud is the authoritative database for cases and configuration; avoid a second case store. R2 stores attachments and transcript artifacts with access controlled through the Worker.
+The Worker owns authorization, validation, orchestration, and external secrets. Clients do not call privileged providers directly. Tiger Cloud is the authoritative database for submissions, category configuration, theme membership, and metrics; avoid a second feedback store. R2 stores attachments and transcript artifacts with access controlled through the Worker.
 
 The product can run for a fictional municipality without an external government integration. It must never imply that reports are being sent to a real public agency. Within its own resident and staff accounts, submission, assignment, communication, and resolution must all work.
 
 ### AI responsibilities
 
-- **Workers AI:** extract fields and summarize natural-language reports; power the staff conversation and retrieval-assisted explanations.
-- **Jev:** choose among published category IDs or routing options as a bounded decision.
-- **Application rules:** validate model output, check required fields, enforce routing and state transitions, and send uncertain cases to staff review.
+- **Workers AI:** extract structured details, generate aggregate theme summaries from redacted source submissions, and power the staff conversation.
+- **Jev:** make bounded intent, category, and routing choices from the currently published taxonomy. It is not the summarizer or the staff chat model.
+- **Vectorize and Tiger:** find semantically similar feedback as candidate theme members, then store reviewed membership and exact counts in Tiger.
+- **Application rules:** validate all model output, keep original submissions, enforce authorization and state transitions, and send uncertain or sensitive reports to staff review.
 
 Classification contract:
 
 ```ts
 type ClassificationInput = {
-  report: string
+  feedbackText: string
   extractedFields: Record<string, unknown>
   taxonomyVersion: string
-  categories: Array<{ id: string; description: string; examples: string[] }>
+  categories: Array<{
+    id: string
+    groupId: string
+    description: string
+    examples: string[]
+    exclusions: string[]
+  }>
 }
 
 type ClassificationResult = {
+  intent: 'complaint' | 'suggestion' | 'question' | 'positive'
   categoryId: string
   confidence: number
   alternatives: string[]
@@ -199,35 +227,73 @@ type ClassificationResult = {
 }
 ```
 
-The selected ID must exist in the published taxonomy. Store the classification, provider, model version, taxonomy version, and review outcome. A production Workers AI fallback may be used when Jev is unavailable; it must perform a real classification and disclose degraded provider status to staff. Tests may use a fixture provider. Neither the video nor the live product should present a fixture result as a live model result.
+Build Jev `choice` questions dynamically from the current published category descriptions and examples. First choose a broad group, then a category in that group; keep an `other_or_unsure` path at each step. This keeps a growing taxonomy and Jev's compact request within the documented 32 KiB body limit. The selected ID must exist in the published taxonomy. Store the intent, category, provider, confidence, model version, taxonomy version, and review outcome. A production Workers AI fallback may be used when Jev is unavailable; it must perform a real classification and disclose degraded provider status to staff. Tests may use a fixture provider. Neither the video nor the live product should present a fixture result as a live model result. See the [Jev native Decisions API](https://www.jevai.org/docs).
+
+### Aggregation and summaries
+
+The staff landing page must make large volumes of feedback readable without forcing staff to open every submission:
+
+1. Query exact counts and trends from Tiger by time window, category, intent, department, and status.
+2. Find similar submissions within a category using Workers AI embeddings and Vectorize; persist theme membership in Tiger. A submission may belong to one primary theme and retain its original category.
+3. Generate a concise theme summary with Workers AI from redacted source text. Include what residents report, what changes they request, the number of linked submissions, and representative source IDs.
+4. Show theme cards sorted by volume or change over time, with links to a filtered list of original submissions.
+5. Allow staff to correct a category, split/merge themes, or mark a summary as inaccurate. Regenerate affected summaries after new submissions or corrections.
+
+Numerical claims come from SQL, not the language model. Summaries carry a generated-at timestamp and source links; stale summaries are marked as such. Protect private details in the aggregate view and do not quote a small or sensitive cohort without staff access. The original submission always remains available to authorized reviewers.
+
+An example theme card, with illustrative values only:
+
+```text
+Permit website loses saved drafts
+38 submissions · 12 more than the previous period · Digital services
+Residents report losing progress when the form times out.
+Common request: save a draft and resume later.
+[Read summary sources] [Open 38 submissions] [Assign owner]
+```
+
+Do not count one submission multiple times within a category or theme. Show whether a metric counts submissions, people, or themes, because those are different measures.
 
 ### Data and events
 
-Core entities: organizations, users, departments, cases, messages, attachments, classifications, categories, taxonomy versions, routing rules, status transitions, voice sessions, agent threads/messages/tool calls, workspace tabs, and audit events.
+Core entities: organizations, users, departments, feedback submissions, guest access tokens, messages, attachments, classifications, category groups, categories, taxonomy versions, routing rules, themes, theme memberships, theme summaries, status transitions, voice sessions, agent threads/messages/tool calls, workspace tabs, and audit events.
 
-At minimum, each event stores case ID, event type, timestamp, actor, organization, and validated payload. Persist an event for creation, classification, correction, assignment, status change, message, resolution, reopening, taxonomy publication, and agent approval/execution.
+At minimum, each event stores submission ID, event type, timestamp, actor, organization, and validated payload. Persist an event for creation, classification, correction, theme membership, assignment, status change, message, outcome, reopening, taxonomy publication, and agent approval/execution.
 
-Create a Tiger `case_events` hypertable and continuous aggregates for intake over time and at least one operational metric such as routing or resolution time. Dashboard charts must query those aggregates. Historical synthetic cases may seed the database, but new user and staff actions must produce real events visible in the same charts.
+Create a Tiger `feedback_events` hypertable and continuous aggregates for intake volume over time, category/intent counts, and at least one operational metric such as acknowledgement time. Dashboard charts must query those aggregates. Historical synthetic submissions may seed the database, but new user and staff actions must produce real events visible in the same charts.
 
-### Case state machine
+### Feedback state machine
 
 ```text
-draft → submitted → needs_review or assigned → acknowledged
-→ in_progress → waiting_on_resident → resolved → closed
-                                      resolved → reopened → assigned
+draft → submitted → categorized or needs_review → assigned → acknowledged
+→ in_review → waiting_on_resident → outcome_recorded → closed
+                               outcome_recorded → reopened → assigned
 ```
 
-Each transition has an allowed actor/role, required fields, and an audit event. Rejected transitions return a clear error. Staff must be able to complete the full path and residents must see its result.
+An outcome can be action taken, planned action, referral, or no action with an explanation. Criticism should not be marked “resolved” merely because staff read it. Each transition has an allowed actor/role, required fields, and an audit event. Rejected transitions return a clear error. Staff must be able to complete the full path and residents must see its result.
 
 ### Integrations
 
-- **Auth0:** real resident and staff sign-in on web and mobile, organization/department roles, Worker-side JWT and scope validation, resident ownership checks, protected mutations, and an observable access-denied path. Use step-up authentication for high-impact actions if available within the build time.
-- **ElevenLabs:** actual conversational agent, dynamic follow-up based on required fields, spoken confirmation, signed webhook, and case creation through the Worker. Handle retries and duplicate webhooks.
-- **Tiger Data:** real PostgreSQL connection, schema migrations, hypertable, continuous aggregate, and dashboard queries. Verify Worker connectivity early.
+- **Auth0:** real staff and administrator sign-in, optional resident accounts, organization/department roles, Worker-side JWT and scope validation, protected mutations, and an observable access-denied path. Guest feedback and private receipt links work without Auth0; their access tokens are checked by the Worker. Use step-up authentication for high-impact actions if available within the build time.
+- **ElevenLabs:** actual conversational agent that invites constructive detail (“What happened?” and “What would improve it?”), asks relevant follow-ups, confirms the summary, and submits feedback through a signed Worker webhook. Handle retries and duplicate webhooks.
+- **Tiger Data:** real PostgreSQL connection, schema migrations, feedback-event hypertable, continuous aggregates, and dashboard queries. Verify Worker connectivity early.
 - **Presage:** real SDK integration in the mobile app, explicit consent, one measurable interaction adaptation (for example, shorter prompts or a pause offer), and no service decision based on biometric output. Validate SDK/device feasibility early.
 - **Jev:** real bounded decision call through an adapter; validate probabilities and category IDs; use Workers AI as a production fallback.
 
 External calls need timeouts, request IDs, idempotency where relevant, retry/error states, and audit visibility. A provider outage may degrade that feature but must not silently create false success.
+
+### Minimum API surface
+
+The Worker should expose versioned, schema-validated routes for:
+
+- Guest submission, attachment upload, and private receipt/status access.
+- Guest follow-up messages and optional account claim.
+- Staff overview counts, trends, theme summaries, and filtered source submissions.
+- Staff assignment, response, state transition, theme correction, and summary refresh.
+- Category/group drafts, preview, publication, and retirement.
+- Agent threads, tool results, rich approval cards, and approved tool execution.
+- ElevenLabs signed webhook delivery and idempotent session completion.
+
+Each route needs an explicit auth mode: public submission with abuse controls, guest receipt token, authenticated resident, staff role, or administrator role. Do not let a public category count endpoint expose raw text or personally identifying details.
 
 ## 6. pnpm workspace and CI
 
@@ -236,12 +302,12 @@ Use one pnpm lockfile and typed package boundaries:
 ```text
 apps/
   web/          # resident and staff web UI
-  worker/       # Cloudflare API, auth, tools, webhooks
+  worker/       # Cloudflare API, guest access, auth, tools, webhooks
   mobile/       # React Native/Expo resident app
   remotion/     # five-minute video composition
 packages/
   contracts/    # request/response, events, tool and card schemas
-  domain/       # case states, permissions, taxonomy rules
+  domain/       # feedback states, permissions, taxonomy rules
   db/           # Tiger migrations and queries
   ai/           # Workers AI and Jev adapters
   ui/           # shared web components
@@ -256,7 +322,7 @@ pnpm-lock.yaml
 
 Root commands: `pnpm dev`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm check`, `pnpm video:render`, and `pnpm deploy`. `pnpm check` is the local CI gate.
 
-CI runs on every push to `main`: frozen install, formatting/lint, typecheck, domain/permission/provider tests, migrations against a disposable database, application builds, and a Worker smoke test. Add an end-to-end test that submits a case, assigns it, updates status, and verifies the resident view and audit events. Provider adapters can be stubbed in automated tests; run a separate pre-submission integration check with real sponsor services.
+CI runs on every push to `main`: frozen install, formatting/lint, typecheck, domain/permission/provider tests, migrations against a disposable database, application builds, and a Worker smoke test. Add an end-to-end test that submits guest feedback, categorizes it, groups it, assigns it, updates status, and verifies both the resident receipt and staff aggregate view. Provider adapters can be stubbed in automated tests; run a separate pre-submission integration check with real sponsor services.
 
 Deployment is a separate job after checks pass. Secrets stay in Cloudflare/GitHub secret stores. The deployed app and video must use the same contracts and status vocabulary.
 
@@ -266,9 +332,9 @@ Use only Luna subagents at `high` or `xhigh` reasoning. All agents may work in t
 
 ### Sequential foundation gate
 
-One core subagent first builds a working vertical slice: pnpm workspace, contracts, domain state machine, Worker/API, Tiger persistence, Auth0 resident and staff protection, resident text submission, staff case queue, assignment/status mutation, and resident status view. It runs relevant checks, commits, and pushes before feature agents begin.
+One core subagent first builds a working vertical slice: pnpm workspace, contracts, feedback state machine, Worker/API, Tiger persistence, secure guest submission/receipt, Auth0 staff protection, a seeded editable taxonomy, manual staff queue, assignment/status mutation, and resident status view. It runs relevant checks, commits, and pushes before feature agents begin.
 
-The orchestrator verifies this live path and CI. Only then does it delegate feature-sized units with explicit package/file ownership, dependencies, acceptance behavior, and test commands. Suggested later units: ElevenLabs intake, Workers AI/Jev decisions, staff agent and rich cards, Tiger dashboard, mobile/Presage, design polish, and Remotion capture/render.
+The orchestrator verifies this live path and CI. Only then does it delegate feature-sized units with explicit package/file ownership, dependencies, acceptance behavior, and test commands. Suggested later units: ElevenLabs intake, Workers AI/Jev decisions, theme grouping and summaries, staff agent and rich cards, Tiger dashboard, mobile/Presage, design polish, and Remotion capture/render.
 
 For shared interface changes, commit a contract update first, then release dependent units. Synchronize `main` before pushing. Resolve cross-owner conflicts through the orchestrator; never discard another agent’s work. Run `pnpm check` after each integration wave.
 
@@ -278,7 +344,7 @@ Each completed unit is committed and pushed to `main` with a Conventional Commit
 
 ### In-person Civic presentation
 
-Five minutes to present and show the working product, followed by three minutes of questions. Show the same deployed case moving through resident intake, department assignment, staff action, and resident-visible update. Demonstrate one agent action with an approval card and one manual tab edit if both are complete. Use real service integrations for any sponsor claim made during judging. Rehearse with network and device setup already complete.
+Five minutes to present and show the working product, followed by three minutes of questions. Show a resident submitting constructive criticism without choosing a category or signing in. Then show Jev categorizing it, the staff overview counting it inside a recurring theme, a department acknowledging or responding, and the resident viewing that response through the private receipt. Demonstrate an agent action with an approval card and a manual taxonomy edit if both are complete. Use real service integrations for any sponsor claim made during judging. Rehearse with network and device setup already complete.
 
 ### Remotion Devpost video
 
@@ -286,13 +352,13 @@ Remotion is an editor/compositor for a five-minute account of the **working** pr
 
 Suggested timing:
 
-1. 0:00–0:35 — resident problem and civic interaction.
-2. 0:35–1:25 — live web/mobile intake and ElevenLabs follow-up.
-3. 1:25–2:05 — Workers AI extraction, Jev classification, resident confirmation.
-4. 2:05–3:05 — department queue, staff agent rich cards, Auth0 approval, manual edit.
-5. 3:05–3:50 — Tiger analytics and case resolution/status update.
+1. 0:00–0:35 — why residents need an easier way to give constructive criticism.
+2. 0:35–1:25 — guest web/mobile intake and ElevenLabs follow-up.
+3. 1:25–2:05 — resident confirmation and Jev categorization from the live taxonomy.
+4. 2:05–3:05 — staff aggregate overview, source-linked summaries, agent rich cards, Auth0 approval, taxonomy edit.
+5. 3:05–3:50 — Tiger category trends, department response, and private resident status update.
 6. 3:50–4:25 — real Presage accessibility interaction, if working.
-7. 4:25–5:00 — final resident outcome, architecture, and limitations.
+7. 4:25–5:00 — feedback outcome, architecture, and limitations.
 
 Keep captions readable and the recorded UI legible at normal playback size. If a sponsor feature is incomplete, remove its segment and prize selection. The video cannot stand in for the in-person live evaluation.
 
@@ -300,26 +366,28 @@ Keep captions readable and the recorded UI legible at normal playback size. If a
 
 ### Gate A — complete civic loop
 
-- Resident submits a text report on the deployed site.
-- Worker persists case and event in Tiger.
-- Staff signs in via Auth0, assigns and updates it.
-- Resident refreshes and sees the department and update.
-- Staff resolves it; resident can reopen it.
-- Invalid role and invalid state transition are rejected.
+- A guest submits constructive criticism on the deployed site without choosing a category or creating an account.
+- Worker persists the original text, secure receipt token hash, submission, and event in Tiger.
+- Staff signs in via Auth0, assigns and acknowledges it, then records an outcome.
+- Guest opens the private receipt link and sees the department, update, and outcome.
+- Guest can provide more information; authorized staff can reopen or close the submission.
+- Invalid token, role, and state transition are rejected.
 
-### Gate B — intelligence and configuration
+### Gate B — categorization, aggregation, and configuration
 
-- Workers AI extracts missing fields from a real report.
-- Jev or a real Workers AI fallback selects a published category.
-- Low confidence reaches a human queue.
-- Admin publishes a taxonomy version; the next report uses it.
+- Workers AI extracts useful fields from a real submission without replacing the resident's original words.
+- Jev chooses intent and a published category; low confidence reaches human review.
+- The database ships with the full starter taxonomy described above.
+- Admin adds, edits, and retires categories; the next submission uses the newly published version, while history remains readable.
+- Two related submissions appear in one theme with an exact count; the summary links back to both source records.
+- A new submission updates Tiger counts and eventually refreshes the relevant theme summary.
 - Agent tools and manual tabs perform the same authorized commands.
 - Approval cards show exact changes and cannot execute after stale previews.
 
 ### Gate C — side-challenge integrations
 
-- ElevenLabs voice session creates a case with a transcript.
-- Tiger dashboard reflects actual case events through a continuous aggregate.
+- ElevenLabs voice session submits feedback with a transcript and a useful follow-up question.
+- Tiger dashboard reflects actual feedback events through a continuous aggregate.
 - Auth0 role denial and permitted mutation both work.
 - Presage changes one consented mobile interaction from a real SDK signal.
 - Resident and staff UI are usable with keyboard/text alternatives.
