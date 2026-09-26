@@ -280,7 +280,7 @@ The product can run for a fictional municipality/employer without an external go
 
 ### AI responsibilities
 
-- **Workers AI:** use an inexpensive standard model for structured extraction, published-taxonomy intent/category decisions, redacted theme summaries, and both resident and staff conversations. Model outputs are proposals validated by domain rules and permissions.
+- **Workers AI:** use `@cf/ibm-granite/granite-4.0-h-micro` as the initial inexpensive standard model for structured extraction, published-taxonomy intent/category decisions, redacted theme summaries, and both resident and staff conversations. Keep the model ID configurable and validate outputs as proposals against domain rules and permissions.
 - **Vectorize and Tiger:** find semantically similar feedback as candidate theme members, then store reviewed membership and exact counts in Tiger.
 - **Application rules:** validate all model output, keep original submissions, enforce authorization and state transitions, and send uncertain or sensitive reports to staff review.
 
