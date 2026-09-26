@@ -168,9 +168,93 @@ describe("guest feedback duplicate checks", () => {
     expect(store.duplicateQuerySql).toMatch(/LIMIT\s+500/i);
   });
 
+  it("searches across categories only when no category was specified", async () => {
+    const roadReport = new GuestDuplicateStore([
+      {
+        original_text: repeatedReport,
+        status: "in_review",
+        category: "roads_and_sidewalks",
+      },
+    ]);
+    const previewPath = "/api/v1/feedback/duplicate-check";
+    const omittedCategory = await handleFeedbackRequest(
+      guestFeedbackRequest(previewPath, {
+        message: repeatedReport,
+        municipalityId: "3520005",
+      }),
+      new URL(`https://example.test${previewPath}`),
+      roadReport.context(),
+    );
+    expect(await omittedCategory!.json()).toMatchObject({
+      duplicate: { status: "in_review" },
+    });
+    expect(roadReport.duplicateQuerySql).not.toMatch(/AND category = \?/i);
+
+    const explicitCategoryStore = new GuestDuplicateStore([
+      {
+        original_text: repeatedReport,
+        status: "in_review",
+        category: "roads_and_sidewalks",
+      },
+    ]);
+    const explicitCategory = await handleFeedbackRequest(
+      guestFeedbackRequest(previewPath, {
+        message: repeatedReport,
+        municipalityId: "3520005",
+        category: "other_or_unsure",
+      }),
+      new URL(`https://example.test${previewPath}`),
+      explicitCategoryStore.context(),
+    );
+    expect(await explicitCategory!.json()).toMatchObject({ duplicate: null });
+    expect(explicitCategoryStore.duplicateQuerySql).toMatch(
+      /AND category = \?/i,
+    );
+  });
+
+  it("keeps the create-time exact-match guard category-aware only when specified", async () => {
+    const path = "/api/v1/feedback";
+    const create = async (category?: string) => {
+      const store = new GuestDuplicateStore([]);
+      const response = await handleFeedbackRequest(
+        guestFeedbackRequest(
+          path,
+          {
+            message: repeatedReport,
+            municipalityId: "3520005",
+            sandboxAcknowledged: true,
+            ...(category === undefined ? {} : { category }),
+          },
+          {
+            "Idempotency-Key": `duplicate-guard-${category ?? "omitted"}`,
+            "X-Receipt-Token": (category === undefined ? "ac" : "ad").repeat(
+              32,
+            ),
+          },
+        ),
+        new URL(`https://example.test${path}`),
+        store.context(),
+      );
+      expect(response?.status).toBe(409);
+      expect(store.batchCount).toBe(1);
+      return store.insertGuardSql;
+    };
+
+    const omittedCategorySql = await create();
+    expect(omittedCategorySql).toMatch(/NOT EXISTS/i);
+    expect(omittedCategorySql).not.toMatch(/AND category = \?/i);
+
+    const explicitCategorySql = await create("roads_and_sidewalks");
+    expect(explicitCategorySql).toMatch(/AND category = \?/i);
+  });
+
   it("returns a status-only duplicate outcome at creation", async () => {
     const store = new GuestDuplicateStore([
-      { original_text: repeatedReport, status: "waiting_on_resident" },
+      {
+        original_text: repeatedReport,
+        status: "waiting_on_resident",
+        category: "roads_and_sidewalks",
+      },
     ]);
     const path = "/api/v1/feedback";
     const response = await handleFeedbackRequest(
@@ -707,6 +791,7 @@ describe("guest abuse limits", () => {
 class GuestDuplicateStore {
   duplicateQueryCount = 0;
   duplicateQuerySql = "";
+  insertGuardSql = "";
   batchCount = 0;
   private readonly candidates: Array<{
     original_text: string;
@@ -722,13 +807,14 @@ class GuestDuplicateStore {
       original_text: string;
       status: FeedbackRow["status"];
       created_at?: string;
+      category?: string;
     }>,
   ) {
     this.candidates = candidates.map((candidate) => ({
       ...candidate,
       organization_id: "org_43G1B1RhPwac7EjS",
       municipality_csd_uid: "3520005",
-      category: "other_or_unsure",
+      category: candidate.category ?? "other_or_unsure",
       created_at: candidate.created_at ?? new Date().toISOString(),
     }));
   }
@@ -737,6 +823,8 @@ class GuestDuplicateStore {
     const store = this;
     const database = {
       prepare(query: string) {
+        if (query.includes("INSERT OR IGNORE INTO feedback_submissions"))
+          store.insertGuardSql = query;
         let values: unknown[] = [];
         const statement = {
           bind(...bound: unknown[]) {
@@ -762,13 +850,14 @@ class GuestDuplicateStore {
               store.duplicateQueryCount += 1;
               store.duplicateQuerySql = query;
               const limit = Number(query.match(/LIMIT\s+(\d+)/i)?.[1] ?? 0);
+              const filtersCategory = /AND\s+category\s*=\s*\?/i.test(query);
               return {
                 results: store.candidates
                   .filter(
                     (candidate) =>
                       candidate.organization_id === values[0] &&
                       candidate.municipality_csd_uid === values[1] &&
-                      candidate.category === values[2],
+                      (!filtersCategory || candidate.category === values[2]),
                   )
                   .sort((left, right) => {
                     const leftResolved =

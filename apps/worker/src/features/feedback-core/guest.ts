@@ -127,28 +127,30 @@ async function findRecentGuestDuplicate(
   database: D1Database,
   input: {
     message: string;
-    category: FeedbackCategory;
+    category?: FeedbackCategory;
     destination: DestinationRow;
   },
 ): Promise<FeedbackDuplicateCandidateRow | null> {
   if (!normalizeFeedbackDuplicateText(input.message)) return null;
+  const categoryFilter = input.category === undefined ? "" : "AND category = ?";
+  const values: string[] = [
+    input.destination.organization_id,
+    input.destination.municipality_csd_uid,
+  ];
+  if (input.category !== undefined) values.push(input.category);
   const candidates = await database
     .prepare(
       `SELECT original_text, status
        FROM feedback_submissions
        WHERE organization_id = ? AND municipality_csd_uid = ?
-         AND category = ?
+         ${categoryFilter}
        ORDER BY CASE
          WHEN status IN ('closed', 'outcome_recorded') THEN 1
          ELSE 0
        END, created_at DESC
        LIMIT ${GUEST_DUPLICATE_CANDIDATE_LIMIT}`,
     )
-    .bind(
-      input.destination.organization_id,
-      input.destination.municipality_csd_uid,
-      input.category,
-    )
+    .bind(...values)
     .all<FeedbackDuplicateCandidateRow>();
   return (
     candidates.results?.find((candidate) =>
@@ -175,14 +177,12 @@ async function checkGuestFeedbackDuplicate(
 ): Promise<Response> {
   const body = await jsonBody<GuestFeedbackDuplicateCheckBody>(request);
   const message = normalizedMessage(body?.message);
-  const category =
-    body?.category === undefined ? "other_or_unsure" : body.category;
   if (
     !body ||
     !message ||
     typeof body.municipalityId !== "string" ||
     body.municipalityId.length !== 7 ||
-    !isFeedbackCategory(category)
+    (body.category !== undefined && !isFeedbackCategory(body.category))
   ) {
     return featureError(
       context,
@@ -211,7 +211,9 @@ async function checkGuestFeedbackDuplicate(
   }
   const duplicate = await findRecentGuestDuplicate(context.env.DB, {
     message,
-    category,
+    ...(body.category === undefined
+      ? {}
+      : { category: body.category as FeedbackCategory }),
     destination,
   });
   return featureJson(context, {
@@ -387,7 +389,7 @@ async function createGuestFeedback(
   if (!duplicateOverride) {
     const duplicate = await findRecentGuestDuplicate(database, {
       message,
-      category,
+      ...(body.category === undefined ? {} : { category }),
       destination,
     });
     if (duplicate) return duplicateCreateResponse(context, duplicate.status);
@@ -473,18 +475,20 @@ async function createGuestFeedback(
     const insertGuards: string[] = [];
     const insertGuardValues: Array<string> = [];
     if (!duplicateOverride && normalizeFeedbackDuplicateText(message)) {
+      const categoryFilter =
+        body.category === undefined ? "" : "AND category = ?";
       insertGuards.push(`NOT EXISTS (
         SELECT 1 FROM feedback_submissions
         WHERE organization_id = ? AND municipality_csd_uid = ?
-          AND category = ?
+          ${categoryFilter}
           AND lower(trim(original_text)) = lower(trim(?))
       )`);
       insertGuardValues.push(
         destination.organization_id,
         destination.municipality_csd_uid,
-        category,
-        message,
       );
+      if (body.category !== undefined) insertGuardValues.push(category);
+      insertGuardValues.push(message);
     }
     for (const assetId of stagedAssetIds) {
       insertGuards.push(`EXISTS (
@@ -598,7 +602,7 @@ async function createGuestFeedback(
           await deleteStoredEvidence(bucket, evidence);
         const duplicate = await findRecentGuestDuplicate(database, {
           message,
-          category,
+          ...(body.category === undefined ? {} : { category }),
           destination,
         });
         if (duplicate)
