@@ -1,0 +1,17 @@
+name = "civicresolve-api"
+main = "src/platform/index.ts"
+compatibility_date = "2026-07-28"
+workers_dev = true
+
+[vars]
+APP_ENV = "development"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "civicresolve-local"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "../../packages/db/migrations"
+
+[[r2_buckets]]
+binding = "PRIVATE_ASSETS"
+bucket_name = "civicresolve-private-local"

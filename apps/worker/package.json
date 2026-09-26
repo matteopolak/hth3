@@ -1,0 +1,20 @@
+{
+  "name": "@civicresolve/worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/wrangler.mjs dev --local --port 8787",
+    "migrations:apply:local": "node scripts/wrangler.mjs d1 migrations apply civicresolve-local --local",
+    "smoke": "node scripts/smoke.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "node scripts/wrangler.mjs deploy --dry-run"
+  },
+  "dependencies": {
+    "@civicresolve/contracts": "workspace:*",
+    "@civicresolve/db": "workspace:*"
+  },
+  "devDependencies": {
+    "wrangler": "4.113.0"
+  }
+}
