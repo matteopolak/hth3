@@ -1,13 +1,13 @@
 import SwiftUI
 
 enum CivicTheme {
-    static let accent = Color(red: 0.08, green: 0.38, blue: 0.37)
-    static let ink = Color(red: 0.12, green: 0.17, blue: 0.19)
-    static let muted = Color(red: 0.34, green: 0.40, blue: 0.42)
-    static let canvas = Color(red: 0.96, green: 0.97, blue: 0.97)
-    static let border = Color(red: 0.84, green: 0.87, blue: 0.88)
-    static let warning = Color(red: 0.49, green: 0.30, blue: 0.08)
-    static let success = Color(red: 0.15, green: 0.42, blue: 0.31)
+    static let accent = Color.black
+    static let ink = Color.black
+    static let muted = Color(red: 0.36, green: 0.36, blue: 0.36)
+    static let canvas = Color(red: 0.975, green: 0.975, blue: 0.975)
+    static let border = Color(red: 0.86, green: 0.86, blue: 0.86)
+    static let warning = Color(red: 0.33, green: 0.33, blue: 0.33)
+    static let success = Color.black
 
     static func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content()
@@ -30,7 +30,7 @@ struct SandboxBadge: View {
             .foregroundStyle(CivicTheme.warning)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color.orange.opacity(0.10), in: Capsule())
+            .background(CivicTheme.canvas, in: Capsule())
     }
 }
 

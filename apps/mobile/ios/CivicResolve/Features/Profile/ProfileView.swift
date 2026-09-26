@@ -15,6 +15,14 @@ struct ProfileView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                NavigationLink {
+                    AccessibilityView()
+                        .navigationTitle(model.locale == .en ? "Accessibility" : "Accessibilité")
+                } label: {
+                    Label(model.locale == .en ? "Accessibility" : "Accessibilité", systemImage: "textformat.size")
+                }
+                .buttonStyle(.bordered)
+
                 Text(copy("profile.intro"))
                     .font(.subheadline)
                     .foregroundStyle(CivicTheme.muted)

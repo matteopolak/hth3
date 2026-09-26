@@ -9,6 +9,42 @@ struct Posting: Decodable, Identifiable {
     let sample: Bool
 }
 
+struct DiscoveryItem: Decodable, Identifiable {
+    struct Jurisdiction: Decodable { let name: String; let code: String }
+    struct Coordinate: Decodable { let latitude: Double; let longitude: Double }
+    struct Handoff: Decodable { let url: String; let publisher: String; let externalSubmissionRecorded: Bool }
+    let id: String
+    let origin: String
+    let title: String
+    let summary: String
+    let publisher: String
+    let sourceUrl: String
+    let evidenceUrl: String?
+    let termsUrl: String?
+    let jurisdiction: Jurisdiction
+    let language: String
+    let freshness: String
+    let verifiedAt: String?
+    let expiresAt: String?
+    let sampleLabel: String?
+    let area: String?
+    let coordinates: Coordinate?
+    let handoff: Handoff?
+}
+
+struct DiscoveryChecklistEntry: Codable, Identifiable {
+    let id: String
+    var text: String
+    var done: Bool
+}
+
+struct DiscoverySavedItem: Decodable, Identifiable {
+    let item: DiscoveryItem
+    let checklist: [DiscoveryChecklistEntry]
+    let savedAt: String
+    var id: String { item.id }
+}
+
 struct FeedbackMessage: Decodable, Identifiable {
     let id: String
     let author: String
@@ -179,6 +215,47 @@ struct WorkerAPI {
         try await get("/postings", as: PostingEnvelope.self).postings
     }
 
+    func discovery(area: String?, query: String, jurisdiction: String, currentOnly: Bool, includeSamples: Bool, offset: Int = 0) async throws -> (items: [DiscoveryItem], total: Int) {
+        var components = URLComponents()
+        components.queryItems = [URLQueryItem(name: "limit", value: "30"), URLQueryItem(name: "offset", value: String(offset))]
+        if let area { components.queryItems?.append(URLQueryItem(name: "area", value: area)) }
+        if !query.isEmpty { components.queryItems?.append(URLQueryItem(name: "q", value: query)) }
+        if !jurisdiction.isEmpty { components.queryItems?.append(URLQueryItem(name: "jurisdiction", value: jurisdiction)) }
+        if currentOnly { components.queryItems?.append(URLQueryItem(name: "freshness", value: "current")) }
+        if includeSamples { components.queryItems?.append(URLQueryItem(name: "includeSamples", value: "true")) }
+        let response = try await get("/discovery\(components.string ?? "")", as: DiscoveryEnvelope.self)
+        return (response.items, response.total)
+    }
+
+    func discoveryDetail(id: String, includeSamples: Bool) async throws -> DiscoveryItem {
+        try await get("/discovery/\(id)?includeSamples=\(includeSamples)", as: DiscoveryDetailEnvelope.self).item
+    }
+
+    func discoveryHandoff(id: String) async throws -> DiscoveryItem.Handoff {
+        try await get("/discovery/\(id)/handoff", as: DiscoveryHandoffEnvelope.self).handoff
+    }
+
+    func savedDiscovery(token: String, includeSamples: Bool) async throws -> [DiscoverySavedItem] {
+        try await get("/discovery/saved?includeSamples=\(includeSamples)", token: token, as: DiscoverySavedEnvelope.self).items
+    }
+
+    func saveDiscovery(id: String, token: String, includeSamples: Bool, checklist: [DiscoveryChecklistEntry]? = nil) async throws -> [DiscoveryChecklistEntry] {
+        let path = "/discovery/saved/\(id)?includeSamples=\(includeSamples)"
+        return try await send(path, method: "PUT", token: token, body: DiscoverySaveRequest(checklist: checklist), as: DiscoverySaveEnvelope.self).checklist
+    }
+
+    func removeSavedDiscovery(id: String, token: String) async throws {
+        let _: DiscoveryRemoveEnvelope = try await send("/discovery/saved/\(id)", method: "DELETE", token: token, as: DiscoveryRemoveEnvelope.self)
+    }
+
+    func applicationMessages(id: String, token: String) async throws -> [ApplicationMessage] {
+        try await get("/applications/\(id)/messages", token: token, as: ApplicationMessagesEnvelope.self).messages
+    }
+
+    func sendApplicationMessage(id: String, text: String, token: String) async throws -> ApplicationMessage {
+        try await send("/applications/\(id)/messages", method: "POST", token: token, idempotent: true, body: ApplicationMessageRequest(message: text), as: ApplicationMessageEnvelope.self).message
+    }
+
     func applications(token: String) async throws -> [CivicApplication] {
         try await get("/applications", token: token, as: ApplicationsEnvelope.self).applications
     }
@@ -290,7 +367,10 @@ struct WorkerAPI {
     }
 
     private func makeRequest(_ path: String, method: String, token: String?, receiptToken: String?, idempotent: Bool) -> URLRequest {
-        var request = URLRequest(url: baseURL.appending(path: path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))))
+        let pieces = path.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
+        var components = URLComponents(url: baseURL.appending(path: String(pieces[0]).trimmingCharacters(in: CharacterSet(charactersIn: "/"))), resolvingAgainstBaseURL: false)!
+        if pieces.count > 1 { components.percentEncodedQuery = String(pieces[1]) }
+        var request = URLRequest(url: components.url!)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
@@ -315,6 +395,22 @@ struct WorkerAPI {
 }
 
 private struct PostingEnvelope: Decodable { let postings: [Posting] }
+struct ApplicationMessage: Decodable, Identifiable {
+    let id: String
+    let author: String
+    let body: String
+    let createdAt: String
+}
+private struct ApplicationMessageRequest: Encodable { let message: String }
+private struct ApplicationMessagesEnvelope: Decodable { let messages: [ApplicationMessage] }
+private struct ApplicationMessageEnvelope: Decodable { let message: ApplicationMessage }
+private struct DiscoveryEnvelope: Decodable { let items: [DiscoveryItem]; let total: Int }
+private struct DiscoveryDetailEnvelope: Decodable { let item: DiscoveryItem }
+private struct DiscoveryHandoffEnvelope: Decodable { let handoff: DiscoveryItem.Handoff }
+private struct DiscoverySavedEnvelope: Decodable { let items: [DiscoverySavedItem] }
+private struct DiscoverySaveRequest: Encodable { let checklist: [DiscoveryChecklistEntry]? }
+private struct DiscoverySaveEnvelope: Decodable { let checklist: [DiscoveryChecklistEntry] }
+private struct DiscoveryRemoveEnvelope: Decodable { let saved: Bool }
 private struct ApplicationsEnvelope: Decodable { let applications: [CivicApplication] }
 private struct ProfileEnvelope: Decodable { let profile: ApplicantProfile }
 private struct ResumesEnvelope: Decodable { let resumes: [ResumeDocument] }

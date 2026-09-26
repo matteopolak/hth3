@@ -6,8 +6,22 @@ struct CivicResolveTabs: View {
     var body: some View {
         TabView {
             NavigationStack {
+                DiscoveryView()
+                    .navigationTitle(copy("nav.discover"))
+                    .toolbar { languageToolbar }
+            }
+            .tabItem { Label(copy("nav.discover"), systemImage: "magnifyingglass") }
+
+            NavigationStack {
+                ResidentAssistantView()
+                    .navigationTitle(copy("nav.assistant"))
+                    .toolbar { languageToolbar }
+            }
+            .tabItem { Label(copy("nav.assistant"), systemImage: "bubble.left") }
+
+            NavigationStack {
                 FeedbackView()
-                    .navigationTitle(copy("app.name"))
+                    .navigationTitle(copy("nav.feedback"))
                     .toolbar { languageToolbar }
             }
             .tabItem { Label(copy("nav.feedback"), systemImage: "bubble.left.and.bubble.right") }
@@ -26,12 +40,6 @@ struct CivicResolveTabs: View {
             }
             .tabItem { Label(copy("nav.profile"), systemImage: "person.crop.circle") }
 
-            NavigationStack {
-                AccessibilityView()
-                    .navigationTitle(model.locale == .en ? "Accessibility" : "Accessibilité")
-                    .toolbar { languageToolbar }
-            }
-            .tabItem { Label(model.locale == .en ? "Access" : "Accès", systemImage: "textformat.size") }
         }
         .tint(CivicTheme.accent)
         .task { await model.restoreAuthSession() }

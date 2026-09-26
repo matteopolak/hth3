@@ -1,0 +1,357 @@
+import SwiftUI
+
+private enum DiscoveryArea: String, CaseIterable, Identifiable {
+    case all, jobs, support, funding, nearby, participation, saved
+    var id: String { rawValue }
+    var apiValue: String? { self == .all || self == .saved ? nil : rawValue }
+    var icon: String {
+        switch self {
+        case .all: "square.grid.2x2"
+        case .jobs: "briefcase"
+        case .support: "heart.text.square"
+        case .funding: "dollarsign.circle"
+        case .nearby: "mappin.and.ellipse"
+        case .participation: "person.3"
+        case .saved: "bookmark"
+        }
+    }
+}
+
+struct DiscoveryView: View {
+    @EnvironmentObject private var model: CivicResolveModel
+    @State private var area: DiscoveryArea = .all
+    @State private var query = ""
+    @State private var jurisdiction = ""
+    @State private var currentOnly = false
+    @State private var includeSamples = false
+    @State private var items: [DiscoveryItem] = []
+    @State private var saved: [DiscoverySavedItem] = []
+    @State private var total = 0
+    @State private var loading = false
+    @State private var error: String?
+    @State private var mapMode = false
+    private let api = WorkerAPI()
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(DiscoveryArea.allCases) { option in
+                            Button { area = option; Task { await refresh() } } label: {
+                                Label(text("discovery.\(option.rawValue)"), systemImage: option.icon)
+                                    .font(.subheadline.weight(area == option ? .semibold : .regular))
+                                    .padding(.horizontal, 12).padding(.vertical, 9)
+                                    .foregroundStyle(area == option ? .white : CivicTheme.ink)
+                                    .background(area == option ? CivicTheme.ink : .white, in: Capsule())
+                                    .overlay(Capsule().stroke(CivicTheme.border, lineWidth: area == option ? 0 : 1))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                if area != .saved {
+                    HStack {
+                        Image(systemName: "magnifyingglass").foregroundStyle(CivicTheme.muted)
+                        TextField(text("discovery.searchHint"), text: $query)
+                            .submitLabel(.search)
+                            .onSubmit { Task { await refresh() } }
+                        if !query.isEmpty {
+                            Button { query = ""; Task { await refresh() } } label: { Image(systemName: "xmark.circle.fill") }
+                                .accessibilityLabel(text("discovery.clear"))
+                        }
+                    }
+                    .padding(12)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(CivicTheme.border))
+
+                    HStack {
+                        TextField(text("discovery.jurisdictionHint"), text: $jurisdiction)
+                            .textInputAutocapitalization(.characters)
+                            .submitLabel(.search)
+                            .onSubmit { Task { await refresh() } }
+                        Button(text("discovery.search")) { Task { await refresh() } }
+                            .buttonStyle(.bordered)
+                    }
+                    Toggle(text("discovery.currentOnly"), isOn: $currentOnly)
+                        .onChange(of: currentOnly) { _, _ in Task { await refresh() } }
+                    Toggle(text("discovery.practice"), isOn: $includeSamples)
+                        .onChange(of: includeSamples) { _, _ in Task { await refresh() } }
+                    if area == .nearby {
+                        Picker(text("discovery.view"), selection: $mapMode) {
+                            Text(text("discovery.list")).tag(false)
+                            Text(text("discovery.map")).tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+                if loading { ProgressView(text("common.loading")) }
+                if let error { InlineNotice(message: error, isError: true) }
+                if area == .saved && model.accessToken == nil {
+                    InlineNotice(message: text("discovery.signIn"))
+                    Button(text("auth.signInButton")) { Task { await model.signIn() } }
+                        .buttonStyle(.bordered)
+                } else if area == .nearby && mapMode && !items.isEmpty {
+                    NearbyMapView(items: items)
+                }
+                let visible = area == .saved ? saved.map(\.item) : items
+                if !loading && visible.isEmpty && error == nil {
+                    Text(text(area == .saved ? "discovery.noSaved" : "discovery.noResults"))
+                        .foregroundStyle(CivicTheme.muted)
+                        .padding(.vertical, 24)
+                }
+                if !(area == .nearby && mapMode) {
+                    LazyVStack(spacing: 10) {
+                        ForEach(visible) { item in
+                            NavigationLink {
+                                DiscoveryDetailView(itemID: item.id, includeSamples: includeSamples)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(alignment: .top) {
+                                        Text(item.title).font(.headline).foregroundStyle(CivicTheme.ink)
+                                        Spacer(minLength: 6)
+                                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(CivicTheme.muted)
+                                    }
+                                    Text(item.summary).font(.subheadline).foregroundStyle(CivicTheme.muted).lineLimit(3)
+                                    HStack(spacing: 8) {
+                                        Text(item.publisher)
+                                        Text("·")
+                                        Text(item.jurisdiction.name)
+                                    }
+                                    .font(.caption).foregroundStyle(CivicTheme.muted)
+                                    if item.origin == "sample" {
+                                        Label(text("discovery.practiceLabel"), systemImage: "info.circle")
+                                            .font(.caption).foregroundStyle(CivicTheme.warning)
+                                    }
+                                }
+                                .padding(15)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(CivicTheme.border))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    if area != .saved && items.count < total {
+                        Button(text("discovery.more")) { Task { await loadMore() } }
+                            .buttonStyle(.bordered)
+                    }
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: 720, alignment: .leading)
+            .frame(maxWidth: .infinity)
+        }
+        .background(CivicTheme.canvas)
+        .task { await refresh() }
+        .onChange(of: model.accessToken) { _, _ in Task { await refresh() } }
+    }
+
+    private func refresh() async {
+        loading = true
+        error = nil
+        defer { loading = false }
+        do {
+            if area == .saved {
+                items = []
+                if let token = model.accessToken {
+                    saved = try await api.savedDiscovery(token: token, includeSamples: includeSamples)
+                } else {
+                    saved = []
+                }
+            } else {
+                let response = try await api.discovery(area: area.apiValue, query: query, jurisdiction: jurisdiction, currentOnly: currentOnly, includeSamples: includeSamples)
+                items = response.items
+                total = response.total
+            }
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func loadMore() async {
+        guard !loading else { return }
+        loading = true
+        defer { loading = false }
+        do {
+            let response = try await api.discovery(area: area.apiValue, query: query, jurisdiction: jurisdiction, currentOnly: currentOnly, includeSamples: includeSamples, offset: items.count)
+            items += response.items
+            total = response.total
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func text(_ key: String) -> String { model.copy(key) }
+}
+
+struct DiscoveryDetailView: View {
+    @EnvironmentObject private var model: CivicResolveModel
+    let itemID: String
+    let includeSamples: Bool
+    @State private var item: DiscoveryItem?
+    @State private var saved = false
+    @State private var checklist: [DiscoveryChecklistEntry] = []
+    @State private var newStep = ""
+    @State private var error: String?
+    @State private var busy = false
+    @State private var handoffURL: URL?
+    private let api = WorkerAPI()
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if let item {
+                    Text(item.title).font(.title2.weight(.semibold))
+                    Text(item.summary).foregroundStyle(CivicTheme.ink)
+                    if item.origin == "sample" {
+                        InlineNotice(message: text("discovery.practiceNote"))
+                    }
+                    if item.freshness != "current" {
+                        InlineNotice(message: text("discovery.staleNote"))
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        detail(text("discovery.publisher"), item.publisher)
+                        detail(text("discovery.jurisdiction"), item.jurisdiction.name)
+                        detail(text("discovery.freshness"), item.freshness)
+                        if let verifiedAt = item.verifiedAt { detail(text("discovery.verified"), String(verifiedAt.prefix(10))) }
+                        if let url = URL(string: item.evidenceUrl ?? "") {
+                            Link(destination: url) { Label(text("discovery.evidence"), systemImage: "doc.text") }
+                        }
+                        if let url = URL(string: item.termsUrl ?? "") {
+                            Link(destination: url) { Label(text("discovery.terms"), systemImage: "doc.text") }
+                        }
+                    }
+                    .padding(15)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(CivicTheme.border))
+
+                    if item.handoff != nil {
+                        InlineNotice(message: text("discovery.handoffNote"))
+                        Button { Task { await openOfficial() } } label: {
+                            Label(text("discovery.openOfficial"), systemImage: "arrow.up.right.square")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(CivicTheme.ink)
+                    } else {
+                        InlineNotice(message: text("discovery.noHandoff"))
+                    }
+
+                    if model.accessToken != nil {
+                        Button(saved ? text("discovery.removeSaved") : text("discovery.save")) {
+                            Task { await toggleSaved() }
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(busy)
+                        if saved { checklistSection }
+                    } else {
+                        Text(text("discovery.signIn")).font(.subheadline).foregroundStyle(CivicTheme.muted)
+                    }
+                } else if error == nil { ProgressView(text("common.loading")) }
+                if let error { InlineNotice(message: error, isError: true) }
+            }
+            .padding(16)
+            .frame(maxWidth: 720, alignment: .leading)
+            .frame(maxWidth: .infinity)
+        }
+        .background(CivicTheme.canvas)
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await load() }
+        .onChange(of: model.accessToken) { _, _ in Task { await loadSaved() } }
+        .confirmationDialog(text("discovery.openOfficial"), isPresented: Binding(get: { handoffURL != nil }, set: { if !$0 { handoffURL = nil } })) {
+            if let handoffURL {
+                Link(text("discovery.continueOfficial"), destination: handoffURL)
+            }
+        } message: { Text(text("discovery.handoffNote")) }
+    }
+
+    private var checklistSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(text("discovery.checklist")).font(.headline)
+            ForEach(checklist.indices, id: \.self) { index in
+                Button {
+                    checklist[index].done.toggle()
+                    Task { await updateChecklist() }
+                } label: {
+                    Label(checklist[index].text, systemImage: checklist[index].done ? "checkmark.square.fill" : "square")
+                        .foregroundStyle(CivicTheme.ink)
+                }
+                .buttonStyle(.plain)
+            }
+            HStack {
+                TextField(text("discovery.stepHint"), text: $newStep)
+                    .textFieldStyle(.roundedBorder)
+                Button { Task { await addStep() } } label: { Image(systemName: "plus") }
+                    .disabled(newStep.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || checklist.count >= 12)
+                    .accessibilityLabel(text("discovery.addStep"))
+            }
+        }
+        .padding(15)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(CivicTheme.border))
+    }
+
+    private func detail(_ label: String, _ value: String) -> some View {
+        HStack(alignment: .top) {
+            Text(label).foregroundStyle(CivicTheme.muted).frame(width: 94, alignment: .leading)
+            Text(value)
+        }
+        .font(.subheadline)
+    }
+
+    private func load() async {
+        do {
+            item = try await api.discoveryDetail(id: itemID, includeSamples: includeSamples)
+            await loadSaved()
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func loadSaved() async {
+        guard let token = model.accessToken else { saved = false; checklist = []; return }
+        do {
+            let match = try await api.savedDiscovery(token: token, includeSamples: includeSamples).first { $0.id == itemID }
+            saved = match != nil
+            checklist = match?.checklist ?? []
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func toggleSaved() async {
+        guard let token = model.accessToken else { return }
+        busy = true
+        defer { busy = false }
+        do {
+            if saved {
+                try await api.removeSavedDiscovery(id: itemID, token: token)
+                saved = false
+                checklist = []
+            } else {
+                checklist = try await api.saveDiscovery(id: itemID, token: token, includeSamples: includeSamples)
+                saved = true
+            }
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func addStep() async {
+        let value = newStep.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty, value.count <= 140, checklist.count < 12 else { return }
+        checklist.append(.init(id: UUID().uuidString, text: value, done: false))
+        newStep = ""
+        await updateChecklist()
+    }
+
+    private func updateChecklist() async {
+        guard let token = model.accessToken else { return }
+        do {
+            checklist = try await api.saveDiscovery(id: itemID, token: token, includeSamples: includeSamples, checklist: checklist)
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func openOfficial() async {
+        do {
+            let handoff = try await api.discoveryHandoff(id: itemID)
+            guard !handoff.externalSubmissionRecorded, let url = URL(string: handoff.url), url.scheme == "https" else { return }
+            handoffURL = url
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func text(_ key: String) -> String { model.copy(key) }
+}

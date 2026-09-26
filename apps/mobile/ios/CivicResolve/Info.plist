@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Envoy</string>
+	<string>envoy</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.matteopolak.envoy</string>
 	<key>CFBundleName</key>
-	<string>Envoy</string>
+	<string>envoy</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

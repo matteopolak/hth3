@@ -21,6 +21,10 @@
 		A1000000000000000000000D /* Auth0 in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000001 /* Auth0 */; };
 		A1000000000000000000000E /* AccessibilityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* AccessibilityView.swift */; };
 		A1000000000000000000000F /* SmartSpectra in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000002 /* SmartSpectra */; };
+		A10000000000000000000010 /* DiscoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* DiscoveryView.swift */; };
+		A10000000000000000000011 /* NearbyMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* NearbyMapView.swift */; };
+		A10000000000000000000012 /* ResidentAssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* ResidentAssistantView.swift */; };
+		A10000000000000000000013 /* ResidentAssistantAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* ResidentAssistantAPI.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +43,10 @@
 		B1000000000000000000000D /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		B1000000000000000000000E /* Auth0Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth0Session.swift; sourceTree = "<group>"; };
 		B1000000000000000000000F /* AccessibilityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityView.swift; sourceTree = "<group>"; };
+		B10000000000000000000010 /* DiscoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryView.swift; sourceTree = "<group>"; };
+		B10000000000000000000011 /* NearbyMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyMapView.swift; sourceTree = "<group>"; };
+		B10000000000000000000012 /* ResidentAssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResidentAssistantView.swift; sourceTree = "<group>"; };
+		B10000000000000000000013 /* ResidentAssistantAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResidentAssistantAPI.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,11 +75,14 @@
 		D10000000000000000000004 /* App */ = {isa = PBXGroup; path = App; sourceTree = "<group>"; children = (B10000000000000000000001 /* CivicResolveApp.swift */, B10000000000000000000002 /* CivicResolveTabs.swift */, B10000000000000000000003 /* CivicResolveModel.swift */); };
 		D10000000000000000000005 /* Design */ = {isa = PBXGroup; path = Design; sourceTree = "<group>"; children = (B10000000000000000000004 /* CivicTheme.swift */); };
 		D10000000000000000000006 /* Platform */ = {isa = PBXGroup; path = Platform; sourceTree = "<group>"; children = (B10000000000000000000005 /* AppCopy.swift */, B10000000000000000000006 /* LocalIdentity.swift */, B10000000000000000000007 /* KeychainReceiptStore.swift */, B10000000000000000000008 /* WorkerAPI.swift */, B1000000000000000000000E /* Auth0Session.swift */); };
-		D10000000000000000000007 /* Features */ = {isa = PBXGroup; children = (D10000000000000000000008 /* Feedback */, D10000000000000000000009 /* Applications */, D1000000000000000000000A /* Profile */, D1000000000000000000000B /* Accessibility */); sourceTree = "<group>"; };
+		D10000000000000000000007 /* Features */ = {isa = PBXGroup; children = (D10000000000000000000008 /* Feedback */, D10000000000000000000009 /* Applications */, D1000000000000000000000A /* Profile */, D1000000000000000000000B /* Accessibility */, D1000000000000000000000C /* Discovery */, D1000000000000000000000D /* Nearby */, D1000000000000000000000E /* ResidentAssistant */); sourceTree = "<group>"; };
 		D10000000000000000000008 /* Feedback */ = {isa = PBXGroup; path = Features/Feedback; sourceTree = "<group>"; children = (B10000000000000000000009 /* FeedbackView.swift */); };
 		D10000000000000000000009 /* Applications */ = {isa = PBXGroup; path = Features/Applications; sourceTree = "<group>"; children = (B1000000000000000000000A /* ApplicationsView.swift */); };
 		D1000000000000000000000A /* Profile */ = {isa = PBXGroup; path = Features/Profile; sourceTree = "<group>"; children = (B1000000000000000000000D /* ProfileView.swift */); };
 		D1000000000000000000000B /* Accessibility */ = {isa = PBXGroup; path = Features/Accessibility; sourceTree = "<group>"; children = (B1000000000000000000000F /* AccessibilityView.swift */); };
+		D1000000000000000000000C /* Discovery */ = {isa = PBXGroup; path = Features/Discovery; sourceTree = "<group>"; children = (B10000000000000000000010 /* DiscoveryView.swift */); };
+		D1000000000000000000000D /* Nearby */ = {isa = PBXGroup; path = Features/Nearby; sourceTree = "<group>"; children = (B10000000000000000000011 /* NearbyMapView.swift */); };
+		D1000000000000000000000E /* ResidentAssistant */ = {isa = PBXGroup; path = Features/ResidentAssistant; sourceTree = "<group>"; children = (B10000000000000000000012 /* ResidentAssistantView.swift */, B10000000000000000000013 /* ResidentAssistantAPI.swift */); };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -90,7 +101,7 @@
 /* End PBXNativeTarget section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* CivicResolveApp.swift in Sources */, A10000000000000000000002 /* CivicResolveTabs.swift in Sources */, A10000000000000000000003 /* CivicResolveModel.swift in Sources */, A10000000000000000000004 /* CivicTheme.swift in Sources */, A10000000000000000000005 /* AppCopy.swift in Sources */, A10000000000000000000006 /* LocalIdentity.swift in Sources */, A10000000000000000000007 /* KeychainReceiptStore.swift in Sources */, A10000000000000000000008 /* WorkerAPI.swift in Sources */, A10000000000000000000009 /* FeedbackView.swift in Sources */, A1000000000000000000000A /* ApplicationsView.swift in Sources */, A1000000000000000000000B /* ProfileView.swift in Sources */, A1000000000000000000000C /* Auth0Session.swift in Sources */, A1000000000000000000000E /* AccessibilityView.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+		C10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* CivicResolveApp.swift in Sources */, A10000000000000000000002 /* CivicResolveTabs.swift in Sources */, A10000000000000000000003 /* CivicResolveModel.swift in Sources */, A10000000000000000000004 /* CivicTheme.swift in Sources */, A10000000000000000000005 /* AppCopy.swift in Sources */, A10000000000000000000006 /* LocalIdentity.swift in Sources */, A10000000000000000000007 /* KeychainReceiptStore.swift in Sources */, A10000000000000000000008 /* WorkerAPI.swift in Sources */, A10000000000000000000009 /* FeedbackView.swift in Sources */, A1000000000000000000000A /* ApplicationsView.swift in Sources */, A1000000000000000000000B /* ProfileView.swift in Sources */, A1000000000000000000000C /* Auth0Session.swift in Sources */, A1000000000000000000000E /* AccessibilityView.swift in Sources */, A10000000000000000000010 /* DiscoveryView.swift in Sources */, A10000000000000000000011 /* NearbyMapView.swift in Sources */, A10000000000000000000012 /* ResidentAssistantView.swift in Sources */, A10000000000000000000013 /* ResidentAssistantAPI.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
