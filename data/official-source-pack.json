@@ -733,6 +733,70 @@
       "detailsSourceUrl": "https://www.translink.ca/contactus",
       "coordinatesEvidenceUrl": "https://opendata.vancouver.ca/explore/dataset/rapid-transit-stations/",
       "mapLocationPrecision": "station"
+    },
+    {
+      "area": "nearby",
+      "kind": "service_location",
+      "publisher": "Toronto Public Library",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-ON-TOR",
+        "name": "Toronto, Ontario",
+        "municipalityCode": "CA-ON-TOR",
+        "municipalityName": "Toronto"
+      },
+      "termsUrl": "https://tpl.ca/policies-and-terms-of-use/",
+      "termsReview": "Link and original short branch summary only; no TPL page text copied. City of Toronto GIS Library layer supplies coordinates, cross-checked with the current TPL branch page.",
+      "checkedAt": "2026-09-26T20:31:00.000Z",
+      "expiresAt": "2026-10-03T20:31:00.000Z",
+      "serviceCategory": "library",
+      "detailsCheckedAt": "2026-09-26T20:31:00.000Z",
+      "coordinatesEvidenceUrl": "https://gis.toronto.ca/arcgis/rest/services/cot_geospatial28/FeatureServer/28",
+      "id": "tpl-fort-york",
+      "title": "Toronto Public Library — Fort York",
+      "summary": "Public library at 190 Fort York Boulevard, Toronto. Visit the branch page for facilities and hours.",
+      "url": "https://tpl.ca/locations/FO/",
+      "coordinates": {
+        "latitude": 43.639152098,
+        "longitude": -79.400334688
+      },
+      "address": "190 Fort York Boulevard, Toronto, Ontario M5V 0E7",
+      "publicAccessSummary": "Toronto Public Library lists Fort York as a public branch with visitor information and directions.",
+      "servicesSummary": "Library collections, computer workstations, Wi-Fi, digital innovation facilities and social or crisis support services are listed on the branch page.",
+      "accessibilitySummary": "The branch page lists wheelchair access and accessible washrooms.",
+      "detailsSourceUrl": "https://tpl.ca/locations/FO/"
+    },
+    {
+      "area": "nearby",
+      "kind": "service_location",
+      "publisher": "Toronto Public Library",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-ON-TOR",
+        "name": "Toronto, Ontario",
+        "municipalityCode": "CA-ON-TOR",
+        "municipalityName": "Toronto"
+      },
+      "termsUrl": "https://tpl.ca/policies-and-terms-of-use/",
+      "termsReview": "Link and original short branch summary only; no TPL page text copied. City of Toronto GIS Library layer supplies coordinates, cross-checked with the current TPL branch page.",
+      "checkedAt": "2026-09-26T20:31:00.000Z",
+      "expiresAt": "2026-10-03T20:31:00.000Z",
+      "serviceCategory": "library",
+      "detailsCheckedAt": "2026-09-26T20:31:00.000Z",
+      "coordinatesEvidenceUrl": "https://gis.toronto.ca/arcgis/rest/services/cot_geospatial28/FeatureServer/28",
+      "id": "tpl-north-york-central",
+      "title": "Toronto Public Library — North York Central",
+      "summary": "Public library at 5120 Yonge Street, Toronto. Visit the branch page for facilities and hours.",
+      "url": "https://tpl.ca/locations/CL/",
+      "coordinates": {
+        "latitude": 43.768204255,
+        "longitude": -79.41410041
+      },
+      "address": "5120 Yonge Street, Toronto, Ontario M2N 5N9",
+      "publicAccessSummary": "Toronto Public Library lists North York Central Library as a public branch with visitor information and directions.",
+      "servicesSummary": "Library collections, study space, a Digital Innovation Hub, KidsStop and a fabrication studio are listed on the branch page.",
+      "accessibilitySummary": "The branch page lists wheelchair access.",
+      "detailsSourceUrl": "https://tpl.ca/locations/CL/"
     }
   ]
 }
