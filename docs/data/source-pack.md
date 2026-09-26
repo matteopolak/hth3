@@ -10,7 +10,7 @@ These are official **page links**, not imported job vacancies, awards, service a
 
 `node scripts/seed-source-pack.mjs --out /tmp/envoy-source-pack.sql` generates reviewable, idempotent SQL. The script creates one manual official source and record per link, assigns a discovery area and optional finder/location kind, and inserts practice feedback records into the fictional Toronto organization. It does not send practice issues to a government body or the analytics outbox. Re-running preserves changes to practice issue statuses and messages.
 
-Each official record has its publisher, jurisdiction, source and evidence URL, terms URL, a metadata hash, review time, and a seven-day expiry. The pack was manually checked on 2026-09-26. It marks itself stale after 2026-10-03; re-running after that date does not renew verification. Before refreshing it, recheck each official page and update both `checkedAt` and `expiresAt` in the JSON. A source fetch failure elsewhere does not turn these manually checked records current.
+Each official record has its publisher, jurisdiction, source and evidence URL, terms URL, a metadata hash, review time, and a seven-day expiry. The pack was manually checked on 2026-09-26. It marks each record stale after its own expiry; re-running after that date does not renew verification. Before refreshing it, recheck each official page and update its `checkedAt` and `expiresAt` values. Entries without dates inherit the pack-level dates. A source fetch failure elsewhere does not turn these manually checked records current.
 
 The descriptions are original short summaries. Link-only review avoids reproducing government page content or scraping listings. See each entry's `termsReview` for the exact boundary and the linked publisher terms. The known BC job board restriction is why this pack contains no WorkBC job listing data.
 
@@ -39,4 +39,4 @@ No packages, API keys, or paid services are required. The script uses Node built
 
 ## Coverage
 
-The 2026-09-26 pack has 13 official pages: one jobs finder, four funding pages, three support programs, two service locations, and three participation directories. It adds eight practice civic issues. Existing scheduled adapters add federal and provincial finders plus Service BC locations separately. No real municipality, vacancy, grant decision, consultation status, or resident complaint was invented.
+The 2026-09-26 pack has 29 official pages and locations: five jobs finders, nine funding pages, three support programs, six service locations, and six participation directories. Four Alberta centre coordinates came from the province's official location page. It adds eight practice civic issues. Existing scheduled adapters add federal and provincial finders plus Service BC locations separately. No real municipality, vacancy, grant decision, consultation status, or resident complaint was invented.

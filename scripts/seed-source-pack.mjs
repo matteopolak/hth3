@@ -36,18 +36,28 @@ for (const item of pack.records) {
   seen.add(item.id);
   const sourceId = `manual-${item.id}`;
   const recordId = `official-manual-${item.id}`;
+  const checkedAt = item.checkedAt ?? pack.checkedAt;
+  const expiresAt = item.expiresAt ?? pack.expiresAt;
+  const itemFreshness = Date.parse(expiresAt) > Date.now() ? "current" : "stale";
+  if (!Number.isFinite(Date.parse(checkedAt)) || !Number.isFinite(Date.parse(expiresAt)) || Date.parse(expiresAt) <= Date.parse(checkedAt)) {
+    throw new Error(`Invalid review dates: ${item.id}`);
+  }
   const j = item.jurisdiction;
   const base = [item.title, item.publisher, item.url, j.level, j.code, j.name, j.municipalityCode ?? null, j.municipalityName ?? null, item.termsUrl];
   sql.push(`INSERT INTO source_registry ${row(
     ["id", "origin", "name", "publisher", "source_url", "jurisdiction_level", "jurisdiction_code", "jurisdiction_name", "municipality_code", "municipality_name", "terms_url", "terms_status", "collection_mode", "verified_at", "expires_at", "freshness_state", "created_at", "updated_at"],
-    [sourceId, "official_external", ...base, "permitted", "manual", pack.checkedAt, pack.expiresAt, freshness, now, now],
+    [sourceId, "official_external", ...base, "permitted", "manual", checkedAt, expiresAt, itemFreshness, now, now],
   )} ON CONFLICT(id) DO UPDATE SET name=excluded.name, publisher=excluded.publisher, source_url=excluded.source_url, terms_url=excluded.terms_url, verified_at=excluded.verified_at, expires_at=excluded.expires_at, freshness_state=excluded.freshness_state, updated_at=excluded.updated_at;`);
   sql.push(`INSERT INTO source_records ${row(
     ["id", "source_id", "origin", "external_id", "title", "summary", "source_url", "publisher", "jurisdiction_level", "jurisdiction_code", "jurisdiction_name", "municipality_code", "municipality_name", "terms_url", "terms_status", "language", "verified_at", "expires_at", "payload_hash", "evidence_url", "freshness_state", "created_at", "updated_at"],
-    [recordId, sourceId, "official_external", item.url, item.title, item.summary, item.url, item.publisher, j.level, j.code, j.name, j.municipalityCode ?? null, j.municipalityName ?? null, item.termsUrl, "permitted", "en", pack.checkedAt, pack.expiresAt, sha256(JSON.stringify(item)), item.url, freshness, now, now],
+    [recordId, sourceId, "official_external", item.url, item.title, item.summary, item.url, item.publisher, j.level, j.code, j.name, j.municipalityCode ?? null, j.municipalityName ?? null, item.termsUrl, "permitted", "en", checkedAt, expiresAt, sha256(JSON.stringify(item)), item.url, itemFreshness, now, now],
   )} ON CONFLICT(id) DO UPDATE SET title=excluded.title, summary=excluded.summary, source_url=excluded.source_url, publisher=excluded.publisher, terms_url=excluded.terms_url, verified_at=excluded.verified_at, expires_at=excluded.expires_at, payload_hash=excluded.payload_hash, evidence_url=excluded.evidence_url, freshness_state=excluded.freshness_state, updated_at=excluded.updated_at;`);
   if (item.kind) {
-    sql.push(`INSERT INTO source_record_details ${row(["record_id", "kind"], [recordId, item.kind])} ON CONFLICT(record_id) DO UPDATE SET kind=excluded.kind;`);
+    const coordinates = item.coordinates;
+    if (coordinates && (item.kind !== "service_location" || !Number.isFinite(coordinates.latitude) || !Number.isFinite(coordinates.longitude))) {
+      throw new Error(`Invalid coordinates: ${item.id}`);
+    }
+    sql.push(`INSERT INTO source_record_details ${row(["record_id", "kind", "latitude", "longitude"], [recordId, item.kind, coordinates?.latitude ?? null, coordinates?.longitude ?? null])} ON CONFLICT(record_id) DO UPDATE SET kind=excluded.kind, latitude=excluded.latitude, longitude=excluded.longitude;`);
   }
   sql.push(`INSERT INTO discovery_record_areas ${row(["record_id", "area"], [recordId, item.area])} ON CONFLICT(record_id) DO UPDATE SET area=excluded.area;`);
 }

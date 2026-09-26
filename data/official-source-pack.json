@@ -12,7 +12,13 @@
       "summary": "Search City of Toronto career opportunities on the City's official recruitment site.",
       "url": "https://jobs.toronto.ca/jobsatcity/",
       "publisher": "City of Toronto",
-      "jurisdiction": { "level": "municipal", "code": "CA-ON-TOR", "name": "Toronto, Ontario", "municipalityCode": "CA-ON-TOR", "municipalityName": "Toronto" },
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-ON-TOR",
+        "name": "Toronto, Ontario",
+        "municipalityCode": "CA-ON-TOR",
+        "municipalityName": "Toronto"
+      },
       "termsUrl": "https://www.toronto.ca/home/copyright-information/",
       "termsReview": "Link and original short description only; no job listings or City text copied."
     },
@@ -23,7 +29,11 @@
       "summary": "Find federal student grants and loans, then apply through the participating province or territory's student aid service.",
       "url": "https://www.canada.ca/en/services/benefits/education/student-aid/grants-loans/province-apply.html",
       "publisher": "Employment and Social Development Canada",
-      "jurisdiction": { "level": "federal", "code": "CA", "name": "Canada" },
+      "jurisdiction": {
+        "level": "federal",
+        "code": "CA",
+        "name": "Canada"
+      },
       "termsUrl": "https://www.canada.ca/en/transparency/terms.html",
       "termsReview": "Government of Canada link metadata and original short description only; no eligibility or intake status claim."
     },
@@ -34,7 +44,11 @@
       "summary": "Learn about a needs-based grant for eligible full-time undergraduate study at B.C. public institutions. StudentAid BC assesses it with a student-aid application.",
       "url": "https://studentaidbc.ca/explore/grants-scholarships/bc-access-grant-full-time",
       "publisher": "StudentAid BC",
-      "jurisdiction": { "level": "provincial", "code": "CA-BC", "name": "British Columbia" },
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-BC",
+        "name": "British Columbia"
+      },
       "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
       "termsReview": "Link and original short description only; B.C. site content is not reproduced."
     },
@@ -45,7 +59,11 @@
       "summary": "Explore help with eligible adult-upgrading costs at B.C. public institutions and contact the institution's financial aid office.",
       "url": "https://studentaidbc.ca/explore/grants-scholarships/adult-upgrading-grant-application",
       "publisher": "StudentAid BC",
-      "jurisdiction": { "level": "provincial", "code": "CA-BC", "name": "British Columbia" },
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-BC",
+        "name": "British Columbia"
+      },
       "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
       "termsReview": "Link and original short description only; B.C. site content is not reproduced."
     },
@@ -56,7 +74,11 @@
       "summary": "Review grant support for selected Ontario programs and regions, including the related work commitment, on the province's official page.",
       "url": "https://www.ontario.ca/page/ontario-learn-and-stay-grant",
       "publisher": "Government of Ontario",
-      "jurisdiction": { "level": "provincial", "code": "CA-ON", "name": "Ontario" },
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-ON",
+        "name": "Ontario"
+      },
       "termsUrl": "https://www.ontario.ca/page/terms-use",
       "termsReview": "Ontario welcomes linking; original short description only, with no copied program text or current intake claim."
     },
@@ -67,7 +89,11 @@
       "summary": "Explore a federal interest-free loan for eligible Red Seal apprentices during technical training.",
       "url": "https://www.canada.ca/en/services/jobs/training/support-skilled-trades-apprentices/loan.html",
       "publisher": "Employment and Social Development Canada",
-      "jurisdiction": { "level": "federal", "code": "CA", "name": "Canada" },
+      "jurisdiction": {
+        "level": "federal",
+        "code": "CA",
+        "name": "Canada"
+      },
       "termsUrl": "https://www.canada.ca/en/transparency/terms.html",
       "termsReview": "Government of Canada link metadata and original short description only; no eligibility decision."
     },
@@ -78,7 +104,11 @@
       "summary": "Check whether an eligible occupation and community may qualify for federal student loan forgiveness.",
       "url": "https://www.canada.ca/en/services/benefits/education/student-aid/grants-loans/repay/assistance/student-loan-forgiveness.html",
       "publisher": "Employment and Social Development Canada",
-      "jurisdiction": { "level": "federal", "code": "CA", "name": "Canada" },
+      "jurisdiction": {
+        "level": "federal",
+        "code": "CA",
+        "name": "Canada"
+      },
       "termsUrl": "https://www.canada.ca/en/transparency/terms.html",
       "termsReview": "Government of Canada link metadata and original short description only; no eligibility decision."
     },
@@ -89,7 +119,11 @@
       "summary": "Explore Ontario training and related financial support through an Employment Ontario service provider.",
       "url": "https://www.ontario.ca/page/better-jobs-ontario",
       "publisher": "Government of Ontario",
-      "jurisdiction": { "level": "provincial", "code": "CA-ON", "name": "Ontario" },
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-ON",
+        "name": "Ontario"
+      },
       "termsUrl": "https://www.ontario.ca/page/terms-use",
       "termsReview": "Ontario welcomes linking; original short description only, with no eligibility or current intake claim."
     },
@@ -101,7 +135,13 @@
       "summary": "ServiceOntario location at 2864 St. Joseph Boulevard, Ottawa. Check the official page for services and hours before visiting.",
       "url": "https://www.ontario.ca/locations/serviceontario/st-joseph-ottawa",
       "publisher": "Government of Ontario",
-      "jurisdiction": { "level": "municipal", "code": "CA-ON-OTT", "name": "Ottawa, Ontario", "municipalityCode": "CA-ON-OTT", "municipalityName": "Ottawa" },
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-ON-OTT",
+        "name": "Ottawa, Ontario",
+        "municipalityCode": "CA-ON-OTT",
+        "municipalityName": "Ottawa"
+      },
       "termsUrl": "https://www.ontario.ca/page/terms-use",
       "termsReview": "Ontario welcomes linking; address verified on official location page; hours and services stay on publisher site."
     },
@@ -113,7 +153,13 @@
       "summary": "City service counters at 100 Queen Street West, Toronto. Check the official page for offered services and hours.",
       "url": "https://www.toronto.ca/services-payments/venues-facilities-bookings/booking-city-facilities/counter-services-at-city-hall-civic-centres/",
       "publisher": "City of Toronto",
-      "jurisdiction": { "level": "municipal", "code": "CA-ON-TOR", "name": "Toronto, Ontario", "municipalityCode": "CA-ON-TOR", "municipalityName": "Toronto" },
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-ON-TOR",
+        "name": "Toronto, Ontario",
+        "municipalityCode": "CA-ON-TOR",
+        "municipalityName": "Toronto"
+      },
       "termsUrl": "https://www.toronto.ca/home/copyright-information/",
       "termsReview": "Link and original short description only; address checked on official page; no hours or service guarantee."
     },
@@ -124,7 +170,11 @@
       "summary": "Browse Government of British Columbia engagement opportunities and check each project for participation details.",
       "url": "https://engage.gov.bc.ca/govtogetherbc",
       "publisher": "Government of British Columbia",
-      "jurisdiction": { "level": "provincial", "code": "CA-BC", "name": "British Columbia" },
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-BC",
+        "name": "British Columbia"
+      },
       "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
       "termsReview": "Link and original short description only; no individual engagement or opening status copied."
     },
@@ -135,7 +185,11 @@
       "summary": "Find Ontario environmental proposals and notices, then check the official notice for comment options and dates.",
       "url": "https://ero.ontario.ca/",
       "publisher": "Government of Ontario",
-      "jurisdiction": { "level": "provincial", "code": "CA-ON", "name": "Ontario" },
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-ON",
+        "name": "Ontario"
+      },
       "termsUrl": "https://www.ontario.ca/page/terms-use",
       "termsReview": "Ontario welcomes linking; original short description only; no individual comment period or deadline claimed."
     },
@@ -146,9 +200,336 @@
       "summary": "Browse City of Toronto engagement projects and check each project page for ways to participate.",
       "url": "https://haveyoursay.toronto.ca/",
       "publisher": "City of Toronto",
-      "jurisdiction": { "level": "municipal", "code": "CA-ON-TOR", "name": "Toronto, Ontario", "municipalityCode": "CA-ON-TOR", "municipalityName": "Toronto" },
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-ON-TOR",
+        "name": "Toronto, Ontario",
+        "municipalityCode": "CA-ON-TOR",
+        "municipalityName": "Toronto"
+      },
       "termsUrl": "https://haveyoursay.toronto.ca/",
       "termsReview": "Link and original short description only; engagement status remains on official project page."
+    },
+    {
+      "id": "ottawa-city-jobs",
+      "area": "jobs",
+      "kind": "jobs_finder",
+      "title": "City of Ottawa jobs",
+      "summary": "Browse City of Ottawa career opportunities and continue to the official application site.",
+      "url": "https://ottawa.ca/jobs",
+      "publisher": "City of Ottawa",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-ON-OTT",
+        "name": "Ottawa, Ontario",
+        "municipalityCode": "CA-ON-OTT",
+        "municipalityName": "Ottawa"
+      },
+      "termsUrl": "https://ottawa.ca/en/terms-use/disclaimer",
+      "termsReview": "Link and original short description only; no job listings copied or opening status claimed.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "vancouver-city-jobs",
+      "area": "jobs",
+      "kind": "jobs_finder",
+      "title": "City of Vancouver jobs",
+      "summary": "Find the City of Vancouver career entry point for external applicants.",
+      "url": "https://vancouver.ca/your-government/work-for-the-city-of-vancouver.aspx",
+      "publisher": "City of Vancouver",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-BC-VAN",
+        "name": "Vancouver, British Columbia",
+        "municipalityCode": "CA-BC-VAN",
+        "municipalityName": "Vancouver"
+      },
+      "termsUrl": "https://vancouver.ca/your-government/terms-of-use.aspx",
+      "termsReview": "Link and original short description only; Vancouver terms restrict reuse of site material.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "calgary-city-jobs",
+      "area": "jobs",
+      "kind": "jobs_finder",
+      "title": "City of Calgary careers",
+      "summary": "Explore City of Calgary career paths and follow the official page for current job postings.",
+      "url": "https://www.calgary.ca/careers.html",
+      "publisher": "City of Calgary",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-AB-CGY",
+        "name": "Calgary, Alberta",
+        "municipalityCode": "CA-AB-CGY",
+        "municipalityName": "Calgary"
+      },
+      "termsUrl": "https://www.calgary.ca/info-requests/terms-of-use.html",
+      "termsReview": "Link and original short description only; no vacancy details reproduced.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "winnipeg-city-jobs",
+      "area": "jobs",
+      "kind": "jobs_finder",
+      "title": "City of Winnipeg careers",
+      "summary": "Find current City of Winnipeg postings through the official careers page.",
+      "url": "https://www.winnipeg.ca/careers",
+      "publisher": "City of Winnipeg",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-MB-WPG",
+        "name": "Winnipeg, Manitoba",
+        "municipalityCode": "CA-MB-WPG",
+        "municipalityName": "Winnipeg"
+      },
+      "termsUrl": "https://www.winnipeg.ca/connect/conditions-use",
+      "termsReview": "Link and original short description only; no job listing content copied.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "alberta-scholarships",
+      "area": "funding",
+      "kind": "funding_finder",
+      "title": "Alberta Student Aid scholarships",
+      "summary": "Browse provincial scholarships and awards through Alberta Student Aid; check each award page for requirements and application details.",
+      "url": "https://studentaid.alberta.ca/scholarships/?c=all",
+      "publisher": "Alberta Student Aid",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-AB",
+        "name": "Alberta"
+      },
+      "termsUrl": "https://www.alberta.ca/disclaimer",
+      "termsReview": "Link and original short description only; Alberta.ca material is not reproduced.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "alberta-rutherford-scholarship",
+      "area": "funding",
+      "title": "Alexander Rutherford Scholarship",
+      "summary": "Review Alberta Student Aid information about the Alexander Rutherford high school achievement scholarship.",
+      "url": "https://studentaid.alberta.ca/scholarships-and-awards/alexander-rutherford-scholarship/",
+      "publisher": "Alberta Student Aid",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-AB",
+        "name": "Alberta"
+      },
+      "termsUrl": "https://www.alberta.ca/disclaimer",
+      "termsReview": "Link and original short description only; eligibility and application status remain on publisher site.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "saskatchewan-student-aid",
+      "area": "funding",
+      "title": "Saskatchewan Student Loans and Grants",
+      "summary": "Explore provincial and federal loans and grants available through Saskatchewan Student Aid.",
+      "url": "https://www.saskatchewan.ca/residents/education-and-learning/saskatchewan-student-aid/student-loans-and-grants",
+      "publisher": "Government of Saskatchewan",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-SK",
+        "name": "Saskatchewan"
+      },
+      "termsUrl": "https://www.saskatchewan.ca/en/Terms-of-Use",
+      "termsReview": "Link and original short description only; Saskatchewan requires permission to reproduce site content.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "nova-scotia-scholarships",
+      "area": "funding",
+      "kind": "funding_finder",
+      "title": "Nova Scotia government scholarships and bursaries",
+      "summary": "Browse the Government of Nova Scotia directory of scholarship and bursary programs.",
+      "url": "https://novascotia.ca/studentassistance/financing/scholarships.asp",
+      "publisher": "Government of Nova Scotia",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-NS",
+        "name": "Nova Scotia"
+      },
+      "termsUrl": "https://www.novascotia.ca/terms",
+      "termsReview": "Link and original short description only; no award details or availability copied.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "quebec-student-aid",
+      "area": "funding",
+      "kind": "funding_finder",
+      "title": "Québec student financial assistance",
+      "summary": "Find Québec loans, bursaries, and other student financial assistance through the provincial portal.",
+      "url": "https://www.quebec.ca/en/education/student-financial-assistance",
+      "publisher": "Gouvernement du Québec",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-QC",
+        "name": "Québec"
+      },
+      "termsUrl": "https://www.quebec.ca/en/copyright",
+      "termsReview": "Link and original short description only; Québec prohibits reproduction of copyrighted materials without authorization.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "calgary-engage",
+      "area": "participation",
+      "title": "Engage Calgary",
+      "summary": "Browse City of Calgary public engagement projects and check each project page for ways to provide input.",
+      "url": "https://engage.calgary.ca/",
+      "publisher": "City of Calgary",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-AB-CGY",
+        "name": "Calgary, Alberta",
+        "municipalityCode": "CA-AB-CGY",
+        "municipalityName": "Calgary"
+      },
+      "termsUrl": "https://www.calgary.ca/info-requests/terms-of-use.html",
+      "termsReview": "Link and original short description only; no individual consultation opening or deadline copied.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "winnipeg-engage",
+      "area": "participation",
+      "title": "Engage Winnipeg",
+      "summary": "Explore City of Winnipeg public engagement projects and check each project for participation details.",
+      "url": "https://engage.winnipeg.ca/",
+      "publisher": "City of Winnipeg",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-MB-WPG",
+        "name": "Winnipeg, Manitoba",
+        "municipalityCode": "CA-MB-WPG",
+        "municipalityName": "Winnipeg"
+      },
+      "termsUrl": "https://engage.winnipeg.ca/privacy",
+      "termsReview": "The official engagement site terms and privacy page was reviewed; link and original summary only, with no project status copied.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "vancouver-public-engagement",
+      "area": "participation",
+      "title": "Vancouver public engagement",
+      "summary": "Find City of Vancouver opportunities to share views on plans, projects, and services.",
+      "url": "https://vancouver.ca/your-government/public-engagement.aspx",
+      "publisher": "City of Vancouver",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-BC-VAN",
+        "name": "Vancouver, British Columbia",
+        "municipalityCode": "CA-BC-VAN",
+        "municipalityName": "Vancouver"
+      },
+      "termsUrl": "https://vancouver.ca/your-government/terms-of-use.aspx",
+      "termsReview": "Link and original short description only; Vancouver terms restrict reuse of site material.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "alberta-supports-calgary-east",
+      "area": "nearby",
+      "kind": "service_location",
+      "title": "Alberta Supports — Calgary East",
+      "summary": "Alberta Supports centre at 2752 Sunridge Way NE, Calgary. Check the official page for services and hours before visiting.",
+      "url": "https://www.alberta.ca/find-an-alberta-supports-centre",
+      "publisher": "Government of Alberta",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-AB-CGY",
+        "name": "Calgary, Alberta",
+        "municipalityCode": "CA-AB-CGY",
+        "municipalityName": "Calgary"
+      },
+      "coordinates": {
+        "latitude": 51.072353,
+        "longitude": -113.997874
+      },
+      "termsUrl": "https://www.alberta.ca/disclaimer",
+      "termsReview": "Official address and coordinates checked; link metadata and original summary only; hours and services remain on publisher site.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "alberta-supports-edmonton-central",
+      "area": "nearby",
+      "kind": "service_location",
+      "title": "Alberta Supports — Edmonton Central",
+      "summary": "Alberta Supports centre at 10242 105 Street, Edmonton. Check the official page for services and hours before visiting.",
+      "url": "https://www.alberta.ca/find-an-alberta-supports-centre",
+      "publisher": "Government of Alberta",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-AB-EDM",
+        "name": "Edmonton, Alberta",
+        "municipalityCode": "CA-AB-EDM",
+        "municipalityName": "Edmonton"
+      },
+      "coordinates": {
+        "latitude": 53.543947,
+        "longitude": -113.501156
+      },
+      "termsUrl": "https://www.alberta.ca/disclaimer",
+      "termsReview": "Official address and coordinates checked; link metadata and original summary only; hours and services remain on publisher site.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "alberta-supports-canmore",
+      "area": "nearby",
+      "kind": "service_location",
+      "title": "Alberta Supports — Canmore",
+      "summary": "Alberta Supports centre at 800 Railway Avenue, Canmore. Check the official page for services and hours before visiting.",
+      "url": "https://www.alberta.ca/find-an-alberta-supports-centre",
+      "publisher": "Government of Alberta",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-AB-CNM",
+        "name": "Canmore, Alberta",
+        "municipalityCode": "CA-AB-CNM",
+        "municipalityName": "Canmore"
+      },
+      "coordinates": {
+        "latitude": 51.0899986,
+        "longitude": -115.353187
+      },
+      "termsUrl": "https://www.alberta.ca/disclaimer",
+      "termsReview": "Official address and coordinates checked; link metadata and original summary only; hours and services remain on publisher site.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
+    },
+    {
+      "id": "alberta-supports-grande-prairie",
+      "area": "nearby",
+      "kind": "service_location",
+      "title": "Alberta Supports — Grande Prairie",
+      "summary": "Alberta Supports centre at 9845 99 Avenue, Grande Prairie. Check the official page for services and hours before visiting.",
+      "url": "https://www.alberta.ca/find-an-alberta-supports-centre",
+      "publisher": "Government of Alberta",
+      "jurisdiction": {
+        "level": "municipal",
+        "code": "CA-AB-GP",
+        "name": "Grande Prairie, Alberta",
+        "municipalityCode": "CA-AB-GP",
+        "municipalityName": "Grande Prairie"
+      },
+      "coordinates": {
+        "latitude": 55.169772,
+        "longitude": -118.791471
+      },
+      "termsUrl": "https://www.alberta.ca/disclaimer",
+      "termsReview": "Official address and coordinates checked; link metadata and original summary only; hours and services remain on publisher site.",
+      "checkedAt": "2026-09-26T19:50:00.000Z",
+      "expiresAt": "2026-10-03T19:50:00.000Z"
     }
   ]
 }
