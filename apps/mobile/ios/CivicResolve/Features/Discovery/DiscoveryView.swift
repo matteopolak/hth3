@@ -17,6 +17,29 @@ private enum DiscoveryArea: String, CaseIterable, Identifiable {
     }
 }
 
+private struct DiscoveryLocation: Identifiable {
+    let code: String
+    let key: String
+    var id: String { code }
+
+    static let all: [DiscoveryLocation] = [
+        .init(code: "", key: "allCanada"),
+        .init(code: "CA-AB", key: "alberta"),
+        .init(code: "CA-BC", key: "britishColumbia"),
+        .init(code: "CA-MB", key: "manitoba"),
+        .init(code: "CA-NB", key: "newBrunswick"),
+        .init(code: "CA-NL", key: "newfoundlandLabrador"),
+        .init(code: "CA-NT", key: "northwestTerritories"),
+        .init(code: "CA-NS", key: "novaScotia"),
+        .init(code: "CA-NU", key: "nunavut"),
+        .init(code: "CA-ON", key: "ontario"),
+        .init(code: "CA-PE", key: "princeEdwardIsland"),
+        .init(code: "CA-QC", key: "quebec"),
+        .init(code: "CA-SK", key: "saskatchewan"),
+        .init(code: "CA-YT", key: "yukon"),
+    ]
+}
+
 struct DiscoveryView: View {
     @EnvironmentObject private var model: CivicResolveModel
     @State private var area: DiscoveryArea = .all
@@ -24,6 +47,7 @@ struct DiscoveryView: View {
     @State private var jurisdiction = ""
     @State private var currentOnly = false
     @State private var includeSamples = false
+    @State private var showOptions = false
     @State private var items: [DiscoveryItem] = []
     @State private var saved: [DiscoverySavedItem] = []
     @State private var total = 0
@@ -34,7 +58,7 @@ struct DiscoveryView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
                         ForEach(DiscoveryArea.allCases) { option in
@@ -65,18 +89,46 @@ struct DiscoveryView: View {
                     .background(.white, in: RoundedRectangle(cornerRadius: 12))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(CivicTheme.border))
 
-                    HStack {
-                        TextField(text("discovery.jurisdictionHint"), text: $jurisdiction)
-                            .textInputAutocapitalization(.characters)
-                            .submitLabel(.search)
-                            .onSubmit { Task { await refresh() } }
-                        Button(text("discovery.search")) { Task { await refresh() } }
-                            .buttonStyle(.bordered)
+                    HStack(spacing: 12) {
+                        Menu {
+                            ForEach(DiscoveryLocation.all) { location in
+                                Button {
+                                    jurisdiction = location.code
+                                    Task { await refresh() }
+                                } label: {
+                                    if jurisdiction == location.code {
+                                        Label(text("discovery.location.\(location.key)"), systemImage: "checkmark")
+                                    } else {
+                                        Text(text("discovery.location.\(location.key)"))
+                                    }
+                                }
+                            }
+                        } label: {
+                            Label(locationLabel, systemImage: "mappin.and.ellipse")
+                                .lineLimit(1)
+                        }
+                        .accessibilityLabel(text("discovery.locationLabel"))
+                        Spacer()
+                        Button { withAnimation { showOptions.toggle() } } label: {
+                            Label(text("discovery.options"), systemImage: "slider.horizontal.3")
+                        }
+                        .accessibilityValue(showOptions ? text("discovery.expanded") : text("discovery.collapsed"))
                     }
-                    Toggle(text("discovery.currentOnly"), isOn: $currentOnly)
-                        .onChange(of: currentOnly) { _, _ in Task { await refresh() } }
-                    Toggle(text("discovery.practice"), isOn: $includeSamples)
-                        .onChange(of: includeSamples) { _, _ in Task { await refresh() } }
+                    .font(.subheadline)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(CivicTheme.muted)
+                    if showOptions {
+                        VStack(spacing: 8) {
+                            Toggle(text("discovery.currentOnly"), isOn: $currentOnly)
+                                .onChange(of: currentOnly) { _, _ in Task { await refresh() } }
+                            Toggle(text("discovery.practice"), isOn: $includeSamples)
+                                .onChange(of: includeSamples) { _, _ in Task { await refresh() } }
+                        }
+                        .font(.subheadline)
+                        .padding(14)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(CivicTheme.border))
+                    }
                     if area == .nearby {
                         Picker(text("discovery.view"), selection: $mapMode) {
                             Text(text("discovery.list")).tag(false)
@@ -95,10 +147,28 @@ struct DiscoveryView: View {
                     NearbyMapView(items: items)
                 }
                 let visible = area == .saved ? saved.map(\.item) : items
-                if !loading && visible.isEmpty && error == nil {
-                    Text(text(area == .saved ? "discovery.noSaved" : "discovery.noResults"))
-                        .foregroundStyle(CivicTheme.muted)
-                        .padding(.vertical, 24)
+                if !loading && !visible.isEmpty {
+                    HStack {
+                        Text(text(area == .saved ? "discovery.savedHeading" : "discovery.sourcesHeading"))
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Text(resultCount)
+                            .font(.caption).foregroundStyle(CivicTheme.muted)
+                    }
+                    .padding(.top, 6)
+                }
+                if !loading && visible.isEmpty && error == nil && !(area == .saved && model.accessToken == nil) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Image(systemName: area == .saved ? "bookmark" : "magnifyingglass")
+                            .font(.title3).foregroundStyle(CivicTheme.muted)
+                        Text(text(area == .saved ? "discovery.noSaved" : "discovery.noResults"))
+                            .font(.subheadline.weight(.semibold))
+                        if area != .all && area != .saved {
+                            Button(text("discovery.showAll")) { area = .all; Task { await refresh() } }
+                                .font(.subheadline)
+                        }
+                    }
+                    .padding(.vertical, 24)
                 }
                 if !(area == .nearby && mapMode) {
                     LazyVStack(spacing: 10) {
@@ -107,24 +177,28 @@ struct DiscoveryView: View {
                                 DiscoveryDetailView(itemID: item.id, includeSamples: includeSamples)
                             } label: {
                                 VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Text(item.publisher)
+                                        Spacer(minLength: 8)
+                                        if item.freshness != "current" {
+                                            Label(text("discovery.checkSource"), systemImage: "clock")
+                                        }
+                                    }
+                                    .font(.caption).foregroundStyle(CivicTheme.muted)
                                     HStack(alignment: .top) {
                                         Text(item.title).font(.headline).foregroundStyle(CivicTheme.ink)
                                         Spacer(minLength: 6)
                                         Image(systemName: "chevron.right").font(.caption).foregroundStyle(CivicTheme.muted)
                                     }
-                                    Text(item.summary).font(.subheadline).foregroundStyle(CivicTheme.muted).lineLimit(3)
-                                    HStack(spacing: 8) {
-                                        Text(item.publisher)
-                                        Text("·")
-                                        Text(item.jurisdiction.name)
-                                    }
-                                    .font(.caption).foregroundStyle(CivicTheme.muted)
+                                    Text(item.summary).font(.subheadline).foregroundStyle(CivicTheme.muted).lineLimit(2)
+                                    Text(item.jurisdiction.name)
+                                        .font(.caption).foregroundStyle(CivicTheme.muted)
                                     if item.origin == "sample" {
                                         Label(text("discovery.practiceLabel"), systemImage: "info.circle")
                                             .font(.caption).foregroundStyle(CivicTheme.warning)
                                     }
                                 }
-                                .padding(15)
+                                .padding(14)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(.white, in: RoundedRectangle(cornerRadius: 14))
                                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(CivicTheme.border))
@@ -143,6 +217,7 @@ struct DiscoveryView: View {
             .frame(maxWidth: .infinity)
         }
         .background(CivicTheme.canvas)
+        .navigationBarTitleDisplayMode(.inline)
         .task { await refresh() }
         .onChange(of: model.accessToken) { _, _ in Task { await refresh() } }
     }
@@ -179,6 +254,21 @@ struct DiscoveryView: View {
     }
 
     private func text(_ key: String) -> String { model.copy(key) }
+
+    private var locationLabel: String {
+        let location = DiscoveryLocation.all.first { $0.code == jurisdiction } ?? DiscoveryLocation.all[0]
+        return text("discovery.location.\(location.key)")
+    }
+
+    private var resultCount: String {
+        if area == .saved {
+            return "\(saved.count) \(text(saved.count == 1 ? "discovery.savedOne" : "discovery.savedMany"))"
+        }
+        if items.count < total {
+            return "\(items.count) \(text("discovery.of")) \(total)"
+        }
+        return "\(total) \(text(total == 1 ? "discovery.sourceOne" : "discovery.sourceMany"))"
+    }
 }
 
 struct DiscoveryDetailView: View {
