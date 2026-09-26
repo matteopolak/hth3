@@ -896,7 +896,11 @@ function chatPage(mode: ChatMode): HTMLElement {
   const input = el("textarea", "chat-input") as HTMLTextAreaElement;
   input.rows = 3;
   input.maxLength = 4000;
-  input.placeholder = t(mode === "employee" ? "assistant.staffPlaceholder" : "assistant.placeholder");
+  input.placeholder = t(mode === "resident" ? "assistant.placeholder"
+    : staffSummary?.capabilities.sourceManage && !staffSummary.capabilities.feedbackRead ? "assistant.staffCuratorPlaceholder"
+      : staffSummary?.capabilities.applicantReview && !staffSummary.capabilities.feedbackRead ? "assistant.staffHiringPlaceholder"
+        : staffSummary?.capabilities.feedbackRead && !staffSummary.capabilities.applicantReview ? "assistant.staffFeedbackPlaceholder"
+          : "assistant.staffPlaceholder");
   input.setAttribute("aria-label", input.placeholder);
   input.value = chat.draft;
   input.addEventListener("input", () => (chat.draft = input.value));
