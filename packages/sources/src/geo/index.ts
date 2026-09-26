@@ -91,6 +91,7 @@ export function serviceLocationView(
   const reviewCurrent =
     validDate(metadata?.details_verified_at) &&
     Date.parse(metadata!.details_verified_at!) <= now.getTime() &&
+    (record.verified || record.origin === "sample") &&
     (record.sourceId === "service-bc-office-locations"
       ? now.getTime() < Date.parse(BC_REVIEW_EXPIRES_AT)
       : validDate(record.expiresAt) &&
