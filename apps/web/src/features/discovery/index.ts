@@ -585,7 +585,10 @@ export function createDiscoveryPage({
         locale,
         onBrowse: () => {
           const search = root.querySelector<HTMLInputElement>(".discovery-input");
-          search?.scrollIntoView({ block: "center", behavior: "smooth" });
+          search?.scrollIntoView({
+            block: "center",
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+          });
           search?.focus();
         },
         onSearchLocation: (nextLocation) => {
