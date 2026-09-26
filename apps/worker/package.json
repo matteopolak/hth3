@@ -13,7 +13,9 @@
   "dependencies": {
     "@civicresolve/contracts": "workspace:*",
     "@civicresolve/db": "workspace:*",
-    "@civicresolve/domain": "workspace:*"
+    "@civicresolve/domain": "workspace:*",
+    "@civicresolve/sources": "workspace:*",
+    "postgres": "3.4.7"
   },
   "devDependencies": {
     "wrangler": "4.113.0"

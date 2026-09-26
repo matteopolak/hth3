@@ -33,6 +33,7 @@ interface DailyRow {
 interface FeedbackMetadata {
   sample: number;
   category: string;
+  intent: string | null;
   municipality_csd_uid: string | null;
 }
 
@@ -183,14 +184,15 @@ export async function deliverFeedbackOutbox(
           unknown
         >;
         const feedback = await env.DB.prepare(
-          `SELECT sample, category, municipality_csd_uid
+          `SELECT sample, COALESCE(category_id, category) AS category,
+             intent, municipality_csd_uid
            FROM feedback_submissions WHERE id = ? AND organization_id = ?`,
         )
           .bind(event.aggregate_id, event.organization_id)
           .first<FeedbackMetadata>();
         if (!feedback) throw new Error("Feedback metadata is unavailable.");
-        const category = stringValue(payload.category, feedback.category);
-        const intent = stringValue(payload.intent, "unclassified");
+        const category = feedback.category;
+        const intent = stringValue(feedback.intent, "unclassified");
         const municipality = stringValue(
           payload.municipalityCsdUid,
           feedback.municipality_csd_uid,

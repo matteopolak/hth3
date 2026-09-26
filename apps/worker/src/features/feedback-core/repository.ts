@@ -6,7 +6,9 @@ import type {
 } from "./types.js";
 
 const FEEDBACK_SELECT = `
-  SELECT f.id, f.original_text, f.constructive_follow_up, f.category,
+  SELECT f.id, f.original_text, f.constructive_follow_up,
+    COALESCE(f.category_id, f.category) AS category,
+    f.intent, f.classification_review_status,
     f.municipality_csd_uid, m.name AS municipality_name,
     m.province_name, f.status, f.receipt_token_hash,
     COALESCE(d.routing_label, f.department_name) AS department_name,

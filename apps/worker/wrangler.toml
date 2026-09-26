@@ -1,19 +1,48 @@
 name = "civicresolve-api"
 main = "src/platform/index.ts"
 compatibility_date = "2026-07-28"
+compatibility_flags = ["nodejs_compat"]
 workers_dev = true
+
+[ai]
+binding = "AI"
 
 [vars]
 APP_ENV = "development"
 DEV_AUTH_ENABLED = "false"
 AUTH0_DOMAIN = "dev-ole6i03kzvf3yb8z.us.auth0.com"
 AUTH0_AUDIENCE = "https://civicresolve.example/api"
+ELEVENLABS_AGENT_ID = "agent_5801m3fcxxsfez68g5v7gr22fzky"
 
 [env.production.vars]
 APP_ENV = "production"
 DEV_AUTH_ENABLED = "false"
 AUTH0_DOMAIN = "dev-ole6i03kzvf3yb8z.us.auth0.com"
 AUTH0_AUDIENCE = "https://civicresolve.example/api"
+ELEVENLABS_AGENT_ID = "agent_5801m3fcxxsfez68g5v7gr22fzky"
+
+[env.production]
+compatibility_flags = ["nodejs_compat"]
+
+[env.production.ai]
+binding = "AI"
+
+[[env.production.hyperdrive]]
+binding = "HYPERDRIVE"
+id = "d9c7e05b5ab547be9355ac1e0085dae6"
+
+[env.production.triggers]
+crons = ["*/5 * * * *"]
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "civicresolve-prod"
+database_id = "63318ca9-4000-4713-b72e-364429251d21"
+migrations_dir = "../../packages/db/migrations"
+
+[[env.production.r2_buckets]]
+binding = "PRIVATE_ASSETS"
+bucket_name = "civicresolve-private-prod"
 
 [[d1_databases]]
 binding = "DB"

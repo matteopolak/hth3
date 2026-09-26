@@ -1,5 +1,5 @@
 {
-  "name": "civicresolve",
+  "name": "envoy",
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@12.6.0",
@@ -7,7 +7,7 @@
     "node": ">=22.14.0"
   },
   "scripts": {
-    "lint": "prettier --check .github/workflows/check.yml apps/worker packages/config packages/contracts packages/db packages/domain packages/i18n packages/design-tokens package.json pnpm-workspace.yaml tsconfig.json docs/README.md docs/workspace-and-ci.md docs/shared-contracts-and-locales.md docs/worker-platform.md docs/authorization.md docs/applications.md docs/guest-feedback.md",
+    "lint": "prettier --check .github/workflows/check.yml apps/worker apps/web packages/config packages/contracts packages/db packages/domain packages/i18n packages/sources packages/design-tokens package.json pnpm-workspace.yaml tsconfig.json docs",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm exec vitest run",
     "build": "pnpm -r --if-present build",

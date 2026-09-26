@@ -54,7 +54,9 @@ export interface FeedbackRow {
   updated_at: string;
   original_text?: string;
   constructive_follow_up?: string | null;
-  category?: FeedbackCategory;
+  category?: string;
+  intent?: string | null;
+  classification_review_status?: string | null;
   municipality_csd_uid?: string | null;
   municipality_name?: string | null;
   province_name?: string | null;

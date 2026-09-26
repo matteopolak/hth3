@@ -2,7 +2,7 @@
 
 ## What it is
 
-The Cloudflare Worker is the server boundary for CivicResolve. D1 stores transactional records and an idempotent event outbox; R2 is bound as a private object store whose keys and reads are scoped to a resource, organization, and owner.
+The Cloudflare Worker is the server boundary for Envoy. D1 stores transactional records and an idempotent event outbox; R2 is bound as a private object store whose keys and reads are scoped to a resource, organization, and owner.
 
 ## How it works
 
@@ -10,7 +10,7 @@ The Cloudflare Worker is the server boundary for CivicResolve. D1 stores transac
 
 Private R2 keys include purpose, organization, owner, record, and asset IDs. The read helper checks all of those values against the authorization grant before it calls R2; the bucket has no public URL binding. Authorization middleware must establish the grant from the caller and the database before using this helper.
 
-The seeded Auth0 organization is `CivicResolve Toronto Sandbox (Fictional, unaffiliated)`, with geography Toronto, Ontario and `sample = 1`. Its sample posting says it is not an official City of Toronto or government vacancy. These records exercise the internal workflow and do not claim a government partner.
+The seeded organization is internally marked `sample = 1` and `unverified`, with Toronto, Ontario geography. Migration `0010_posting_copy.sql` gives its display name and posting natural copy; the UI keeps an explicit practice disclosure at the record and submission action. These records exercise the internal workflow and do not claim a government partner.
 
 Worker authentication is implemented in `apps/worker/src/auth/`. Auth0 JWT validation, exact role and API-permission checks, and the required intersection with D1 organization membership are described in [Auth0 and organization authorization](authorization.md). Applicant ownership is based on the token subject and does not require membership in an employer organization.
 
@@ -24,16 +24,20 @@ Add a forward-only migration for schema changes and update package-level D1 help
 
 - `apps/worker/wrangler.toml`: Worker entrypoint, runtime-supported compatibility date, D1/R2 bindings, and local `APP_ENV`.
 - `compatibility_date`: pinned to `2026-07-28`, the latest date supported by the Wrangler 4.113.0 bundled local workerd. Keep it there until an age-eligible Wrangler release supports a newer runtime date; do not bypass the workspace release-age policy to move it forward.
-- `DB`: Cloudflare D1 transactional binding. Replace the local placeholder `database_id` with the account's configured database ID before remote deployment.
-- `PRIVATE_ASSETS`: private R2 bucket binding; provision a bucket with a matching configured name for remote use.
+- `DB`: Cloudflare D1 transactional binding. The default local binding uses a placeholder ID; `env.production` points to the provisioned `civicresolve-prod` database.
+- `PRIVATE_ASSETS`: private R2 bucket binding. The default local bucket name is for local development; `env.production` points to `civicresolve-private-prod`.
 - Migration `0002_feedback_organization.sql`: attaches guest feedback submissions to the destination organization so civic staff access is tenant-scoped.
-- Production provisioning for later deployment: D1 database `civicresolve-prod` (`63318ca9-4000-4713-b72e-364429251d21`, ENAM) and private R2 bucket `civicresolve-private-prod`. The checked-in Wrangler binding remains local.
-- Tiger is provisioned behind Hyperdrive configuration `d9c7e05b5ab547be9355ac1e0085dae6`; the later integration will bind it as `HYPERDRIVE`. No database password is stored in this repository.
+- Production provisioning for later deployment: D1 database `civicresolve-prod` (`63318ca9-4000-4713-b72e-364429251d21`, ENAM) and private R2 bucket `civicresolve-private-prod`. Wrangler has explicit production bindings; deployment and remote migrations are separate steps.
+- `AI`: Workers AI binding used by resident/staff agents and feedback classification. The selected Granite Micro model stays within the account's no-charge allocation.
+- `HYPERDRIVE`: production Tiger Data connection for five-minute outbox delivery and scoped analytics. Apply `scripts/tiger/001_feedback_analytics.sql` to Tiger before expecting analytics.
+- `ELEVENLABS_AGENT_ID`: nonsecret ID of the private voice intake agent. `ELEVENLABS_API_KEY` is a Worker secret needed to sign browser sessions; the current OAuth CLI token cannot serve as that key.
+- The production cron runs every five minutes for Tiger delivery and invokes official source ingestion once daily at 02:00 UTC. See [Official source ingestion](data/official-ingestion.md).
 - `ALLOWED_ORIGINS`: comma-separated origins accepted by API CORS. Local development permits localhost web/mobile origins when this is unset.
+- `FEEDBACK_ABUSE_HMAC_KEY`: at least 32 characters, stored as a Worker secret in production. Guest feedback writes fail closed when it is missing; the local smoke injects a fixed test-only key.
 - `APP_ENV`: `development` enables only the local smoke harness; production must use `production`.
 - Auth0's public issuer host and API audience are configured as non-secret Wrangler vars. Role grants and active organization membership are checked on the Worker; see [authorization configuration](authorization.md).
 - Wrangler local state and logs are stored under `apps/worker/.wrangler/` and ignored by Git.
 
 ## Dependencies
 
-The Worker depends on shared v1 contracts, the `@civicresolve/db` D1/R2 helpers, `@civicresolve/domain/permissions`, Wrangler, Cloudflare Workers, D1, and R2. Tiger delivery is a later integration; this outbox does not claim that a local event reached Tiger. The later Tiger connection is provisioned outside the repository and will be exposed to the Worker through a `HYPERDRIVE` binding for the dedicated provider issue; it is not required for this local foundation gate.
+The Worker depends on shared v1 contracts, `@civicresolve/db`, `@civicresolve/domain`, `@civicresolve/sources`, the `postgres` driver, Wrangler, Cloudflare Workers, D1, R2, Workers AI, and optional Tiger/ElevenLabs provider bindings. A local outbox event does not establish live Tiger delivery; that requires the remote schema, Worker deployment, and a confirmed event round trip.

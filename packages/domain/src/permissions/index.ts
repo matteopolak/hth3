@@ -27,6 +27,8 @@ export const OWNER_ACTIONS = [
   "application:create_own",
   "application:read_own",
   "application:submit_own",
+  "profile:read_own",
+  "profile:write_own",
 ] as const;
 
 export const DOMAIN_ACTIONS = [
@@ -44,6 +46,8 @@ export const API_PERMISSIONS = [
   "read:applications",
   "write:applications",
   "submit:applications",
+  "read:profile",
+  "write:profile",
   "review:applications",
   "manage:postings",
   "read:feedback",
@@ -67,6 +71,8 @@ const ROLE_PERMISSIONS: Record<DomainRole, readonly DomainAction[]> = {
     "application:create_own",
     "application:read_own",
     "application:submit_own",
+    "profile:read_own",
+    "profile:write_own",
   ],
   civic_staff: ["feedback:read_organization", "feedback:respond_organization"],
   hiring_reviewer: [
@@ -88,6 +94,8 @@ const ACTION_SCOPES: Record<DomainAction, ApiPermission> = {
   "application:create_own": "write:applications",
   "application:read_own": "read:applications",
   "application:submit_own": "submit:applications",
+  "profile:read_own": "read:profile",
+  "profile:write_own": "write:profile",
   "application:read_organization": "read:applications",
   "application:review_organization": "review:applications",
   "posting:manage_organization": "manage:postings",

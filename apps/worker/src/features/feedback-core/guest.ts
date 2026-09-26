@@ -5,6 +5,7 @@ import {
   canTransitionFeedback,
   isFeedbackCategory,
 } from "@civicresolve/domain/feedback";
+import { classifyFeedbackSubmission } from "../taxonomy/classification.js";
 import {
   featureError,
   featureJson,
@@ -143,8 +144,8 @@ async function createGuestFeedback(
       context,
       "SANDBOX_ACK_REQUIRED",
       locale === "fr"
-        ? "Confirmez que ce message sera envoyé uniquement à la boîte fictive de CivicResolve à Toronto."
-        : "Confirm that this message will go only to CivicResolve’s fictional Toronto sandbox queue.",
+        ? "Confirmez que ce message sera envoyé uniquement à la boîte d'essai d'Envoy à Toronto."
+        : "Confirm that this message will go only to Envoy's practice queue in Toronto.",
       409,
     );
   }
@@ -369,6 +370,10 @@ async function createGuestFeedback(
   );
   const savedId = (persisted as IdempotentFeedbackResponse | null)
     ?.submissionId;
+  if (savedId)
+    await classifyFeedbackSubmission(database, context.env.AI, savedId).catch(
+      () => null,
+    );
   const receipt = savedId
     ? await getReceiptByToken(database, savedId, tokenHash)
     : null;
@@ -792,6 +797,8 @@ function guestReceiptView(
     originalText: feedback.original_text ?? "",
     constructiveFollowUp: feedback.constructive_follow_up ?? null,
     category: feedback.category ?? "other_or_unsure",
+    intent: feedback.intent ?? null,
+    classificationReviewStatus: feedback.classification_review_status ?? null,
     municipality: feedback.municipality_csd_uid
       ? {
           id: feedback.municipality_csd_uid,

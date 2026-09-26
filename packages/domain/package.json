@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    "./permissions": "./src/permissions/index.ts"
+    "./permissions": "./src/permissions/index.ts",
+    "./profile": "./src/profile/index.ts",
+    "./feedback": "./src/feedback/index.ts",
+    "./taxonomy": "./src/taxonomy/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

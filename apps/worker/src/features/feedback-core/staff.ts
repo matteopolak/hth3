@@ -126,7 +126,9 @@ async function listStaffFeedback(
   context: FeedbackContext,
 ): Promise<Response> {
   const rows = await context.env.DB.prepare(
-    `SELECT f.id, f.original_text, f.constructive_follow_up, f.category,
+    `SELECT f.id, f.original_text, f.constructive_follow_up,
+      COALESCE(f.category_id, f.category) AS category,
+      f.intent, f.classification_review_status,
       f.municipality_csd_uid, m.name AS municipality_name,
       m.province_name, f.status,
       COALESCE(d.routing_label, f.department_name) AS department_name,
@@ -150,6 +152,8 @@ async function listStaffFeedback(
       originalText: row.original_text,
       constructiveFollowUp: row.constructive_follow_up ?? null,
       category: row.category,
+      intent: row.intent ?? null,
+      classificationReviewStatus: row.classification_review_status ?? null,
       municipality: row.municipality_csd_uid
         ? {
             id: row.municipality_csd_uid,
@@ -491,6 +495,8 @@ function staffFeedbackView(
     originalText: row.original_text ?? "",
     constructiveFollowUp: row.constructive_follow_up ?? null,
     category: row.category ?? "other_or_unsure",
+    intent: row.intent ?? null,
+    classificationReviewStatus: row.classification_review_status ?? null,
     municipality: row.municipality_csd_uid
       ? {
           id: row.municipality_csd_uid,

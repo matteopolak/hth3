@@ -3,11 +3,20 @@ import {
   IdempotencyConflictError,
   type D1Database,
   type D1PreparedStatement,
+  type R2Bucket,
 } from "@civicresolve/db/d1";
 import type { AuthEnvironment } from "../auth/identity.js";
+import type { AiBinding } from "./agents/types.js";
 
 export interface FeatureContext {
-  env: AuthEnvironment;
+  env: AuthEnvironment & {
+    PRIVATE_ASSETS: R2Bucket;
+    FEEDBACK_ABUSE_HMAC_KEY?: string;
+    AI?: AiBinding;
+    HYPERDRIVE?: { connectionString: string };
+    ELEVENLABS_API_KEY?: string;
+    ELEVENLABS_AGENT_ID?: string;
+  };
   requestId: string;
   cors: Headers;
 }

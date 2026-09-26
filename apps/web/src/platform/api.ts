@@ -2,6 +2,7 @@ import type {
   ApplicationStatus,
   FeedbackStatus,
   FeedbackReceiptView,
+  FeedbackEmergencyResponse,
   Locale,
   PublicPostingView,
 } from "@civicresolve/contracts/v1";
@@ -51,6 +52,42 @@ export interface ReceiptCredentials {
   receiptToken: string;
 }
 
+export interface ConversationCredentials {
+  accessToken?: string;
+  conversationToken?: string;
+  receiptToken?: string;
+}
+
+export interface AgentProposal {
+  id: string;
+  status: "pending" | "approved" | "rejected";
+  preview: {
+    name?: string;
+    method?: string;
+    path?: string;
+    body?: unknown;
+    destinationNotice?: string;
+    recordVersion?: string;
+    [key: string]: unknown;
+  };
+  createdAt?: string;
+  expiresAt?: string;
+}
+
+export interface AgentConversation {
+  id: string;
+  mode: "resident" | "employee";
+  locale: Locale;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgentTool {
+  name: string;
+  access: "read" | "write";
+  description: string;
+}
+
 export class WorkerApiError extends Error {
   constructor(
     message: string,
@@ -63,12 +100,95 @@ export class WorkerApiError extends Error {
   }
 }
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ??
-  "http://localhost:8787/api/v1").replace(/\/$/, "");
+const apiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787/api/v1"
+).replace(/\/$/, "");
 
 export const api = {
-  getPostings: () =>
-    request<{ postings: PublicPostingView[] }>("/postings"),
+  createVoiceSession: (locale: Locale) =>
+    request<{ signedUrl: string; expiresInSeconds: number; locale: Locale }>(
+      "/voice/session",
+      { method: "POST", body: { locale } },
+    ),
+  createConversation: (
+    mode: "resident" | "employee",
+    locale: Locale,
+    credentials: ConversationCredentials = {},
+  ) =>
+    request<{
+      conversation: AgentConversation;
+      conversationToken?: string;
+      tools: AgentTool[];
+    }>("/agent/conversations", {
+      method: "POST",
+      headers: conversationHeaders(credentials),
+      body: { mode, locale },
+    }),
+  getConversation: (id: string, credentials: ConversationCredentials) =>
+    request<{
+      conversation: AgentConversation;
+      messages: Array<{
+        id: string;
+        role: "user" | "assistant" | "tool";
+        content: string;
+        createdAt: string;
+      }>;
+      proposals: AgentProposal[];
+      tools: AgentTool[];
+    }>(`/agent/conversations/${encodeURIComponent(id)}`, {
+      headers: conversationHeaders(credentials),
+    }),
+  sendConversationMessage: (
+    id: string,
+    credentials: ConversationCredentials,
+    message: string,
+  ) =>
+    request<{
+      message: string;
+      toolResult?: unknown;
+      proposal?: AgentProposal;
+    }>(`/agent/conversations/${encodeURIComponent(id)}/messages`, {
+      method: "POST",
+      headers: conversationHeaders(credentials),
+      body: { message },
+    }),
+  decideConversationProposal: (
+    id: string,
+    proposalId: string,
+    decision: "approve" | "reject",
+    credentials: ConversationCredentials,
+    sandboxAcknowledged = false,
+  ) =>
+    request<{ proposal: AgentProposal; result?: unknown }>(
+      `/agent/conversations/${encodeURIComponent(id)}/proposals/${encodeURIComponent(proposalId)}/${decision}`,
+      {
+        method: "POST",
+        headers: conversationHeaders(credentials),
+        body:
+          decision === "approve" ? { approved: true, sandboxAcknowledged } : {},
+      },
+    ),
+  getEmergencyGuidance: async (locale: Locale) => {
+    const response = await request<FeedbackEmergencyResponse>("/feedback", {
+      method: "POST",
+      body: { emergency: true, locale },
+      acceptedStatus: 422,
+    });
+    if (
+      response.accepted !== false ||
+      response.emergencyRedirect?.number !== "911" ||
+      typeof response.emergencyRedirect.message !== "string"
+    ) {
+      throw new WorkerApiError(
+        "Invalid emergency guidance",
+        502,
+        "BAD_RESPONSE",
+        "",
+      );
+    }
+    return response;
+  },
+  getPostings: () => request<{ postings: PublicPostingView[] }>("/postings"),
   submitFeedback: (
     message: string,
     whatWouldImprove: string,
@@ -193,12 +313,29 @@ export const api = {
     ),
 };
 
+function conversationHeaders(
+  credentials: ConversationCredentials,
+): Record<string, string> {
+  return {
+    ...(credentials.accessToken
+      ? { Authorization: `Bearer ${credentials.accessToken}` }
+      : {}),
+    ...(credentials.conversationToken
+      ? { "X-Conversation-Token": credentials.conversationToken }
+      : {}),
+    ...(credentials.receiptToken
+      ? { "X-Receipt-Token": credentials.receiptToken }
+      : {}),
+  };
+}
+
 async function request<T>(
   path: string,
   options: {
     method?: "GET" | "POST" | "PATCH";
     headers?: Record<string, string>;
     body?: unknown;
+    acceptedStatus?: number;
   } = {},
 ): Promise<T> {
   let response: Response;
@@ -219,12 +356,10 @@ async function request<T>(
   } catch {
     throw new WorkerApiError("Network unavailable", 0, "NETWORK_ERROR", "");
   }
-  const payload = (await response.json().catch(() => null)) as
-    | {
-        error?: { code?: string; message?: string; requestId?: string };
-      }
-    | null;
-  if (!response.ok) {
+  const payload = (await response.json().catch(() => null)) as {
+    error?: { code?: string; message?: string; requestId?: string };
+  } | null;
+  if (!response.ok && response.status !== options.acceptedStatus) {
     throw new WorkerApiError(
       payload?.error?.message ?? `Request failed (${response.status})`,
       response.status,
@@ -232,6 +367,7 @@ async function request<T>(
       payload?.error?.requestId ?? "",
     );
   }
-  if (!payload) throw new WorkerApiError("Invalid response", 502, "BAD_RESPONSE", "");
+  if (!payload)
+    throw new WorkerApiError("Invalid response", 502, "BAD_RESPONSE", "");
   return payload as T;
 }

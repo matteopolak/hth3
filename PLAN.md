@@ -1,15 +1,15 @@
-# CivicResolve — Canada-wide civic everything-app implementation plan
+# Envoy — Canada-wide civic product implementation plan
 
 ## 1. Decision and product
 
-**Main track: Civic Technology.** A team may enter only one of Civic Technology, General, or CGI. CivicResolve will enter Civic Technology and only the side challenges demonstrated by working integrations. It will not claim a CGI or General entry.
+**Main track: Civic Technology.** A team may enter only one of Civic Technology, General, or CGI. Envoy will enter Civic Technology and only the side challenges demonstrated by working integrations. It will not claim a CGI or General entry.
 
-CivicResolve is a working title for a bilingual (English/French) website and mobile app that helps people in Canada find public-sector jobs, benefits and food support, grants and scholarships, nearby public service locations, and ways to participate in civic decisions. It also contains a complete constructive-feedback system. Government organizations can join a shared staff workspace to publish jobs, receive applications and civic feedback, respond to residents, and understand recurring issues. The public app is task-oriented, not a single undifferentiated feed.
+Envoy is a working title for a bilingual (English/French) website and mobile app that helps people in Canada find public-sector jobs, benefits and food support, grants and scholarships, nearby public service locations, and ways to participate in civic decisions. It also contains a complete constructive-feedback system. Government organizations can join a shared staff workspace to publish jobs, receive applications and civic feedback, respond to residents, and understand recurring issues. The public app is task-oriented, not a single undifferentiated feed.
 
 There are two kinds of opportunities, and the UI must not confuse them:
 
 1. **Verified external opportunities** come from an identifiable government or program source. Their original URL, jurisdiction, attribution, checked-at time, and application destination are visible. An in-app preparation flow may help users assemble answers, but the app must not claim to have submitted to an external agency unless an authorized integration confirms it.
-2. **Participating-employer opportunities** are published by an authenticated organization in CivicResolve. A person can upload a resume, complete a bilingual profile, review AI-suggested field values, and submit an application in the app. That application is persisted, visible to the employer in its dashboard, and has a real status and messaging trail.
+2. **Participating-employer opportunities** are published by an authenticated organization in Envoy. A person can upload a resume, complete a bilingual profile, review AI-suggested field values, and submit an application in the app. That application is persisted, visible to the employer in its dashboard, and has a real status and messaging trail.
 
 Synthetic records may fill visual and test gaps only when persistently marked **Sample / not a real opportunity or service** in the record, search result, detail page, map, and video. Never extrapolate a real vacancy, grant, office, eligibility decision, or official submission from incomplete data. Extrapolation may be used for clearly labeled estimates or aggregate illustrations, not fictional official facts. No synthetic record is mixed into a real search without an obvious filter and badge. Seeded government organizations are fictional until a real organization onboards and verifies its affiliation.
 
@@ -27,14 +27,14 @@ The civic connection must be visible in the running product. For a hackathon dep
 
 ### Confirmed product decisions
 
-| Decision | Plan consequence |
-| --- | --- |
-| Canada-wide audience, not complete jurisdictional coverage on day one | Build a national location/jurisdiction model, begin with real federal plus BC/Ontario sources, and expose coverage gaps honestly. |
-| All core areas should be substantive | Jobs, supports, funding, map, and feedback each need complete search/detail/action and staff or handoff flows; no decorative modules. |
-| Applications happen in-app where the receiver participates | Reusable applicant profile/résumé autofill, review before submission, and a real organization-side inbox. External government systems get a clearly separate preparation/handoff path. |
-| Government teams are the feedback audience and may also hire | One organization can have civic and employer workspaces, with separate permissions and private data boundaries. |
-| Web and mobile, English and French | Public core journeys on both platforms; employer/administrator workflows are web-first. All critical product copy is maintained in both languages. |
-| Modern but varied visual design | Purpose-built lists, guide flows, maps, timelines, and staff tables; no repeated nested-card or oversized-heading template. |
+| Decision                                                              | Plan consequence                                                                                                                                                                                                                              |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Canada-wide audience, not complete jurisdictional coverage on day one | Build a national location/jurisdiction model, begin with real federal plus BC/Ontario sources, and expose coverage gaps honestly.                                                                                                             |
+| All core areas should be substantive                                  | Jobs, supports, funding, map, and feedback each need complete search/detail/action and staff or handoff flows; no decorative modules.                                                                                                         |
+| Applications happen in-app where the receiver participates            | Reusable applicant profile/résumé autofill, review before submission, and a real organization-side inbox. External government systems get a clearly separate preparation/handoff path.                                                        |
+| Government teams are the feedback audience and may also hire          | One organization can have civic and employer workspaces, with separate permissions and private data boundaries.                                                                                                                               |
+| Web and mobile, English and French                                    | Public core journeys on both platforms; employer/administrator workflows are web-first. All critical product copy is maintained in both languages.                                                                                            |
+| Quiet, monochrome visual design                                       | A compact, ChatGPT-like chat shell, small titles and breadcrumbs, straightforward lists and tables, and no uppercase eyebrow labels or filler descriptions. English is the showcase language; all critical copy also has French translations. |
 
 ### What “fully functional” means
 
@@ -54,7 +54,7 @@ Every feature presented as working must execute against the deployed application
 - Staff can see accurate category counts, trends, grouped themes, and evidence-linked summaries built from persisted feedback.
 - A resident can see an assigned department, status changes, messages, and an outcome using an authenticated account or secure guest receipt link.
 - Any Presage feature shown uses the actual SDK and changes the mobile interaction.
-- The React Native app performs the flows shown in the video against the live API.
+- The native SwiftUI iOS app performs the flows shown in the video against the live API.
 - The Remotion video records or composes evidence from functioning product flows; it does not invent successful calls or display fabricated integration results.
 
 Synthetic people and reports are appropriate **labeled** test content. Sample locations use real municipality names and are marked as samples; they do not imply a verified public office. Test fixtures and mocked providers may be used in automated tests. They must not substitute for a claimed live integration in judging or the final video.
@@ -63,13 +63,13 @@ Synthetic people and reports are appropriate **labeled** test content. Sample lo
 
 Prioritize real federal sources and selected BC/Ontario sources, then extend to other jurisdictions source by source. Every adapter has a documented collection method, licence/terms check, refresh schedule, parser tests, and a freshness threshold. The [Open Government CKAN API](https://open.canada.ca/en/access-our-application-programming-interface-api) is a catalogue, not a unified live service API.
 
-| Domain | Starting official sources | Access reality |
-| --- | --- | --- |
-| Jobs | [GC Jobs](https://www.canada.ca/en/services/jobs/opportunities/government.html), [BC Public Service](https://www2.gov.bc.ca/gov/content/careers-myhr/job-seekers/current-job-postings), [Ontario Public Service](https://www.gojobs.gov.on.ca/Jobs.aspx), later other provincial and municipal employers | Distinct portals; use permitted feeds/exports first, then source-specific collection where allowed. Most applications remain on employer sites unless the employer posts in CivicResolve. |
-| Benefits and food support | [Federal Benefits Finder](https://www.canada.ca/en/services/benefits/finder.html), [BC Benefits Connector](https://www2.gov.bc.ca/bcbenefitsconnector), Ontario program pages, [211 Canada](https://211.ca/data/) by data-sharing request | No national SNAP-style application or universal benefit API. Preserve jurisdiction, eligibility caveats, and official application links. |
-| Grants and student funding | [Federal grants](https://www.canada.ca/en/government/grants-funding.html), [all provincial/territorial student-aid entry points](https://www.canada.ca/en/services/benefits/education/student-aid/grants-loans/province-apply.html), BC and Ontario aid and scholarship sources | Award-disclosure data is not an open-opportunity feed. Capture deadline and sponsor from current official opportunity pages. |
-| Offices and service map | [Service Canada offices](https://offices.service.canada.ca/en), [ServiceOntario](https://www.ontario.ca/locations/serviceontario/), BC government locators and municipal open data | A government-owned building is not necessarily public-facing. Verify public access, offered services, hours, and accessibility. |
-| Civic participation | [Federal consultations dataset](https://open.canada.ca/data/en/dataset/7c03f039-3753-4093-af60-74b0f7b2385d), [BC engagement](https://engage.gov.bc.ca/), official local 311 links | External consultations and 311 requests are official handoffs; CivicResolve feedback is its own separately labeled workflow. |
+| Domain                     | Starting official sources                                                                                                                                                                                                                                                                                | Access reality                                                                                                                                                                     |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Jobs                       | [GC Jobs](https://www.canada.ca/en/services/jobs/opportunities/government.html), [BC Public Service](https://www2.gov.bc.ca/gov/content/careers-myhr/job-seekers/current-job-postings), [Ontario Public Service](https://www.gojobs.gov.on.ca/Jobs.aspx), later other provincial and municipal employers | Distinct portals; use permitted feeds/exports first, then source-specific collection where allowed. Most applications remain on employer sites unless the employer posts in Envoy. |
+| Benefits and food support  | [Federal Benefits Finder](https://www.canada.ca/en/services/benefits/finder.html), [BC Benefits Connector](https://www2.gov.bc.ca/bcbenefitsconnector), Ontario program pages, [211 Canada](https://211.ca/data/) by data-sharing request                                                                | No national SNAP-style application or universal benefit API. Preserve jurisdiction, eligibility caveats, and official application links.                                           |
+| Grants and student funding | [Federal grants](https://www.canada.ca/en/government/grants-funding.html), [all provincial/territorial student-aid entry points](https://www.canada.ca/en/services/benefits/education/student-aid/grants-loans/province-apply.html), BC and Ontario aid and scholarship sources                          | Award-disclosure data is not an open-opportunity feed. Capture deadline and sponsor from current official opportunity pages.                                                       |
+| Offices and service map    | [Service Canada offices](https://offices.service.canada.ca/en), [ServiceOntario](https://www.ontario.ca/locations/serviceontario/), BC government locators and municipal open data                                                                                                                       | A government-owned building is not necessarily public-facing. Verify public access, offered services, hours, and accessibility.                                                    |
+| Civic participation        | [Federal consultations dataset](https://open.canada.ca/data/en/dataset/7c03f039-3753-4093-af60-74b0f7b2385d), [BC engagement](https://engage.gov.bc.ca/), official local 311 links                                                                                                                       | External consultations and 311 requests are official handoffs; Envoy feedback is its own separately labeled workflow.                                                              |
 
 Source-specific terms take precedence over a generic assumption that anything public may be scraped. [Open Government Licence datasets](https://open.canada.ca/en/open-government-licence-canada) require attribution; ordinary [Canada.ca page content has different terms](https://www.canada.ca/en/transparency/terms.html). Maintain a source registry and stop a broken or disallowed ingestion rather than silently replacing its results with generated entries.
 
@@ -79,25 +79,25 @@ The [official competition guide](https://tracker.hackthehill.com/resources) perm
 
 Civic and General use the same **45-point** rubric:
 
-| Criterion | Points | Product evidence |
-| --- | ---: | --- |
-| Technical execution | 15 | Working web/mobile discovery, résumé-assisted applications, employer review, feedback intake, Workers AI taxonomy decisions, aggregate staff view, authorization, persistence, and audit trail. |
-| Idea and impact | 10 | A simpler route from a person's need to the right public opportunity, service, or civic team. |
-| Design and usability | 10 | Distinct task-focused journeys, bilingual plain language, reviewable autofill, accessible alternatives, honest source labels, and useful staff overviews. |
-| Learning and technical decisions | 5 | Explain model boundaries, workflow safety, provider failures, and trade-offs made during the event. |
-| Presentation | 5 | Timed live demonstration and direct answers during questions. |
+| Criterion                        | Points | Product evidence                                                                                                                                                                                |
+| -------------------------------- | -----: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Technical execution              |     15 | Working web/mobile discovery, résumé-assisted applications, employer review, feedback intake, Workers AI taxonomy decisions, aggregate staff view, authorization, persistence, and audit trail. |
+| Idea and impact                  |     10 | A simpler route from a person's need to the right public opportunity, service, or civic team.                                                                                                   |
+| Design and usability             |     10 | Distinct task-focused journeys, bilingual plain language, reviewable autofill, accessible alternatives, honest source labels, and useful staff overviews.                                       |
+| Learning and technical decisions |      5 | Explain model boundaries, workflow safety, provider failures, and trade-offs made during the event.                                                                                             |
+| Presentation                     |      5 | Timed live demonstration and direct answers during questions.                                                                                                                                   |
 
 Judges assess what actually works in the normal in-person session. Mini-challenges are considered during that same session; there is no separate side-challenge presentation. The Devpost video supports the submitted project but does not replace the live demonstration. The broader product is not a reason to claim unfinished modules as complete.
 
 ### Targeted side challenges
 
-| Challenge | Required working evidence |
-| --- | --- |
+| Challenge                                                       | Required working evidence                                                                                                                                          |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Best Project Built with ElevenLabs / MLH Best Use of ElevenLabs | A real conversational voice session asks what happened and what should change, confirms the feedback, and submits it. The guide combines these into one challenge. |
-| MLH Best Use of Tiger Data | Feedback events enter a Tiger hypertable; continuous aggregates power category, volume, and trend charts. |
-| MLH Best Use of Auth0 | Real staff login, role checks, protected API actions, and a denied unauthorized action. |
-| MLH Best Use of Presage | A consented mobile interaction uses a real Presage SDK output to offer an accessibility adjustment, without changing feedback priority or eligibility. |
-| Best UI/UX | A low-friction resident journey and evidence-linked aggregate staff workspace with clear states and accessible controls. |
+| MLH Best Use of Tiger Data                                      | Feedback events enter a Tiger hypertable; continuous aggregates power category, volume, and trend charts.                                                          |
+| MLH Best Use of Auth0                                           | Real staff login, role checks, protected API actions, and a denied unauthorized action.                                                                            |
+| MLH Best Use of Presage                                         | A consented mobile interaction uses a real Presage SDK output to offer an accessibility adjustment, without changing feedback priority or eligibility.             |
+| Best UI/UX                                                      | A low-friction resident journey and evidence-linked aggregate staff workspace with clear states and accessible controls.                                           |
 
 Cloudflare Workers AI is a product technology rather than a prize entry. Do not enter Gemini, Solana, Vultr, or GoDaddy. The planned proprietary services make Best FOSS inapplicable. The current product does not qualify for Best Hardware Hack or MathemaTech; do not add token features just to enter them.
 
@@ -109,16 +109,16 @@ Only select a side challenge on Devpost after its working evidence exists. If a 
 
 All modules must have functioning search/detail/action flows, loading/error/empty states, source provenance, and bilingual copy. A module is not “complete” because it has a homepage tile.
 
-| Module | Public journey | Staff/employer journey |
-| --- | --- | --- |
-| Government jobs | Search by role, location, employer, work arrangement, and deadline; save a posting; prepare an application from a résumé; apply inside CivicResolve only for participating employers. | Verified employer publishes/updates/closes a posting, reviews applications, records decisions, and sends applicant updates. |
-| Benefits and food support | Enter location and optional circumstances, compare relevant programs and community services, complete a reusable in-app intake/checklist, and see official application steps. For an onboarded program, submit its own configured intake form in-app; otherwise export answers or continue at the official site without a false submission state. | Authorized program staff may configure and receive first-party intake only for their program; curators correct source-backed records and refresh status. No staff member can manufacture an official eligibility result. |
-| Grants, bursaries, scholarships, student aid | Search by audience, study level, field, jurisdiction, amount and deadline; save opportunities, build a checklist, prepare answers in-app, and follow the sponsor's actual application path. | Participating sponsors may publish a first-party opportunity and receive in-app applications; external awards remain official handoffs. |
-| Nearby services map | Find public-facing offices and relevant community support by place/service, inspect accessibility, hours, contact details, freshness, and directions. | Curators verify imported locations; participating organizations maintain their own locations. |
-| Civic feedback and complaints | Submit criticism or suggestions by text/voice, review the summary, receive a private receipt, follow status and replies, and reopen with more information. | Government teams review evidence-linked themes, assign and respond, manage category rules, and see exact counts. |
-| Civic participation | Find open consultations and the right official channel; distinguish them from CivicResolve feedback. | Curators maintain source adapters; authorized government teams can publish their own engagement items. |
+| Module                                       | Public journey                                                                                                                                                                                                                                                                                                                                    | Staff/employer journey                                                                                                                                                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Government jobs                              | Search by role, location, employer, work arrangement, and deadline; save a posting; prepare an application from a résumé; apply inside Envoy only for participating employers.                                                                                                                                                                    | Verified employer publishes/updates/closes a posting, reviews applications, records decisions, and sends applicant updates.                                                                                              |
+| Benefits and food support                    | Enter location and optional circumstances, compare relevant programs and community services, complete a reusable in-app intake/checklist, and see official application steps. For an onboarded program, submit its own configured intake form in-app; otherwise export answers or continue at the official site without a false submission state. | Authorized program staff may configure and receive first-party intake only for their program; curators correct source-backed records and refresh status. No staff member can manufacture an official eligibility result. |
+| Grants, bursaries, scholarships, student aid | Search by audience, study level, field, jurisdiction, amount and deadline; save opportunities, build a checklist, prepare answers in-app, and follow the sponsor's actual application path.                                                                                                                                                       | Participating sponsors may publish a first-party opportunity and receive in-app applications; external awards remain official handoffs.                                                                                  |
+| Nearby services map                          | Find public-facing offices and relevant community support by place/service, inspect accessibility, hours, contact details, freshness, and directions.                                                                                                                                                                                             | Curators verify imported locations; participating organizations maintain their own locations.                                                                                                                            |
+| Civic feedback and complaints                | Submit criticism or suggestions by text/voice, review the summary, receive a private receipt, follow status and replies, and reopen with more information.                                                                                                                                                                                        | Government teams review evidence-linked themes, assign and respond, manage category rules, and see exact counts.                                                                                                         |
+| Civic participation                          | Find open consultations and the right official channel; distinguish them from Envoy feedback.                                                                                                                                                                                                                                                     | Curators maintain source adapters; authorized government teams can publish their own engagement items.                                                                                                                   |
 
-The app should also provide a small **My activity** area for saved items, applications, checklists, and feedback receipts. Status must reflect actual events in CivicResolve; “submitted” to an external employer or agency is never inferred from a click. An optional profile contains locale, location, accessibility preferences and résumé data. Browsing, map use, and guest feedback work without an account. In-app job, grant, or program applications need an account so applicants can return to drafts and messages. A participating organization may configure intake for its own program; this does not imply a universal government application gateway.
+The app should also provide a small **My activity** area for saved items, applications, checklists, and feedback receipts. Status must reflect actual events in Envoy; “submitted” to an external employer or agency is never inferred from a click. An optional profile contains locale, location, accessibility preferences and résumé data. Browsing, map use, and guest feedback work without an account. In-app job, grant, or program applications need an account so applicants can return to drafts and messages. A participating organization may configure intake for its own program; this does not imply a universal government application gateway.
 
 ### Résumé-assisted applications
 
@@ -136,20 +136,20 @@ Normalize geography through province/territory plus municipality and postal-code
 
 Ship a broad, editable Canada-oriented starter taxonomy. Residents do not need to browse or understand it before submitting. The platform first identifies the likely jurisdiction and participating organization, then applies that organization's published categories and routes. It must not tell a resident that a real government department received a report unless that department is onboarded and the API confirms receipt. Each published category has a stable ID, group, bilingual display name/description, inclusion/exclusion examples, optional follow-up fields, default department, and version. Initial groups and categories should cover:
 
-| Group | Default categories |
-| --- | --- |
-| Streets and mobility | Roads and potholes; sidewalks and crossings; streetlights and traffic signals; transit and bus stops; cycling and parking. |
-| Environment and public space | Waste and recycling; parks and recreation spaces; trees and landscaping; noise and pollution; water, drainage, and sewer. |
-| Buildings and community | Housing and property standards; public facilities and libraries; community programs; public health and social services; community safety and bylaw enforcement. |
-| Programs and institutions | Benefits and income support; employment services; student aid and education; healthcare access; immigration and settlement services; taxation and revenue services. |
-| Access and administration | Accessibility and language access; permits and licensing; fees and billing; application delays and decisions; websites and digital services; staff conduct and service quality. |
-| Civic decisions | Policy and planning; budget and spending; communication and transparency; other or unsure. |
+| Group                        | Default categories                                                                                                                                                              |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Streets and mobility         | Roads and potholes; sidewalks and crossings; streetlights and traffic signals; transit and bus stops; cycling and parking.                                                      |
+| Environment and public space | Waste and recycling; parks and recreation spaces; trees and landscaping; noise and pollution; water, drainage, and sewer.                                                       |
+| Buildings and community      | Housing and property standards; public facilities and libraries; community programs; public health and social services; community safety and bylaw enforcement.                 |
+| Programs and institutions    | Benefits and income support; employment services; student aid and education; healthcare access; immigration and settlement services; taxation and revenue services.             |
+| Access and administration    | Accessibility and language access; permits and licensing; fees and billing; application delays and decisions; websites and digital services; staff conduct and service quality. |
+| Civic decisions              | Policy and planning; budget and spending; communication and transparency; other or unsure.                                                                                      |
 
 Treat these as starter labels, not claims about any real government's jurisdiction. Include `other_or_unsure` and staff review so every submission has a safe route. Seed descriptions, examples, exclusions, and organization-specific department mappings, not just category names. Municipal service issues and provincial/federal program complaints may share a taxonomy group but cannot be assigned to an unrelated level of government. The starter set is inspired by the breadth of real [NYC311 report topics](https://portal.311.nyc.gov/report-problems/), which include both physical service issues and feedback about agencies and workers; Canadian routes still require Canadian-source verification.
 
 Track **intent** separately from category: complaint, improvement suggestion, question/request, or positive feedback. A complaint about a public service and a suggestion to improve it can share a service category while remaining distinguishable in analytics.
 
-Administrators can add, edit, reorder, and remove categories in the dashboard or through the agent. Removal means *retire from future classification*; historical submissions retain their original category ID and taxonomy version. Publishing a version updates the live classifier without a deployment. Preview the effect on example submissions before publication. An admin can also recategorize a submission with an audit trail.
+Administrators can add, edit, reorder, and remove categories in the dashboard or through the agent. Removal means _retire from future classification_; historical submissions retain their original category ID and taxonomy version. Publishing a version updates the live classifier without a deployment. Preview the effect on example submissions before publication. An admin can also recategorize a submission with an audit trail.
 
 Publishing validates unique IDs, nonempty descriptions, a valid group, a real destination department, and an active `other_or_unsure` route. The editor should show whether a category is draft, published, or retired and which taxonomy version classified each historical submission.
 
@@ -170,7 +170,7 @@ The intake must work without a microphone, camera, address, or sign-in. Ask for 
 
 The public site and mobile app provide a persistent, ChatGPT-like conversation that works for guests. Its typed tools cover every resident action offered elsewhere in the product: search and filter sourced jobs, support, funding, offices and consultations; inspect details and provenance; save items and checklists; prepare and review profile, résumé, and application drafts; submit first-party applications; open official external handoffs; draft and submit feedback; and read or reply to a case through an authenticated account or secure guest receipt. Account-only actions ask the resident to sign in at execution time, while public discovery and guest feedback remain available without sign-in.
 
-When a resident describes an unresolved service problem, the agent proactively offers to prepare a complaint or suggestion. It asks only for missing details needed for a useful submission, shows the original words and an editable proposed report, and submits only after explicit confirmation. It distinguishes CivicResolve's fictional sandbox from official government channels and never claims that an external application or report was submitted because a link was opened. Conversation history and pending drafts persist; tool results link to the same records and controls as the manual website.
+When a resident describes an unresolved service problem, the agent proactively offers to prepare a complaint or suggestion. It asks only for missing details needed for a useful submission, shows the original words and an editable proposed report, and submits only after explicit confirmation. It distinguishes Envoy's fictional sandbox from official government channels and never claims that an external application or report was submitted because a link was opened. Conversation history and pending drafts persist; tool results link to the same records and controls as the manual website.
 
 ### Government staff and employer journey
 
@@ -200,15 +200,15 @@ Chat and manual tabs share server state and version IDs. A manual edit appears i
 
 The agent tool set must cover the same useful operations as the manual workspace:
 
-| Area | Read tools | Write tools requiring preview and approval |
-| --- | --- | --- |
-| Feedback | Search, open, inspect history and evidence | Correct fields, categorize, assign, change status, respond, resolve, reopen. |
-| Residents | Read feedback conversation | Draft and send a message; request more information. |
-| Taxonomy | List categories and versions; compare changes | Add, edit, retire, restore, and publish categories and routing rules. |
-| Aggregates | Query exact counts, trends, and theme source links | Refresh summaries, correct a theme membership, save a view or report. |
-| Hiring | Read postings and authorized application records; filter a pipeline | Draft/publish/close a posting, propose an application state change or message. |
-| Sources | Inspect provenance, freshness, and ingestion errors | Propose a source correction; platform curator approval required for shared records. |
-| Workspace | Open tabs and inspect current context | Save or close a tab. |
+| Area       | Read tools                                                          | Write tools requiring preview and approval                                          |
+| ---------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Feedback   | Search, open, inspect history and evidence                          | Correct fields, categorize, assign, change status, respond, resolve, reopen.        |
+| Residents  | Read feedback conversation                                          | Draft and send a message; request more information.                                 |
+| Taxonomy   | List categories and versions; compare changes                       | Add, edit, retire, restore, and publish categories and routing rules.               |
+| Aggregates | Query exact counts, trends, and theme source links                  | Refresh summaries, correct a theme membership, save a view or report.               |
+| Hiring     | Read postings and authorized application records; filter a pipeline | Draft/publish/close a posting, propose an application state change or message.      |
+| Sources    | Inspect provenance, freshness, and ingestion errors                 | Propose a source correction; platform curator approval required for shared records. |
+| Workspace  | Open tabs and inspect current context                               | Save or close a tab.                                                                |
 
 Tools must return typed data for rich cards. A card should state its source, affected record/version, proposed edit, approval status, and final result. An employee can refuse, revise, or carry out the change manually.
 
@@ -216,7 +216,7 @@ Tools must return typed data for rich cards. A card should state its source, aff
 
 ### Shared visual language
 
-Take interaction cues from ChatGPT, Stripe, Notion, Anthropic, and modern ticketing products while creating an original civic identity. Use readable typography, warm neutral surfaces, restrained blue/teal accents, modest radii, clear borders, and semantic status colors. Design tokens, copy, and status names are shared across web, mobile, and video. Do not copy another product's branding or layout verbatim.
+Use a restrained black-and-white interface with readable typography, compact navigation, small titles, clear borders, and a prominent conversation surface. Take interaction cues from ChatGPT while keeping Envoy's own wording and layout. Design tokens, copy, and status names are shared across web, mobile, and video.
 
 Use different interaction patterns for different tasks: a compact search/results list for jobs and awards; an editorial, step-by-step matcher for benefits; a true spatial map/list switch for offices; a calm wizard for applications and feedback; a timeline for status; a dense table/queue for staff work; and rich, selective cards only where the agent proposes a decision. Avoid nested cards, repeated dashboards, oversized headings on every page, prose where labels and actions suffice, and AI-generated filler. Maintain clear information hierarchy, progressive disclosure, useful filters, sensible defaults, and responsive breakpoints. Use real content samples to test text length in both languages, not English-only placeholder copy.
 
@@ -232,13 +232,13 @@ Agent responses may render theme cards, submission cards, tables, charts, source
 
 ### Public web experience
 
-Use a prominent search/task entry that routes to Jobs, Support, Funding, Nearby, and Share feedback. Each area gets a purposeful visual structure. Source and sample badges, last-checked information, jurisdiction, deadline, and the true action destination must be visible on detail pages. Job/funding detail pages include a clear distinction between **Apply in CivicResolve** and **Continue on official site**.
+Use a prominent search/task entry that routes to Jobs, Support, Funding, Nearby, and Share feedback. Each area gets a purposeful visual structure. Source and sample badges, last-checked information, jurisdiction, deadline, and the true action destination must be visible on detail pages. Job/funding detail pages include a clear distinction between **Apply in Envoy** and **Continue on official site**.
 
 The feedback flow remains calm and low-friction: prompt for a concrete experience and improvement; do not force a category, account, or location. Show the original wording and editable summary before submission. After submission, use a ticket-style receipt and timeline with ownership and next steps in plain language. Keep internal confidence scores, model names, and routing rules out of the public view.
 
-### React Native app
+### Native SwiftUI iOS app
 
-Use Expo/React Native for a **real public mobile app**, not a video-only prop. It shares contracts, API, bilingual strings, and core public workflows with the web app. Build native-feeling navigation and layouts, not a web page in a shell. It must support:
+Use native Swift and SwiftUI for a **real public iOS app**, not a video-only prop. It implements the versioned Worker API and English/French product copy with native `URLSession`, secure Keychain storage, and platform navigation rather than a webview. Keep Swift request/response models aligned with the shared API contract and verify parity in tests. It must support:
 
 - Search/detail for jobs, support, funding, and nearby services, including source status and official handoff.
 - Profile, résumé upload, application draft/review/submission for participating employers, and application status/messages.
@@ -256,7 +256,7 @@ Target WCAG 2.2 AA patterns where relevant: keyboard access and visible focus on
 ## 5. System architecture
 
 ```text
-Public web + React Native app          Government staff/employer web
+Public web + native SwiftUI iOS app    Government staff/employer web
                  \                     /
                   Cloudflare Worker API
                   ├─ Auth0 staff roles / optional resident account
@@ -288,26 +288,26 @@ Classification contract:
 
 ```ts
 type ClassificationInput = {
-  feedbackText: string
-  extractedFields: Record<string, unknown>
-  taxonomyVersion: string
+  feedbackText: string;
+  extractedFields: Record<string, unknown>;
+  taxonomyVersion: string;
   categories: Array<{
-    id: string
-    groupId: string
-    description: string
-    examples: string[]
-    exclusions: string[]
-  }>
-}
+    id: string;
+    groupId: string;
+    description: string;
+    examples: string[];
+    exclusions: string[];
+  }>;
+};
 
 type ClassificationResult = {
-  intent: 'complaint' | 'suggestion' | 'question' | 'positive'
-  categoryId: string
-  confidence: number
-  alternatives: string[]
-  provider: 'workers-ai'
-  modelVersion: string
-}
+  intent: "complaint" | "suggestion" | "question" | "positive";
+  categoryId: string;
+  confidence: number;
+  alternatives: string[];
+  provider: "workers-ai";
+  modelVersion: string;
+};
 ```
 
 Construct a bounded classification prompt from the current published category descriptions and examples. Select a broad group and then a category in that group; retain an `other_or_unsure` route. Validate the model's selected ID against the published taxonomy and store intent, category, confidence, model ID, taxonomy version, and review outcome. Uncertain output goes to staff review. Tests may use a fixture provider, but neither the video nor the live product should present fixture output as a live model result. Use only verified no-charge Workers AI allocation; never upgrade a plan or incur usage-based charges. Workers Free inference fails after its 10,000 Neurons/day allocation; Workers Paid can bill beyond that allocation, so verify the actual account plan and usage before live calls. If the free boundary cannot be verified, leave live inference acceptance open.
@@ -394,7 +394,7 @@ Use one pnpm lockfile and typed package boundaries:
 apps/
   web/          # public and government staff/employer web UI
   worker/       # Cloudflare API, discovery, applications, feedback, tools, webhooks
-  mobile/       # React Native/Expo public app
+  mobile/       # native Swift/SwiftUI public iOS app
   remotion/     # five-minute video composition
 packages/
   contracts/    # bilingual request/response, events, tool and card schemas
@@ -415,7 +415,7 @@ pnpm-lock.yaml
 
 Root commands: `pnpm dev`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm check`, `pnpm video:render`, and `pnpm deploy`. `pnpm check` is the local CI gate.
 
-CI runs on every push to `main`: frozen install, formatting/lint, typecheck, domain/permission/provider tests, migrations against a disposable database, web/mobile builds, and a Worker smoke test. End-to-end tests must cover a verified-source search with official handoff; a labeled sample record; résumé draft/review/native application to a participating employer and its staff-side decision; and guest feedback from intake through a staff response and resident receipt. Add locale parity checks and an English/French flow test. Provider adapters can be stubbed in automated tests; run a separate pre-submission integration check with real sponsor services.
+CI runs on every push to `main`: frozen install, formatting/lint, typecheck, domain/permission/provider tests, migrations against a disposable database, a web build, and a Worker smoke test. A macOS job builds the native SwiftUI iOS app with `xcodebuild`. End-to-end tests must cover a verified-source search with official handoff; a labeled sample record; résumé draft/review/native application to a participating employer and its staff-side decision; and guest feedback from intake through a staff response and resident receipt. Add locale parity checks and an English/French flow test. Provider adapters can be stubbed in automated tests; run a separate pre-submission integration check with real sponsor services.
 
 Deployment is a separate job after checks pass. Secrets stay in Cloudflare/GitHub secret stores. The deployed app and video must use the same contracts and status vocabulary.
 
@@ -473,7 +473,7 @@ Keep captions readable and the recorded UI legible at normal playback size. If a
 - Real federal plus BC/Ontario source records are visible with source links, last-checked times, jurisdiction, and honest stale/no-results states.
 - Jobs, benefits/food support, funding, and nearby offices have functional search/detail/action flows on web and mobile, with accessible English and French UI.
 - A clearly fictional sandbox employer can publish a posting; a user can upload a résumé, edit extracted suggestions, apply, and receive a real status/message from that employer's scoped dashboard. Verification as a real government organization requires an actual onboarding process.
-- A participating grant sponsor or support program can configure an intake form, receive a reviewed in-app application, and send a status update. External grants and benefits provide the same preparation/checklist experience but end with the actual official handoff and no CivicResolve “submitted” claim.
+- A participating grant sponsor or support program can configure an intake form, receive a reviewed in-app application, and send a status update. External grants and benefits provide the same preparation/checklist experience but end with the actual official handoff and no Envoy “submitted” claim.
 - The office map and accessible list show only verified public-facing locations or plainly labeled samples; filtering by service, accessibility, and distance returns the same underlying results.
 - Consultations expose deadline, jurisdiction, official source, and a truthful participation destination; first-party consultations accept and persist a response only for an onboarded organization.
 - An external listing supports preparation and official-site handoff, never false “submitted” state.

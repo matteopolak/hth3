@@ -118,7 +118,12 @@ try {
         "Idempotency-Key": feedbackIdempotencyKey,
         "X-Receipt-Token": receiptToken,
       },
-      body: { message: "The sample streetlight is out near the library." },
+      body: {
+        message: "The sample streetlight is out near the library.",
+        whatWouldImprove: "Please check the streetlight near the library.",
+        municipalityId: "3520005",
+        sandboxAcknowledged: true,
+      },
     });
     assert(
       guestFeedback.status === 201,
@@ -390,6 +395,8 @@ async function startWorker() {
       ".wrangler/state",
       "--var",
       "DEV_AUTH_ENABLED:true",
+      "--var",
+      "FEEDBACK_ABUSE_HMAC_KEY:local-smoke-only-key-never-use-in-production-2026",
     ],
     {
       cwd: workerDirectory,

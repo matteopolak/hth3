@@ -25,8 +25,27 @@ export interface ApiErrorResponse {
   error: { code: string; message: string; requestId: string };
 }
 
-export interface GuestFeedbackCreateRequest {
-  message: string;
+export type GuestFeedbackCreateRequest =
+  | { emergency: true; locale?: Locale }
+  | {
+      message: string;
+      whatWouldImprove?: string;
+      category?: string;
+      municipalityId: string;
+      sandboxAcknowledged: true;
+      emergency?: false;
+      locale?: Locale;
+      evidence?: Array<{
+        fileName: string;
+        contentType: "application/pdf" | "image/jpeg" | "image/png";
+        data: string;
+      }>;
+    };
+
+export interface FeedbackEmergencyResponse {
+  apiVersion: typeof API_VERSION;
+  accepted: false;
+  emergencyRedirect: { number: "911"; message: string };
 }
 
 export interface GuestFeedbackCreateResponse {
@@ -37,7 +56,14 @@ export interface GuestFeedbackCreateResponse {
 
 export interface FeedbackReceiptView {
   id: string;
+  originalText: string;
+  constructiveFollowUp: string | null;
+  category: string;
+  intent: string | null;
+  classificationReviewStatus: string | null;
+  municipality: { id: string; name: string; province: string } | null;
   sample: boolean;
+  destinationLabel: string | null;
   status: FeedbackStatus;
   departmentName: string | null;
   messages: Array<{
@@ -46,12 +72,23 @@ export interface FeedbackReceiptView {
     body: string;
     createdAt: string;
   }>;
+  evidence: Array<{
+    id: string;
+    fileName: string;
+    contentType: string;
+    byteSize: number;
+    downloadPath: string;
+  }>;
   outcome: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface FeedbackMessageRequest {
   message: string;
 }
+
+export interface FeedbackReopenRequest extends FeedbackMessageRequest {}
 
 export interface FeedbackStatusChangeRequest {
   status: FeedbackStatus;
@@ -77,6 +114,60 @@ export interface ApplicationSubmissionResponse {
 
 export interface ApplicationStatusChangeRequest {
   status: ApplicationStatus;
+}
+
+export interface ApplicantProfileView {
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  summary: string;
+  skills: string[];
+  education: Array<{
+    institution: string;
+    credential: string;
+    fieldOfStudy: string;
+    startDate: string;
+    endDate: string;
+    description: string;
+  }>;
+  experience: Array<{
+    organization: string;
+    title: string;
+    startDate: string;
+    endDate: string;
+    description: string;
+  }>;
+}
+
+export interface ProfileResponse {
+  apiVersion: typeof API_VERSION;
+  profile: ApplicantProfileView | null;
+  updatedAt: string | null;
+}
+
+export interface ResumeView {
+  id: string;
+  filename: string;
+  contentType: string;
+  byteSize: number;
+  createdAt: string;
+  retentionExpiresAt: string;
+}
+
+export interface ResumeExtractionResponse {
+  apiVersion: typeof API_VERSION;
+  extraction: {
+    resumeId: string;
+    text: string;
+    suggestions: Array<{
+      field: keyof ApplicantProfileView;
+      value: string | string[];
+      source: { start: number; end: number; text: string };
+    }>;
+    suggestionsTruncated: boolean;
+    extractedAt: string;
+  };
 }
 
 export type OutboxEvent =

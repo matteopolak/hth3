@@ -65,6 +65,8 @@ describe("CivicResolve role permissions", () => {
         "read:applications",
         "write:applications",
         "submit:applications",
+        "read:profile",
+        "write:profile",
       ] as const,
     };
 
@@ -77,6 +79,12 @@ describe("CivicResolve role permissions", () => {
     ).toBe(true);
     expect(
       canPerformOwnerAction(applicant, "application:read_own", "auth0|other"),
+    ).toBe(false);
+    expect(
+      canPerformOwnerAction(applicant, "profile:read_own", applicant.subject),
+    ).toBe(true);
+    expect(
+      canPerformOwnerAction(applicant, "profile:write_own", "auth0|other"),
     ).toBe(false);
     expect(
       canPerformOrganizationAction(

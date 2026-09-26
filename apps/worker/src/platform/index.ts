@@ -19,6 +19,16 @@ import {
 import { authenticateRequest, Auth0TokenError } from "../auth/index.js";
 import { handleApplicationRequest } from "../features/application-core/index.js";
 import { handleFeedbackRequest } from "../features/feedback-core/index.js";
+import { handleProfileRequest } from "../features/profile/index.js";
+import { handleSourceRequest } from "../features/sources/index.js";
+import {
+  handleAnalyticsRequest,
+  deliverFeedbackOutbox,
+} from "../features/analytics/index.js";
+import { handleAgentRequest } from "../features/agents/index.js";
+import { handleTaxonomyRequest } from "../features/taxonomy/index.js";
+import { handleVoiceRequest } from "../features/voice/index.js";
+import { ingestOfficialSources } from "../features/sources/ingest.js";
 import type { FeatureContext } from "../features/shared.js";
 
 interface Env {
@@ -29,6 +39,11 @@ interface Env {
   AUTH0_DOMAIN?: string;
   AUTH0_AUDIENCE?: string;
   ALLOWED_ORIGINS?: string;
+  FEEDBACK_ABUSE_HMAC_KEY?: string;
+  AI?: import("../features/agents/types.js").AiBinding;
+  HYPERDRIVE?: { connectionString: string };
+  ELEVENLABS_API_KEY?: string;
+  ELEVENLABS_AGENT_ID?: string;
 }
 
 interface SmokeInput {
@@ -81,18 +96,54 @@ const worker = {
       }
 
       const featureContext: FeatureContext = { env, requestId, cors };
+      const agentResponse = await handleAgentRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (agentResponse) return agentResponse;
+      const taxonomyResponse = await handleTaxonomyRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (taxonomyResponse) return taxonomyResponse;
+      const voiceResponse = await handleVoiceRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (voiceResponse) return voiceResponse;
+      const sourcesResponse = await handleSourceRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (sourcesResponse) return sourcesResponse;
       const feedbackResponse = await handleFeedbackRequest(
         request,
         url,
         featureContext,
       );
       if (feedbackResponse) return feedbackResponse;
+      const analyticsResponse = await handleAnalyticsRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (analyticsResponse) return analyticsResponse;
       const applicationResponse = await handleApplicationRequest(
         request,
         url,
         featureContext,
       );
       if (applicationResponse) return applicationResponse;
+      const profileResponse = await handleProfileRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (profileResponse) return profileResponse;
 
       return jsonError("NOT_FOUND", "Route not found.", requestId, 404, cors);
     } catch (error) {
@@ -122,6 +173,16 @@ const worker = {
         responseCors,
       );
     }
+  },
+  scheduled(
+    _event: unknown,
+    env: Env,
+    context: { waitUntil(promise: Promise<unknown>): void },
+  ): void {
+    context.waitUntil(deliverFeedbackOutbox(env));
+    const now = new Date();
+    if (now.getUTCHours() === 2 && now.getUTCMinutes() === 0)
+      context.waitUntil(ingestOfficialSources(env.DB));
   },
 };
 
@@ -298,7 +359,7 @@ function corsHeaders(request: Request, env: Env): Headers | Response {
 
   const headers = new Headers({
     "Access-Control-Allow-Headers":
-      "Authorization, Content-Type, Idempotency-Key, X-Receipt-Token",
+      "Authorization, Content-Type, Idempotency-Key, X-Receipt-Token, X-Conversation-Token",
     "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
     "Access-Control-Max-Age": "600",
     Vary: "Origin",

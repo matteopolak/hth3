@@ -11,7 +11,8 @@
   "dependencies": {
     "@civicresolve/contracts": "workspace:*",
     "@civicresolve/design-tokens": "workspace:*",
-    "@civicresolve/i18n": "workspace:*"
+    "@civicresolve/i18n": "workspace:*",
+    "@elevenlabs/client": "^1.25.0"
   },
   "devDependencies": {
     "vite": "7.1.5"
