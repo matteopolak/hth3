@@ -18,8 +18,16 @@ struct CivicResolveTabs: View {
                     .toolbar { languageToolbar }
             }
             .tabItem { Label(copy("nav.applications"), systemImage: "briefcase") }
+
+            NavigationStack {
+                ProfileView()
+                    .navigationTitle(copy("nav.profile"))
+                    .toolbar { languageToolbar }
+            }
+            .tabItem { Label(copy("nav.profile"), systemImage: "person.crop.circle") }
         }
         .tint(CivicTheme.accent)
+        .task { await model.restoreAuthSession() }
     }
 
     @ToolbarContentBuilder

@@ -6,40 +6,51 @@ struct FeedbackView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                SandboxBadge(title: copy("sandbox.title"))
-                Text(copy("feedback.intro"))
-                    .font(.subheadline)
-                    .foregroundStyle(CivicTheme.muted)
-                CivicTheme.card {
-                    VStack(alignment: .leading, spacing: 16) {
-                        if model.feedbackReviewing {
-                            review
-                        } else {
-                            Text(copy("feedback.title"))
-                                .font(.title2.weight(.semibold))
-                            field(copy("feedback.message"), hint: copy("feedback.messageHint"), text: $model.feedbackDraft, minHeight: 124)
-                            field(copy("feedback.improvement"), hint: copy("feedback.improvementHint"), text: $model.improvementDraft, minHeight: 84)
-                            Button(copy("feedback.review")) {
-                                model.error = nil
-                                model.feedbackReviewing = true
+                if model.emergencyGuidanceShowing {
+                    emergencyGuidance
+                } else {
+                    SandboxBadge(title: copy("sandbox.title"))
+                    Text(copy("feedback.intro"))
+                        .font(.subheadline)
+                        .foregroundStyle(CivicTheme.muted)
+                    CivicTheme.card {
+                        VStack(alignment: .leading, spacing: 16) {
+                            if model.feedbackReviewing {
+                                review
+                            } else {
+                                Text(copy("feedback.title"))
+                                    .font(.title2.weight(.semibold))
+                                field(copy("feedback.message"), hint: copy("feedback.messageHint"), text: $model.feedbackDraft, minHeight: 124)
+                                field(copy("feedback.improvement"), hint: copy("feedback.improvementHint"), text: $model.improvementDraft, minHeight: 84)
+                                Button(copy("feedback.review")) {
+                                    model.error = nil
+                                    model.feedbackReviewing = true
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(model.feedbackDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isWorking)
                             }
-                            .buttonStyle(.borderedProminent)
-                            .disabled(model.feedbackDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isWorking)
                         }
                     }
+                    InlineNotice(message: copy("sandbox.body"))
+                    Button {
+                        model.emergencyGuidanceShowing = true
+                    } label: {
+                        Label(copy("feedback.emergencyAction"), systemImage: "phone.fill")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(CivicTheme.warning)
+                    if let error = model.error { InlineNotice(message: error, isError: true) }
+                    if let notice = model.notice { InlineNotice(message: notice) }
+                    if let receipt = model.feedbackReceipt {
+                        receiptCard(receipt)
+                    } else if model.credentials == nil {
+                        Text(copy("feedback.noReceipt"))
+                            .font(.footnote)
+                            .foregroundStyle(CivicTheme.muted)
+                    }
+                    if model.isWorking { ProgressView(copy("common.loading")) }
                 }
-                InlineNotice(message: copy("sandbox.body"))
-                InlineNotice(message: copy("feedback.emergency"), isError: false)
-                if let error = model.error { InlineNotice(message: error, isError: true) }
-                if let notice = model.notice { InlineNotice(message: notice) }
-                if let receipt = model.feedbackReceipt {
-                    receiptCard(receipt)
-                } else if model.credentials == nil {
-                    Text(copy("feedback.noReceipt"))
-                        .font(.footnote)
-                        .foregroundStyle(CivicTheme.muted)
-                }
-                if model.isWorking { ProgressView(copy("common.loading")) }
             }
             .padding(20)
             .frame(maxWidth: 720, alignment: .leading)
@@ -47,6 +58,31 @@ struct FeedbackView: View {
         }
         .background(CivicTheme.canvas)
         .task { await model.refreshReceipt() }
+    }
+
+    private var emergencyGuidance: some View {
+        CivicTheme.card {
+            VStack(alignment: .leading, spacing: 16) {
+                Label(copy("feedback.emergencyTitle"), systemImage: "exclamationmark.triangle.fill")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(CivicTheme.warning)
+                Text(copy("feedback.emergencyGuidance"))
+                    .font(.body)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let number = URL(string: "tel:911") {
+                    Link(destination: number) {
+                        Label(copy("feedback.call911"), systemImage: "phone.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(CivicTheme.warning)
+                }
+                Button(copy("feedback.back")) {
+                    model.emergencyGuidanceShowing = false
+                }
+                .buttonStyle(.bordered)
+            }
+        }
     }
 
     private var review: some View {
@@ -90,7 +126,7 @@ struct FeedbackView: View {
                 if let outcome = receipt.outcome, !outcome.isEmpty { Text(outcome).font(.subheadline) }
                 ForEach(receipt.messages) { message in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(message.author == "staff" ? "CivicResolve sample queue" : copy("feedback.original"))
+                        Text(message.author == "staff" ? copy("feedback.sampleQueue") : copy("feedback.original"))
                             .font(.caption.weight(.semibold)).foregroundStyle(CivicTheme.muted)
                         Text(message.body).textSelection(.enabled)
                     }

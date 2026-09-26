@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>CivicResolve</string>
+	<string>Envoy</string>
 	<key>CFBundleIdentifier</key>
-	<string>example.civicresolve.ios</string>
+	<string>com.matteopolak.envoy</string>
 	<key>CFBundleName</key>
-	<string>CivicResolve</string>
+	<string>Envoy</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -22,8 +22,25 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.matteopolak.envoy.auth0</string>
+			<key>CFBundleURLSchemes</key>
+			<array><string>civicresolve</string></array>
+		</dict>
+	</array>
+	<key>CIVICRESOLVE_AUTH0_AUDIENCE</key>
+	<string>https://civicresolve.example/api</string>
+	<key>CIVICRESOLVE_AUTH0_CLIENT_ID</key>
+	<string>wIsdEAHHyANP6d59MYmTVgIT8VE4DL6N</string>
+	<key>CIVICRESOLVE_AUTH0_DOMAIN</key>
+	<string>dev-ole6i03kzvf3yb8z.us.auth0.com</string>
+	<key>CIVICRESOLVE_AUTH0_REDIRECT_URL</key>
+	<string>civicresolve://auth/callback</string>
 	<key>CIVICRESOLVE_API_BASE_URL</key>
-	<string>http://127.0.0.1:8787/api/v1</string>
+	<string>$(CIVICRESOLVE_API_BASE_URL)</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

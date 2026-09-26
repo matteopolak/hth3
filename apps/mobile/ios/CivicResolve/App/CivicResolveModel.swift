@@ -18,6 +18,18 @@ final class CivicResolveModel: ObservableObject {
     @Published var selectedPostingId = ""
     @Published var feedbackReceipt: FeedbackReceipt?
     @Published var credentials = KeychainReceiptStore.load()
+    @Published var authAccessToken: String?
+    @Published var authIsWorking = false
+    @Published var authMessage: String?
+    @Published var profile = ApplicantProfile.empty
+    @Published var profileSkillsText = ""
+    @Published var resumes: [ResumeDocument] = []
+    @Published var resumeExtraction: ResumeExtraction?
+    @Published var profileIsLoading = false
+    @Published var profileIsLoaded = false
+    @Published var profileIsWorking = false
+    @Published var profileError: String?
+    @Published var profileNotice: String?
     @Published var feedbackDraft = ""
     @Published var improvementDraft = ""
     @Published var applicationExperience = ""
@@ -25,6 +37,7 @@ final class CivicResolveModel: ObservableObject {
     @Published var replyDraft = ""
     @Published var feedbackReviewing = false
     @Published var feedbackAcknowledged = false
+    @Published var emergencyGuidanceShowing = false
     @Published var applicationConfirmed = false
     @Published var isLoadingPostings = false
     @Published var isLoadingApplications = false
@@ -33,6 +46,16 @@ final class CivicResolveModel: ObservableObject {
     @Published var notice: String?
 
     private let api = WorkerAPI()
+    private let authSession = Auth0Session()
+    private var profileLoadID = UUID()
+
+    var authIsConfigured: Bool { authSession.isConfigured }
+    var isAuth0SignedIn: Bool { authAccessToken != nil }
+    #if DEBUG
+    var isUsingLocalIdentity: Bool { !identity.rawValue.isEmpty }
+    #else
+    var isUsingLocalIdentity: Bool { false }
+    #endif
 
     func copy(_ key: String) -> String {
         AppCopy.value(key, locale: locale)
@@ -44,10 +67,186 @@ final class CivicResolveModel: ObservableObject {
 
     var accessToken: String? {
         #if DEBUG
-        return identity.rawValue.isEmpty ? nil : identity.rawValue
+        if !identity.rawValue.isEmpty { return identity.rawValue }
+        return authAccessToken
         #else
-        return nil
+        return authAccessToken
         #endif
+    }
+
+    func restoreAuthSession() async {
+        guard authSession.isConfigured, authAccessToken == nil else { return }
+        do {
+            authAccessToken = try await authSession.restoreAccessToken()
+            #if DEBUG
+            identity = .none
+            #endif
+        }
+        catch { authAccessToken = nil }
+    }
+
+    func signIn() async {
+        guard authSession.isConfigured else { authMessage = copy("auth.notConfigured"); return }
+        authIsWorking = true
+        authMessage = nil
+        error = nil
+        #if DEBUG
+        identity = .none
+        #endif
+        defer { authIsWorking = false }
+        do {
+            authAccessToken = try await authSession.signIn()
+        } catch {
+            authMessage = copy("auth.signInError")
+        }
+    }
+
+    func signOut() async {
+        authIsWorking = true
+        defer { authIsWorking = false }
+        do {
+            try await authSession.signOut()
+            authMessage = copy("auth.signedOut")
+        } catch {
+            authMessage = copy("auth.logoutError")
+        }
+        authAccessToken = nil
+        profile = .empty
+        profileSkillsText = ""
+        resumes = []
+        resumeExtraction = nil
+        applications = []
+        #if DEBUG
+        identity = .none
+        #endif
+    }
+
+    func loadProfileWorkspace() async {
+        let loadID = UUID()
+        profileLoadID = loadID
+        guard let token = accessToken else {
+            profile = .empty
+            profileSkillsText = ""
+            resumes = []
+            resumeExtraction = nil
+            profileIsLoaded = false
+            return
+        }
+        profileIsLoading = true
+        profileIsLoaded = false
+        profileError = nil
+        resumes = []
+        applications = []
+        defer { if profileLoadID == loadID { profileIsLoading = false } }
+        do {
+            let loadedProfile = try await api.profile(token: token)
+            guard profileLoadID == loadID, accessToken == token else { return }
+            profile = loadedProfile
+            profileSkillsText = profile.skills.joined(separator: "\n")
+            profileIsLoaded = true
+            let loadedResumes = try await api.resumes(token: token)
+            guard profileLoadID == loadID, accessToken == token else { return }
+            resumes = loadedResumes
+            let loadedApplications = try await api.applications(token: token)
+            guard profileLoadID == loadID, accessToken == token else { return }
+            applications = loadedApplications
+        } catch { if profileLoadID == loadID { profileError = localizedError(error) } }
+    }
+
+    func saveProfile() async {
+        guard let token = accessToken else { profileError = copy("auth.signInRequired"); return }
+        profile.skills = profileSkillsText
+            .components(separatedBy: .newlines)
+            .flatMap { $0.split(separator: ",").map(String.init) }
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        profileIsWorking = true
+        profileError = nil
+        profileNotice = nil
+        defer { profileIsWorking = false }
+        do {
+            profile = try await api.saveProfile(profile, token: token)
+            profileSkillsText = profile.skills.joined(separator: "\n")
+            profileNotice = copy("profile.saved")
+        } catch { profileError = localizedError(error) }
+    }
+
+    func uploadResume(data: Data, filename: String, contentType: String) async {
+        guard let token = accessToken else { profileError = copy("auth.signInRequired"); return }
+        profileIsWorking = true
+        profileError = nil
+        profileNotice = nil
+        defer { profileIsWorking = false }
+        do {
+            let resume = try await api.uploadResume(data: data, filename: filename, contentType: contentType, token: token)
+            resumes.insert(resume, at: 0)
+            profileNotice = copy("profile.resumeUploaded")
+        } catch { profileError = localizedError(error) }
+    }
+
+    func deleteResume(_ resume: ResumeDocument) async {
+        guard let token = accessToken else { profileError = copy("auth.signInRequired"); return }
+        profileIsWorking = true
+        profileError = nil
+        profileNotice = nil
+        defer { profileIsWorking = false }
+        do {
+            try await api.deleteResume(id: resume.id, token: token)
+            resumes.removeAll { $0.id == resume.id }
+            if resumeExtraction?.resumeId == resume.id { resumeExtraction = nil }
+            profileNotice = copy("profile.resumeDeleted")
+        } catch { profileError = localizedError(error) }
+    }
+
+    func extractResume(_ resume: ResumeDocument) async {
+        guard let token = accessToken else { profileError = copy("auth.signInRequired"); return }
+        profileIsWorking = true
+        profileError = nil
+        profileNotice = nil
+        defer { profileIsWorking = false }
+        do {
+            resumeExtraction = try await api.extractResume(id: resume.id, token: token)
+            profileNotice = copy("profile.extractionReady")
+        } catch { profileError = localizedError(error) }
+    }
+
+    func applyResumeSuggestion(_ suggestion: ResumeSuggestion) {
+        let text: String?
+        switch suggestion.value {
+        case let .text(value): text = value
+        case let .list(values): text = values.joined(separator: "\n")
+        }
+        guard let text else { return }
+        switch suggestion.field {
+        case "name": profile.name = text
+        case "email": profile.email = text
+        case "phone": profile.phone = text
+        case "location": profile.location = text
+        case "summary": profile.summary = text
+        case "skills": profileSkillsText = ([profileSkillsText, text].filter { !$0.isEmpty }).joined(separator: "\n")
+        case "education":
+            if !profile.education.contains(where: { $0.description == text }) {
+                profile.education.append(EducationEntry(description: text))
+            }
+        case "experience":
+            if !profile.experience.contains(where: { $0.description == text }) {
+                profile.experience.append(ExperienceEntry(description: text))
+            }
+        default: return
+        }
+        profileNotice = copy("profile.suggestionDrafted")
+    }
+
+    func shareResume(_ resume: ResumeDocument, with application: CivicApplication) async {
+        guard let token = accessToken else { profileError = copy("auth.signInRequired"); return }
+        profileIsWorking = true
+        profileError = nil
+        profileNotice = nil
+        defer { profileIsWorking = false }
+        do {
+            try await api.shareResume(id: resume.id, with: application.id, token: token)
+            profileNotice = copy("profile.resumeShared")
+        } catch { profileError = localizedError(error) }
     }
 
     func loadPostings() async {
@@ -143,10 +342,15 @@ final class CivicResolveModel: ObservableObject {
         case "UNAUTHENTICATED": return copy("auth.signInRequired")
         case "FORBIDDEN": return copy("error.forbidden")
         case "DESTINATION_NOT_SUPPORTED": return copy("error.unsupportedDestination")
+        case "SANDBOX_UNAVAILABLE": return copy("error.unsupportedDestination")
+        case "ABUSE_CONTROL_UNAVAILABLE": return copy("error.abuseUnavailable")
+        case "RATE_LIMITED": return copy("error.rateLimited")
         case "SANDBOX_ACK_REQUIRED": return copy("feedback.ackRequired")
+        case "UNREADABLE_RESUME": return copy("error.unreadableResume")
+        case "UNSUPPORTED_FILE_TYPE", "INVALID_FILE": return copy("error.unsupportedFile")
         case "EMERGENCY_REDIRECT": return copy("feedback.emergency")
         case "NETWORK_ERROR": return copy("error.network")
-        default: return apiError.errorDescription ?? copy("error.generic")
+        default: return copy("error.generic")
         }
     }
 }

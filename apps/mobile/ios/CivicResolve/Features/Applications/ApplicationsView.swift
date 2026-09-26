@@ -30,15 +30,21 @@ struct ApplicationsView: View {
                             Text(copy("application.sampleLocation")).font(.caption).foregroundStyle(CivicTheme.warning)
                             field(copy("application.experience"), hint: copy("application.experienceHint"), text: $model.applicationExperience, minHeight: 110)
                             field(copy("application.availability"), hint: copy("application.availabilityHint"), text: $model.applicationAvailability, minHeight: 72)
-                            if model.accessToken == nil { InlineNotice(message: copy("auth.unavailable")) }
+                            if model.accessToken == nil {
+                                InlineNotice(message: copy("auth.signInRequired"))
+                                Button(copy("auth.signInButton")) { Task { await model.signIn() } }
+                                    .buttonStyle(.bordered)
+                                    .disabled(model.authIsWorking)
+                            }
                             Toggle(copy("application.confirm"), isOn: $model.applicationConfirmed)
                                 .font(.subheadline)
                             Button(copy("application.submit")) { Task { await model.submitApplication() } }
                                 .buttonStyle(.borderedProminent)
-                                .disabled(model.accessToken == nil || !model.applicationConfirmed || model.isWorking)
+                                .disabled(model.accessToken == nil || !model.applicationConfirmed || model.isWorking || model.authIsWorking)
                         }
                     }
                 }
+                if let message = model.authMessage { InlineNotice(message: message, isError: message != copy("auth.signedOut")) }
                 if let error = model.error { InlineNotice(message: error, isError: true) }
                 if let notice = model.notice { InlineNotice(message: notice) }
                 applicationsList
@@ -53,7 +59,7 @@ struct ApplicationsView: View {
             await model.loadPostings()
             await model.loadApplications()
         }
-        .onChange(of: model.identity) { _, _ in Task { await model.loadApplications() } }
+        .onChange(of: model.accessToken) { _, _ in Task { await model.loadApplications() } }
     }
 
     @ViewBuilder

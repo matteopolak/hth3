@@ -44,6 +44,90 @@ struct CivicApplication: Decodable, Identifiable {
     let answers: [String: String]
 }
 
+struct ApplicantProfile: Codable, Equatable {
+    var name = ""
+    var email = ""
+    var phone = ""
+    var location = ""
+    var summary = ""
+    var skills: [String] = []
+    var education: [EducationEntry] = []
+    var experience: [ExperienceEntry] = []
+
+    static let empty = ApplicantProfile()
+}
+
+struct EducationEntry: Codable, Equatable, Identifiable {
+    var id = UUID()
+    var institution = ""
+    var credential = ""
+    var fieldOfStudy = ""
+    var startDate = ""
+    var endDate = ""
+    var description = ""
+
+    enum CodingKeys: String, CodingKey {
+        case institution, credential, fieldOfStudy, startDate, endDate, description
+    }
+}
+
+struct ExperienceEntry: Codable, Equatable, Identifiable {
+    var id = UUID()
+    var organization = ""
+    var title = ""
+    var startDate = ""
+    var endDate = ""
+    var description = ""
+
+    enum CodingKeys: String, CodingKey {
+        case organization, title, startDate, endDate, description
+    }
+}
+
+struct ResumeDocument: Decodable, Identifiable, Equatable {
+    let id: String
+    let filename: String
+    let contentType: String
+    let byteSize: Int
+    let createdAt: String
+    let retentionExpiresAt: String
+}
+
+struct ResumeSourceSpan: Decodable, Equatable {
+    let start: Int
+    let end: Int
+    let text: String
+}
+
+enum ResumeSuggestionValue: Decodable, Equatable {
+    case text(String)
+    case list([String])
+
+    init(from decoder: Decoder) throws {
+        let value = try decoder.singleValueContainer()
+        if let text = try? value.decode(String.self) {
+            self = .text(text)
+        } else {
+            self = .list(try value.decode([String].self))
+        }
+    }
+}
+
+struct ResumeSuggestion: Decodable, Identifiable, Equatable {
+    let field: String
+    let value: ResumeSuggestionValue
+    let source: ResumeSourceSpan
+    var id: String { "\(field)-\(source.start)-\(source.end)" }
+}
+
+struct ResumeExtraction: Decodable, Equatable {
+    let resumeId: String
+    let text: String
+    let suggestions: [ResumeSuggestion]
+    let suggestionsTruncated: Bool
+    let extractedAt: String
+}
+
 struct WorkerError: Decodable {
     struct Detail: Decodable {
         let code: String
@@ -97,6 +181,50 @@ struct WorkerAPI {
 
     func applications(token: String) async throws -> [CivicApplication] {
         try await get("/applications", token: token, as: ApplicationsEnvelope.self).applications
+    }
+
+    func profile(token: String) async throws -> ApplicantProfile {
+        try await get("/profile", token: token, as: ProfileEnvelope.self).profile
+    }
+
+    func saveProfile(_ profile: ApplicantProfile, token: String) async throws -> ApplicantProfile {
+        try await send("/profile", method: "PUT", token: token, body: ProfileUpdate(profile: profile), as: ProfileEnvelope.self).profile
+    }
+
+    func resumes(token: String) async throws -> [ResumeDocument] {
+        try await get("/profile/resumes", token: token, as: ResumesEnvelope.self).resumes
+    }
+
+    func uploadResume(data: Data, filename: String, contentType: String, token: String) async throws -> ResumeDocument {
+        let boundary = "CivicResolve-\(UUID().uuidString)"
+        var body = Data()
+        body.appendUTF8("--\(boundary)\r\n")
+        let safeFilename = filename
+            .replacingOccurrences(of: "\"", with: "")
+            .replacingOccurrences(of: "\r", with: "")
+            .replacingOccurrences(of: "\n", with: "")
+        body.appendUTF8("Content-Disposition: form-data; name=\"file\"; filename=\"\(safeFilename)\"\r\n")
+        body.appendUTF8("Content-Type: \(contentType)\r\n\r\n")
+        body.append(data)
+        body.appendUTF8("\r\n--\(boundary)--\r\n")
+
+        var request = makeRequest("/profile/resumes", method: "POST", token: token, receiptToken: nil, idempotent: false)
+        request.httpBody = body
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue(String(body.count), forHTTPHeaderField: "Content-Length")
+        return try await perform(request, as: ResumeEnvelope.self).resume
+    }
+
+    func deleteResume(id: String, token: String) async throws {
+        let _: DeletedEnvelope = try await send("/profile/resumes/\(id)", method: "DELETE", token: token, as: DeletedEnvelope.self)
+    }
+
+    func extractResume(id: String, token: String) async throws -> ResumeExtraction {
+        try await send("/profile/resumes/\(id)/extract", method: "POST", token: token, as: ExtractionEnvelope.self).extraction
+    }
+
+    func shareResume(id: String, with applicationId: String, token: String) async throws {
+        let _: ShareEnvelope = try await send("/applications/\(applicationId)/resume", method: "PUT", token: token, body: ResumeShare(resumeId: id))
     }
 
     func submitApplication(token: String, postingId: String, experience: String, availability: String) async throws -> CivicApplication {
@@ -188,11 +316,19 @@ struct WorkerAPI {
 
 private struct PostingEnvelope: Decodable { let postings: [Posting] }
 private struct ApplicationsEnvelope: Decodable { let applications: [CivicApplication] }
+private struct ProfileEnvelope: Decodable { let profile: ApplicantProfile }
+private struct ResumesEnvelope: Decodable { let resumes: [ResumeDocument] }
+private struct ResumeEnvelope: Decodable { let resume: ResumeDocument }
+private struct ExtractionEnvelope: Decodable { let extraction: ResumeExtraction }
+private struct DeletedEnvelope: Decodable { let deleted: Bool }
+private struct ShareEnvelope: Decodable { let applicationId: String; let resumeId: String; let sharedAt: String }
 private struct ApplicationEnvelope: Decodable { let application: CivicApplication }
 private struct FeedbackEnvelope: Decodable { let submission: FeedbackReceipt; let receiptToken: String }
 private struct ReceiptEnvelope: Decodable { let submission: FeedbackReceipt }
 private struct MessageEnvelope: Decodable { let message: FeedbackMessage }
 private struct ApplicationSubmission: Encodable { let postingId: String; let answers: [String: String]; let confirmedByApplicant: Bool }
+private struct ProfileUpdate: Encodable { let profile: ApplicantProfile }
+private struct ResumeShare: Encodable { let resumeId: String }
 private struct FeedbackSubmission: Encodable {
     let message: String
     let whatWouldImprove: String?
@@ -201,3 +337,9 @@ private struct FeedbackSubmission: Encodable {
     let locale: String
 }
 private struct MessageSubmission: Encodable { let message: String }
+
+private extension Data {
+    mutating func appendUTF8(_ value: String) {
+        append(Data(value.utf8))
+    }
+}
