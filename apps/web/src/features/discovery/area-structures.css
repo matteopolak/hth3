@@ -52,7 +52,8 @@
   color: #fff;
   font-size: 12px;
   font-weight: 620;
-  white-space: nowrap;
+  min-width: 0;
+  text-align: center;
 }
 
 .discovery-structure-primary:hover {
@@ -92,6 +93,12 @@
 .discovery-structure-region-list .discovery-structure-region:hover {
   border-color: #999;
   background: #f7f7f7;
+}
+
+.discovery-structure-region-list .discovery-structure-region.is-selected {
+  border-color: #303030;
+  background: #f1f1f1;
+  color: #202020;
 }
 
 .discovery-structure button:focus-visible {
@@ -183,6 +190,11 @@
 .discovery-structure-support-regions .discovery-structure-region:hover {
   border-color: #a7a7a7;
   background: #f9f9f9;
+}
+
+.discovery-structure-support-regions .discovery-structure-region.is-selected {
+  border-color: #303030;
+  background: #f1f1f1;
 }
 
 .discovery-structure-support-regions

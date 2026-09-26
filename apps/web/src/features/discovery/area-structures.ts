@@ -15,6 +15,7 @@ export type StructuredDiscoveryArea = "jobs" | "support" | "funding";
 export interface DiscoveryAreaStructureOptions {
   area: StructuredDiscoveryArea;
   locale: Locale;
+  selectedLocation?: string;
   onBrowse: () => void;
   onSearchLocation: (location: string) => void;
 }
@@ -133,6 +134,7 @@ function regionButtons(
   onSearchLocation: (location: string) => void,
   className: string,
   groupLabel: string,
+  selectedLocation?: string,
 ): HTMLElement {
   const group = element("div", className);
   const text = copy[locale];
@@ -143,6 +145,11 @@ function regionButtons(
       onSearchLocation(location),
     );
     region.setAttribute("aria-label", `${text.choose} ${label}`);
+    if (selectedLocation !== undefined) {
+      const selected = selectedLocation === location;
+      region.setAttribute("aria-pressed", String(selected));
+      if (selected) region.classList.add("is-selected");
+    }
     group.append(region);
   }
   return group;
@@ -151,6 +158,7 @@ function regionButtons(
 export function createDiscoveryAreaStructure({
   area,
   locale,
+  selectedLocation,
   onBrowse,
   onSearchLocation,
 }: DiscoveryAreaStructureOptions): HTMLElement {
@@ -184,6 +192,7 @@ export function createDiscoveryAreaStructure({
         onSearchLocation,
         "discovery-structure-region-list",
         text.jobs.region,
+        selectedLocation,
       ),
     );
     section.append(regions);
@@ -205,6 +214,7 @@ export function createDiscoveryAreaStructure({
       onSearchLocation,
       "discovery-structure-support-regions",
       text.support.region,
+      selectedLocation,
     );
     for (const region of regions.children) {
       region.prepend(icon(MapPin));
@@ -252,6 +262,7 @@ export function createDiscoveryAreaStructure({
         onSearchLocation,
         "discovery-structure-region-list",
         text.funding.region,
+        selectedLocation,
       ),
     );
     section.append(regions);
