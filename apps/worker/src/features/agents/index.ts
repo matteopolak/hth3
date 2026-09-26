@@ -17,6 +17,7 @@ import {
 import type {
   AgentContext,
   AgentMode,
+  AiGeneration,
   ConversationRow,
   MessageRow,
   ProposalRow,
@@ -124,7 +125,12 @@ async function createConversation(
       organizationId = organization?.id ?? null;
     }
     if (!organizationId)
-      return featureError(context, "INVALID_REQUEST", "Choose an organization.", 400);
+      return featureError(
+        context,
+        "INVALID_REQUEST",
+        "Choose an organization.",
+        400,
+      );
   }
   const guestToken = actor ? null : randomHex(32);
   const now = new Date().toISOString();
@@ -149,7 +155,14 @@ async function createConversation(
     context,
     {
       apiVersion: API_VERSION,
-      conversation: { id, mode, locale, organizationId, createdAt: now, updatedAt: now },
+      conversation: {
+        id,
+        mode,
+        locale,
+        organizationId,
+        createdAt: now,
+        updatedAt: now,
+      },
       ...(guestToken ? { conversationToken: guestToken } : {}),
       tools: visibleTools(mode),
     },
@@ -285,7 +298,7 @@ async function sendMessage(
     .bind(conversation.id, HISTORY_LIMIT)
     .all<MessageRow>();
   const recent = (history.results ?? []).reverse();
-  let response: { response?: string; tool_calls?: unknown[] };
+  let response: AiGeneration;
   try {
     response = await context.env.AI.run(MODEL, {
       messages: [
@@ -306,7 +319,7 @@ async function sendMessage(
       503,
     );
   }
-  const instruction = parseInstruction(response.response);
+  const instruction = parseInstruction(modelText(response));
   let assistantText = instruction.message;
   let toolResult: unknown;
   let proposal: unknown;
@@ -350,22 +363,48 @@ async function sendMessage(
           max_tokens: 450,
           temperature: 0.2,
         });
-        if (followUp.response?.trim()) assistantText = followUp.response.trim();
+        const followUpText = modelText(followUp);
+        if (followUpText?.trim()) assistantText = followUpText.trim();
       } catch {
         /* The successful tool result is still returned to the client. */
       }
     }
   }
-  if (
-    conversation.mode === "resident" &&
-    suggestsServiceIssue(safeMessage) &&
-    !proposal &&
-    !/feedback|complaint|signalement|plainte/i.test(assistantText)
-  ) {
-    assistantText +=
-      conversation.locale === "fr"
-        ? " Je peux préparer un signalement que vous pourrez vérifier avant de l'envoyer."
-        : " I can prepare a complaint or suggestion for you to review before sending it.";
+  if (conversation.mode === "resident" && suggestsServiceIssue(safeMessage)) {
+    if (appearsEmergency(safeMessage)) {
+      assistantText +=
+        conversation.locale === "fr"
+          ? " En cas de danger immédiat, appelez le 911."
+          : " If there is immediate danger, call 911.";
+    } else if (!proposal && /\bToronto\b/i.test(safeMessage)) {
+      const draft = await callTool(
+        request,
+        conversation,
+        "create_feedback",
+        {
+          message: safeMessage,
+          municipalityId: "3520005",
+          sandboxAcknowledged: false,
+          locale: conversation.locale,
+        },
+        context,
+      );
+      if (!(draft instanceof Response) && "proposal" in draft) {
+        proposal = draft.proposal;
+        assistantText +=
+          conversation.locale === "fr"
+            ? " J'ai préparé un signalement à vérifier. Il sera envoyé seulement à la file fictive d'Envoy après votre confirmation."
+            : " I prepared a report for you to review. It will go only to Envoy's fictional queue after your approval.";
+      }
+    } else if (
+      !proposal &&
+      !/feedback|complaint|report|signalement|plainte/i.test(assistantText)
+    ) {
+      assistantText +=
+        conversation.locale === "fr"
+          ? " Si cela s'est passé à Toronto, je peux préparer un signalement que vous pourrez vérifier avant de l'envoyer."
+          : " If this happened in Toronto, I can prepare a complaint or suggestion for you to review before sending it.";
+    }
   }
   await storeMessage(conversation.id, "assistant", assistantText, context);
   return featureJson(context, {
@@ -841,6 +880,18 @@ function parseInstruction(raw: string | undefined): {
   } catch {
     return { message: text };
   }
+}
+
+function modelText(response: AiGeneration): string | undefined {
+  if (typeof response.response === "string") return response.response;
+  const content = response.choices?.[0]?.message?.content;
+  return typeof content === "string" ? content : undefined;
+}
+
+function appearsEmergency(message: string): boolean {
+  return /\b(emergency|immediate danger|someone is injured|medical emergency|fire|911|urgence|danger immédiat|blessé|incendie)\b/i.test(
+    message,
+  );
 }
 
 function suggestsServiceIssue(message: string): boolean {

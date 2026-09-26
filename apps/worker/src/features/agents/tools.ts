@@ -1,9 +1,12 @@
 import { handleApplicationRequest } from "../application-core/index.js";
 import { handleAnalyticsRequest } from "../analytics/index.js";
+import { handleDiscoveryRequest } from "../discovery/index.js";
+import { handleEmployerRequest } from "../employer/index.js";
 import { handleFeedbackRequest } from "../feedback-core/index.js";
 import { handleProfileRequest } from "../profile/index.js";
 import { handleSourceRequest } from "../sources/index.js";
 import { handleTaxonomyRequest } from "../taxonomy/index.js";
+import { handleThemesRequest } from "../themes/index.js";
 import type {
   AgentContext,
   AgentMode,
@@ -65,6 +68,33 @@ function sourceRecordId(args: ToolArguments): string {
   return value;
 }
 
+function themeId(args: ToolArguments): string {
+  const value = args.id;
+  if (typeof value !== "string" || !/^theme_[a-f0-9]{32}$/.test(value))
+    throw new ToolInputError("id must be a theme identifier.");
+  return value;
+}
+
+function discoveryQuery(
+  args: ToolArguments,
+  fields: readonly string[],
+): string {
+  const params = new URLSearchParams();
+  for (const field of fields) {
+    const value = args[field];
+    if (value === undefined || value === null || value === "") continue;
+    if (
+      typeof value !== "string" &&
+      typeof value !== "number" &&
+      typeof value !== "boolean"
+    )
+      throw new ToolInputError(`${field} must be a simple filter.`);
+    params.set(field, String(value));
+  }
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
 export class ToolInputError extends Error {}
 
 export const AGENT_TOOLS: Record<string, ToolDefinition> = {
@@ -110,6 +140,64 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     path: (args) =>
       `/api/v1/source-records/${sourceRecordId(args)}${args.includeSamples === true ? "?includeSamples=true" : ""}`,
     handler: handleSourceRequest,
+  },
+  search_discovery: {
+    mode: "both",
+    access: "read",
+    description:
+      "Search real sourced jobs, support, funding, offices and participation records with filters.",
+    method: "GET",
+    path: (args) =>
+      `/api/v1/discovery${discoveryQuery(args, ["area", "q", "jurisdiction", "language", "freshness", "limit", "offset", "includeSamples"])}`,
+    handler: handleDiscoveryRequest,
+  },
+  read_discovery_item: {
+    mode: "both",
+    access: "read",
+    description: "Open one sourced discovery item and its provenance.",
+    method: "GET",
+    path: (args) =>
+      `/api/v1/discovery/${sourceRecordId(args)}${discoveryQuery(args, ["includeSamples"])}`,
+    handler: handleDiscoveryRequest,
+  },
+  get_official_handoff: {
+    mode: "both",
+    access: "read",
+    description:
+      "Get the verified official external destination. Opening the link does not record an application or report submission.",
+    method: "GET",
+    path: (args) =>
+      `/api/v1/discovery/${sourceRecordId(args)}/handoff${discoveryQuery(args, ["includeSamples"])}`,
+    handler: handleDiscoveryRequest,
+  },
+  list_saved_discovery: {
+    mode: "resident",
+    access: "read",
+    description:
+      "List the signed-in resident's saved sourced items and checklists.",
+    method: "GET",
+    path: (args) =>
+      `/api/v1/discovery/saved${discoveryQuery(args, ["includeSamples"])}`,
+    handler: handleDiscoveryRequest,
+  },
+  save_discovery_item: {
+    mode: "resident",
+    access: "write",
+    description:
+      "Prepare saving a sourced item, optionally replacing its checklist of up to 12 entries.",
+    method: "PUT",
+    path: (args) =>
+      `/api/v1/discovery/saved/${sourceRecordId(args)}${discoveryQuery(args, ["includeSamples"])}`,
+    handler: handleDiscoveryRequest,
+    body: (args) => ({ checklist: args.checklist }),
+  },
+  remove_saved_discovery_item: {
+    mode: "resident",
+    access: "write",
+    description: "Prepare removing a saved sourced item and its checklist.",
+    method: "DELETE",
+    path: (args) => `/api/v1/discovery/saved/${sourceRecordId(args)}`,
+    handler: handleDiscoveryRequest,
   },
   read_profile: {
     mode: "resident",
@@ -278,6 +366,25 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     handler: handleProfileRequest,
     body: (args) => ({ resumeId: identifier(args, "resumeId") }),
   },
+  read_application_messages: {
+    mode: "resident",
+    access: "read",
+    description:
+      "Read messages on one of the signed-in resident's applications.",
+    method: "GET",
+    path: (args) => `/api/v1/applications/${identifier(args, "id")}/messages`,
+    handler: handleEmployerRequest,
+  },
+  send_application_message: {
+    mode: "resident",
+    access: "write",
+    description:
+      "Prepare a message to a participating employer about the resident's own application.",
+    method: "POST",
+    path: (args) => `/api/v1/applications/${identifier(args, "id")}/messages`,
+    handler: handleEmployerRequest,
+    body: (args) => ({ message: string(args, "message") }),
+  },
   list_staff_feedback: {
     mode: "employee",
     access: "read",
@@ -289,15 +396,46 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
   read_feedback_analytics: {
     mode: "employee",
     access: "read",
-    description: "Read organization feedback counts and trends for the last 1 to 90 days.",
+    description:
+      "Read organization feedback counts and trends for the last 1 to 90 days.",
     method: "GET",
     path: (args, org) => {
-      const days = typeof args.days === "number" && Number.isInteger(args.days)
-        ? Math.max(1, Math.min(90, args.days))
-        : 30;
+      const days =
+        typeof args.days === "number" && Number.isInteger(args.days)
+          ? Math.max(1, Math.min(90, args.days))
+          : 30;
       return `${organizationPath(org)}/analytics?days=${days}`;
     },
     handler: handleAnalyticsRequest,
+  },
+  list_feedback_themes: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Read feedback overview counts, trends and evidence-linked themes with optional period and filters.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/themes${discoveryQuery(args, ["days", "category", "department", "status"])}`,
+    handler: handleThemesRequest,
+  },
+  read_feedback_theme: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Open one theme and its original supporting feedback submissions.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/themes/${themeId(args)}${discoveryQuery(args, ["limit", "offset"])}`,
+    handler: handleThemesRequest,
+  },
+  refresh_feedback_themes: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare an explicit refresh of organization feedback theme groups.",
+    method: "POST",
+    path: (_args, org) => `${organizationPath(org)}/themes/refresh`,
+    handler: handleThemesRequest,
   },
   read_staff_feedback: {
     mode: "employee",
@@ -324,6 +462,25 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     method: "GET",
     path: (_args, org) => `${organizationPath(org)}/applications`,
     handler: handleApplicationRequest,
+  },
+  read_staff_application: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Open one application in the employee's authorized organization.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/applications/${identifier(args, "id")}`,
+    handler: handleEmployerRequest,
+  },
+  read_staff_application_messages: {
+    mode: "employee",
+    access: "read",
+    description: "Read the conversation on an organization application.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/applications/${identifier(args, "id")}/messages`,
+    handler: handleEmployerRequest,
   },
   read_staff_resume: {
     mode: "employee",
@@ -366,6 +523,93 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       `${organizationPath(org)}/applications/${identifier(args, "id")}/status`,
     handler: handleApplicationRequest,
     body: (args) => ({ status: string(args, "status") }),
+  },
+  list_organization_postings: {
+    mode: "employee",
+    access: "read",
+    description:
+      "List draft, published and closed postings owned by this organization.",
+    method: "GET",
+    path: (_args, org) => `${organizationPath(org)}/postings`,
+    handler: handleEmployerRequest,
+  },
+  read_organization_posting: {
+    mode: "employee",
+    access: "read",
+    description: "Read one organization posting and its current version.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/postings/${identifier(args, "id")}`,
+    handler: handleEmployerRequest,
+  },
+  create_organization_posting: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a new organization posting draft with title, description and location.",
+    method: "POST",
+    path: (_args, org) => `${organizationPath(org)}/postings`,
+    handler: handleEmployerRequest,
+    body: (args) => ({
+      title: string(args, "title"),
+      description: string(args, "description"),
+      location: string(args, "location"),
+    }),
+  },
+  edit_organization_posting: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare edits to an organization posting's title, description or location.",
+    method: "PATCH",
+    path: (args, org) =>
+      `${organizationPath(org)}/postings/${identifier(args, "id")}`,
+    handler: handleEmployerRequest,
+    body: (args) => ({
+      title: args.title,
+      description: args.description,
+      location: args.location,
+    }),
+  },
+  publish_organization_posting: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare publication of a draft posting; verification policy is rechecked on approval.",
+    method: "POST",
+    path: (args, org) =>
+      `${organizationPath(org)}/postings/${identifier(args, "id")}/publish`,
+    handler: handleEmployerRequest,
+  },
+  close_organization_posting: {
+    mode: "employee",
+    access: "write",
+    description: "Prepare closure of a published posting.",
+    method: "POST",
+    path: (args, org) =>
+      `${organizationPath(org)}/postings/${identifier(args, "id")}/close`,
+    handler: handleEmployerRequest,
+  },
+  send_staff_application_message: {
+    mode: "employee",
+    access: "write",
+    description: "Prepare a message to an applicant in this organization.",
+    method: "POST",
+    path: (args, org) =>
+      `${organizationPath(org)}/applications/${identifier(args, "id")}/messages`,
+    handler: handleEmployerRequest,
+    body: (args) => ({ message: string(args, "message") }),
+  },
+  record_application_decision: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a shortlist, offer or decline decision with an optional applicant message; requires explicit human approval.",
+    method: "POST",
+    path: (args, org) =>
+      `${organizationPath(org)}/applications/${identifier(args, "id")}/decision`,
+    handler: handleEmployerRequest,
+    body: (args) => ({ status: string(args, "status"), message: args.message }),
   },
   read_taxonomy: {
     mode: "employee",

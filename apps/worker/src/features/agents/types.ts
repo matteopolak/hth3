@@ -4,6 +4,15 @@ export type AgentMode = "resident" | "employee";
 export type ToolAccess = "read" | "write";
 export type ToolArguments = Record<string, unknown>;
 
+export interface AiGeneration {
+  response?: string;
+  tool_calls?: unknown[];
+  choices?: Array<{
+    message?: { content?: string | null; tool_calls?: unknown[] };
+    finish_reason?: string | null;
+  }>;
+}
+
 export interface AiBinding {
   run(
     model: string,
@@ -15,7 +24,7 @@ export interface AiBinding {
       max_tokens?: number;
       temperature?: number;
     },
-  ): Promise<{ response?: string; tool_calls?: unknown[] }>;
+  ): Promise<AiGeneration>;
 }
 
 export interface AgentContext extends FeatureContext {
