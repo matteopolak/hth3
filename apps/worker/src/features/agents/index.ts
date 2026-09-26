@@ -325,8 +325,36 @@ async function sendMessage(
   let assistantText = instruction.message;
   let toolResult: unknown;
   let proposal: unknown;
-  const residentServiceIssue =
-    conversation.mode === "resident" && suggestsServiceIssue(safeMessage);
+  const previousMessages = recent.slice(0, -1);
+  const previousAssistant = [...previousMessages]
+    .reverse()
+    .find((item) => item.role === "assistant")?.content;
+  const previousIssue = [...previousMessages]
+    .reverse()
+    .find(
+      (item) => item.role === "user" && suggestsServiceIssue(item.content),
+    )?.content;
+  const clarifiesToronto =
+    /\bToronto\b/i.test(safeMessage) &&
+    /which municipality|dans quelle municipalité/i.test(
+      previousAssistant ?? "",
+    ) &&
+    !!previousIssue;
+  const confirmsSeparateIssue =
+    isSeparateIssueConfirmation(safeMessage) &&
+    /matching report already exists|signalement semblable existe déjà/i.test(
+      previousAssistant ?? "",
+    ) &&
+    !!previousIssue;
+  const residentIssueText =
+    conversation.mode === "resident"
+      ? clarifiesToronto || confirmsSeparateIssue
+        ? previousIssue
+        : suggestsServiceIssue(safeMessage)
+          ? safeMessage
+          : null
+      : null;
+  const residentServiceIssue = !!residentIssueText;
   if (instruction.tool && !residentServiceIssue) {
     const outcome = await callTool(
       request,
@@ -376,47 +404,75 @@ async function sendMessage(
   const selectedDuplicate = feedbackDuplicateStatus(toolResult);
   if (selectedDuplicate)
     assistantText = duplicateMessage(selectedDuplicate, conversation.locale);
-  if (residentServiceIssue) {
-    if (appearsEmergency(safeMessage)) {
+  if (residentIssueText) {
+    if (appearsEmergency(residentIssueText)) {
       assistantText =
         conversation.locale === "fr"
           ? "En cas de danger immédiat, appelez le 911. Je peux vous aider à préparer un signalement ensuite."
           : "If there is immediate danger, call 911. I can help prepare a report afterward.";
-    } else if (/\bToronto\b/i.test(safeMessage)) {
+    } else if (
+      /\bToronto\b/i.test(residentIssueText) ||
+      clarifiesToronto ||
+      confirmsSeparateIssue
+    ) {
       assistantText =
         conversation.locale === "fr"
           ? "Je peux vous aider à préparer un signalement pour ce problème."
           : "I can help prepare a report about this problem.";
-      const draft = await callTool(
+      const feedbackArgs = {
+        message: residentIssueText,
+        municipalityId: "3520005",
+        sandboxAcknowledged: false,
+        locale: conversation.locale,
+      };
+      const check = await checkFeedbackDuplicate(
         request,
+        feedbackArgs,
         conversation,
-        "create_feedback",
-        {
-          message: safeMessage,
-          municipalityId: "3520005",
-          sandboxAcknowledged: false,
-          locale: conversation.locale,
-        },
         context,
       );
-      if (draft instanceof Response) {
+      if (check instanceof Response) {
         toolResult = {
-          status: draft.status,
-          data: (await draft.json()) as unknown,
+          status: check.status,
+          data: (await check.json()) as unknown,
         };
         assistantText =
           conversation.locale === "fr"
             ? "Je ne peux pas vérifier les signalements semblables pour le moment. Réessayez bientôt."
             : "I cannot check for matching reports right now. Please try again soon.";
+      } else if (check && !confirmsSeparateIssue) {
+        toolResult = duplicateResult(check);
+        assistantText = duplicateMessage(check, conversation.locale);
       } else {
-        toolResult = draft.result;
-        proposal = draft.proposal;
-        const duplicate = feedbackDuplicateStatus(toolResult);
-        assistantText = duplicate
-          ? duplicateMessage(duplicate, conversation.locale)
-          : conversation.locale === "fr"
-            ? "Je peux vous aider à signaler ce problème. Vérifiez le brouillon avant de l'envoyer."
-            : "You can report this problem through Envoy. Review the draft before sending it.";
+        const draft = await callTool(
+          request,
+          conversation,
+          "create_feedback",
+          feedbackArgs,
+          context,
+          check,
+        );
+        if (draft instanceof Response) {
+          toolResult = {
+            status: draft.status,
+            data: (await draft.json()) as unknown,
+          };
+          assistantText =
+            conversation.locale === "fr"
+              ? "Je ne peux pas préparer ce signalement pour le moment. Réessayez bientôt."
+              : "I cannot prepare this report right now. Please try again soon.";
+        } else {
+          toolResult = draft.result;
+          proposal = draft.proposal;
+          const duplicate = feedbackDuplicateStatus(toolResult);
+          assistantText = duplicate
+            ? conversation.locale === "fr"
+              ? "J'ai préparé un signalement distinct. Vérifiez le brouillon et confirmez qu'il s'agit d'un autre problème avant de l'envoyer."
+              : "I prepared a separate report. Review the draft and confirm this is a distinct issue before sending it."
+            : conversation.locale === "fr"
+              ? "Je peux vous aider à signaler ce problème. Vérifiez le brouillon avant de l'envoyer."
+              : "You can report this problem through Envoy. Review the draft before sending it.";
+        }
       }
     } else {
       assistantText =
@@ -471,6 +527,7 @@ async function callTool(
   name: string,
   args: ToolArguments,
   context: AgentContext,
+  precheckedDuplicate?: string | null,
 ): Promise<{ result?: unknown; proposal?: unknown } | Response> {
   if (JSON.stringify(args).length > MAX_ARGUMENTS)
     return featureError(
@@ -523,12 +580,10 @@ async function callTool(
   const expiresAt = new Date(now.getTime() + 30 * 60_000).toISOString();
   let duplicateStatus: string | null = null;
   if (name === "create_feedback") {
-    const check = await checkFeedbackDuplicate(
-      request,
-      args,
-      conversation,
-      context,
-    );
+    const check =
+      precheckedDuplicate === undefined
+        ? await checkFeedbackDuplicate(request, args, conversation, context)
+        : precheckedDuplicate;
     if (check instanceof Response) return check;
     duplicateStatus = check;
   }
@@ -897,8 +952,14 @@ function feedbackDuplicateStatus(result: unknown): string | null | undefined {
 function duplicateMessage(status: string, locale: "en" | "fr"): string {
   const label = FEEDBACK_STATUS_LABELS[status]?.[locale] ?? status;
   return locale === "fr"
-    ? `Un signalement semblable existe déjà dans Envoy pour cette municipalité. Son état actuel est ${label}.`
-    : `A matching report already exists in Envoy for this municipality. Its current status is ${label}.`;
+    ? `Un signalement semblable existe déjà dans Envoy pour cette municipalité. Son état actuel est ${label}. S'agit-il d'un problème distinct ou récurrent?`
+    : `A matching report already exists in Envoy for this municipality. Its current status is ${label}. Is yours a separate issue or a recurrence?`;
+}
+
+function isSeparateIssueConfirmation(message: string): boolean {
+  return /\b(separate|different|new occurrence|happened again|recurred|recurrence|distinct|différent|différente|nouvel incident|encore une fois|récurrent|récurrence)\b/i.test(
+    message,
+  );
 }
 
 function duplicateResult(status: string): { status: 200; data: unknown } {
