@@ -23,7 +23,7 @@ Resident feedback → clarification → Workers AI categorization → aggregate 
 → authorized government-team review and response → resident outcome
 ```
 
-The civic connection must be visible in the running product. For a hackathon deployment without an actual government partner, a clearly fictional test municipality and employer can exercise every internal loop. The interface must never imply that the fictional account is a real Canadian government office or that feedback reached one.
+The civic connection must be visible in the running product. For a hackathon deployment without an actual government partner, a clearly fictional test organization and employer based in a real municipality can exercise every internal loop. Municipality names and geographic boundaries must be real; do not invent a municipality to fill a data gap. The interface must never imply that the fictional account is a real Canadian government office or that feedback reached one.
 
 ### Confirmed product decisions
 
@@ -57,7 +57,7 @@ Every feature presented as working must execute against the deployed application
 - The React Native app performs the flows shown in the video against the live API.
 - The Remotion video records or composes evidence from functioning product flows; it does not invent successful calls or display fabricated integration results.
 
-Synthetic people, locations, and reports are appropriate **labeled** test content. Test fixtures and mocked providers may be used in automated tests. They must not substitute for a claimed live integration in judging or the final video.
+Synthetic people and reports are appropriate **labeled** test content. Sample locations use real municipality names and are marked as samples; they do not imply a verified public office. Test fixtures and mocked providers may be used in automated tests. They must not substitute for a claimed live integration in judging or the final video.
 
 ### First-pass source coverage
 
@@ -276,7 +276,7 @@ Public web + React Native app          Government staff/employer web
 
 The Worker owns authorization, validation, orchestration, and external secrets. Clients do not call privileged providers directly. Cloudflare D1 is the transactional source of truth for imported records, postings, applications, feedback, categories, themes, and an event outbox. Tiger Cloud receives validated feedback events from that outbox and powers time-series aggregates and staff trend charts; it is not a competing write store for applications or private feedback. The outbox retries safely by event ID, exposes lag to staff, and never turns an analytics outage into a false failure of a resident submission. R2 stores résumés, attachments and transcript artifacts with access controlled through the Worker. Search indexes and caches are derived and rebuildable. A scheduled import job updates source-backed records without exposing provider credentials to clients.
 
-The product can run for a fictional municipality/employer without an external government integration. It must never imply that reports or applications are being sent to a real public agency. Within its own resident, applicant and staff accounts, posting, applying, review, feedback submission, assignment, communication, and resolution must all work.
+The product can run for a fictional organization/employer in a real municipality without an external government integration. It must never imply that reports or applications are being sent to a real public agency. Within its own resident, applicant and staff accounts, posting, applying, review, feedback submission, assignment, communication, and resolution must all work.
 
 ### AI responsibilities
 
