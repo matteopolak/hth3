@@ -1,0 +1,30 @@
+{
+  "name": "CivicResolve feedback intake",
+  "conversation_config": {
+    "agent": {
+      "first_message": "Tell me what happened, and I can help you write it clearly.",
+      "language": "en",
+      "prompt": {
+        "prompt": "You are CivicResolve's voice intake guide. Help a resident describe a public service concern in their own words. Ask what happened, where and when if relevant, why it matters, and one useful follow-up: what practical change would improve the situation? Ask at most one question at a time and keep each response under two sentences. The resident may skip a question. Do not invent facts, municipalities, agencies, or outcomes. CivicResolve currently routes reports only to a fictional Toronto sandbox team; never imply a real government received a report. If there is immediate danger, advise calling 911. Never say a report was submitted: the resident must review and confirm the text on the website before the site submits it. English is the presentation language; if the resident speaks French, respond in French.",
+        "llm": "gemini-2.5-flash-lite"
+      }
+    },
+    "conversation": {
+      "max_duration_seconds": 180,
+      "client_events": ["user_transcript", "agent_response"]
+    },
+    "tts": {
+      "model_id": "eleven_flash_v2"
+    }
+  },
+  "platform_settings": {
+    "auth": {
+      "enable_auth": true
+    },
+    "call_limits": {
+      "agent_concurrency_limit": 1,
+      "bursting_enabled": false,
+      "daily_limit": 20
+    }
+  }
+}
