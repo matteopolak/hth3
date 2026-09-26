@@ -342,6 +342,15 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     path: () => "/api/v1/profile/resumes",
     handler: handleProfileRequest,
   },
+  prepare_resume_upload: {
+    mode: "resident",
+    access: "read",
+    description:
+      "Check résumé access and ask the resident to choose a PDF or DOCX in the chat file picker. This tool does not upload a file itself.",
+    method: "GET",
+    path: () => "/api/v1/profile/resumes",
+    handler: handleProfileRequest,
+  },
   read_resume: {
     mode: "resident",
     access: "read",

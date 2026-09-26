@@ -8,6 +8,7 @@ import {
   type AuthenticatedActor,
 } from "../../auth/identity.js";
 import { featureError, featureJson, sha256Hex } from "../shared.js";
+import { proposalChanges, type ProposalChange } from "./proposal-changes.js";
 import {
   executeTool,
   prepareTool,
@@ -498,6 +499,23 @@ async function callTool(
       prepared,
       request.headers.get("X-Receipt-Token") ?? undefined,
     );
+    if (name === "prepare_resume_upload" && result.status < 400)
+      return {
+        result: {
+          status: result.status,
+          data: {
+            ...(result.data as Record<string, unknown>),
+            upload: {
+              path: "/api/v1/profile/resumes",
+              method: "POST",
+              contentType: "multipart/form-data",
+              field: "file",
+              requiresFileChooser: true,
+              submitted: false,
+            },
+          },
+        },
+      };
     return { result };
   }
   const now = new Date();
@@ -1000,7 +1018,7 @@ async function recordVersion(
   args: ToolArguments,
   conversation: ConversationRow,
   context: AgentContext,
-): Promise<{ recordVersion?: string }> {
+): Promise<{ recordVersion?: string; changes?: ProposalChange[] }> {
   const readName = VERSION_READ_TOOL[name];
   if (!readName) return {};
   const readArgs =
@@ -1035,13 +1053,24 @@ async function recordVersion(
     draft?: unknown;
     classification?: { id?: unknown };
   };
+  const proposed = prepareTool(
+    name,
+    args,
+    conversation.mode,
+    conversation.organization_id,
+  );
+  const changes = proposalChanges(name, args, proposed.preview.body, data);
+  const review = changes.length > 0 ? { changes } : {};
   if (readName === "read_taxonomy" && data.draft)
-    return { recordVersion: await sha256Hex(JSON.stringify(data.draft)) };
+    return {
+      recordVersion: await sha256Hex(JSON.stringify(data.draft)),
+      ...review,
+    };
   if (
     readName === "read_classification" &&
     typeof data.classification?.id === "string"
   )
-    return { recordVersion: data.classification.id };
+    return { recordVersion: data.classification.id, ...review };
   if (readName === "read_feedback_theme" && data.theme)
     return {
       recordVersion: await sha256Hex(
@@ -1050,11 +1079,13 @@ async function recordVersion(
           sourceIds: data.sources?.map((source) => source.id) ?? [],
         }),
       ),
+      ...review,
     };
   if (readName === "read_profile")
     return {
       recordVersion:
         typeof data.updatedAt === "string" ? data.updatedAt : "profile:absent",
+      ...review,
     };
   if (readName === "read_external_preparation")
     return {
@@ -1062,12 +1093,14 @@ async function recordVersion(
         typeof data.updatedAt === "string"
           ? data.updatedAt
           : "preparation:absent",
+      ...review,
     };
   if (readName === "list_saved_discovery") {
     const saved = data.items?.find((entry) => entry.item?.id === args.id);
     return {
       recordVersion:
         typeof saved?.updatedAt === "string" ? saved.updatedAt : "saved:absent",
+      ...review,
     };
   }
   const version = (
@@ -1077,7 +1110,9 @@ async function recordVersion(
     data.program ??
     data.theme
   )?.updatedAt;
-  return typeof version === "string" ? { recordVersion: version } : {};
+  return typeof version === "string"
+    ? { recordVersion: version, ...review }
+    : review;
 }
 
 async function storeMessage(
