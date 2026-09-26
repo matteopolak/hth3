@@ -32,7 +32,7 @@ Assign **one Luna xhigh** agent [#8–#13](https://github.com/matteopolak/hth3/i
 
 ### Stage 2: bounded parallel feature lanes
 
-After Gate A, start at most **four active feature agents** at once. Use Luna `high` for bounded UI/adapters and `xhigh` for auth, sensitive data, agent tools, or cross-service state. A useful first wave is [source registry #14](https://github.com/matteopolak/hth3/issues/14), [applicant profile #20](https://github.com/matteopolak/hth3/issues/20), [feedback depth #24](https://github.com/matteopolak/hth3/issues/24), and [UI system #29](https://github.com/matteopolak/hth3/issues/29). These write disjoint paths. Subsequent issues enter a ready queue only when native GitHub blockers close; for example federal and BC/Ontario adapters can run concurrently after #14, while the public UI can use agreed contracts and fixtures until the API is available.
+After Gate A, start with **four active feature agents** in disjoint paths. Once the first wave integrates cleanly, expand to at most **eight active feature agents** when blockers and exclusive file ownership permit. Use Luna `high` for bounded UI/adapters and `xhigh` for auth, sensitive data, agent tools, or cross-service state. A useful first wave is [source registry #14](https://github.com/matteopolak/hth3/issues/14), [applicant profile #20](https://github.com/matteopolak/hth3/issues/20), [feedback depth #24](https://github.com/matteopolak/hth3/issues/24), and [UI system #29](https://github.com/matteopolak/hth3/issues/29). These write disjoint paths. Subsequent issues enter a ready queue only when native GitHub blockers close; for example federal and BC/Ontario adapters can run concurrently after #14, while the public UI can use agreed contracts and fixtures until the API is available.
 
 Assign one agent to one issue-sized feature or tightly related pair. The issue prompt must include: parent epic and blocker links, exact owned paths, contracts/API version, acceptance checks, corresponding documentation path, and whether a real-provider test is required. Do not give two active agents a shared file owner. The orchestrator owns integration wiring, shared contracts, root manifests, `PLAN.md`, `docs/README.md`, and cross-feature overview docs after the foundation gate. If a feature needs a shared contract changed, pause that dependent feature; the orchestrator lands the contract first, then resumes consumers.
 
@@ -70,7 +70,7 @@ Add or split an issue when its path ownership or acceptance cannot be stated wit
 
 ## Configuration
 
-The agent model is limited to `gpt-6-luna` with `high` or `xhigh` reasoning. The active-agent cap is four after the sequential foundation gate; the orchestrator may use fewer when files or credentials are contested. Source and provider credentials are never embedded in issue bodies or agent prompts. CI's `pnpm check` is the local gate; deployment and real-service acceptance have separate evidence.
+The agent model is limited to `gpt-6-luna` with `high` or `xhigh` reasoning. The initial active-agent cap is four after the sequential foundation gate; it can rise to eight after a clean integration wave with disjoint ownership. The orchestrator may use fewer when files or credentials are contested. Source and provider credentials are never embedded in issue bodies or agent prompts. CI's `pnpm check` is the local gate; deployment and real-service acceptance have separate evidence.
 
 ## Dependencies
 
