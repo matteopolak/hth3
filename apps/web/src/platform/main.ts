@@ -7,7 +7,9 @@ import { tokens } from "@civicresolve/design-tokens";
 import { translate, type MessageKey } from "@civicresolve/i18n";
 import { createDiscoveryPage, type DiscoveryArea } from "../features/discovery/index.js";
 import { createProfilePage } from "../features/profile/index.js";
-import { staffWorkspace } from "../features/staff/index.js";
+import { createProgramIntakePage } from "../features/program-intake/index.js";
+import { createExternalPreparationPage } from "../features/external-preparation/index.js";
+import { staffFeedbackOperations, staffWorkspace } from "../features/staff/index.js";
 import { webAuth } from "./auth0.js";
 import {
   Activity, ArrowUp, Blocks, BriefcaseBusiness, ChartNoAxesColumn,
@@ -27,7 +29,7 @@ import {
 } from "./api.js";
 import "./styles.css";
 
-type Page = "assistant" | "feedback" | "applications" | "employee" | "discovery" | "profile";
+type Page = "assistant" | "feedback" | "applications" | "employee" | "discovery" | "profile" | "signin" | "programs" | "external-preparation";
 type EmployeePage = "assistant" | "feedback" | "applications";
 type StaffView = "issues" | "overview" | "themes" | "taxonomy" | "hiring" | "applicants" | "analytics";
 type ChatMode = "resident" | "employee";
@@ -53,12 +55,14 @@ interface ChatState {
   pending: boolean;
   error: string;
   approvalChecked: Record<string, boolean>;
+  reportEdits: Record<string, string>;
   tools: AgentTool[];
-  tray: "area" | "files" | "plugins" | null;
+  tray: "actions" | "area" | "files" | "plugins" | null;
   toolSearch: string;
   history: ChatHistoryEntry[];
   historyLoaded: boolean;
   contextArea: string | null;
+  savedResume: string | null;
 }
 
 function newChatState(): ChatState {
@@ -71,12 +75,14 @@ function newChatState(): ChatState {
     pending: false,
     error: "",
     approvalChecked: {},
+    reportEdits: {},
     tools: [],
     tray: null,
     toolSearch: "",
     history: [],
     historyLoaded: false,
     contextArea: null,
+    savedResume: null,
   };
 }
 
@@ -84,6 +90,8 @@ interface AppState {
   locale: Locale;
   page: Page;
   discoveryArea: DiscoveryArea;
+  programView: "discover" | "mine" | "sponsor";
+  externalRecordId: string;
   employeePage: EmployeePage;
   staffView: StaffView;
   localIdentity: string;
@@ -133,9 +141,13 @@ interface AppState {
   exploreOpen: boolean;
   historyOpen: boolean;
   historySearch: string;
+  searchOpen: boolean;
+  signInIntent: "resume" | "applications" | "profile" | "saved" | "staff" | "programs" | "external" | null;
 }
 
 const RECEIPT_KEY = "civicresolve.private-receipt.v1";
+const SIGNIN_INTENT_KEY = "civicresolve.signin.intent.v1";
+const EXTERNAL_RECORD_KEY = "civicresolve.external-record.v1";
 const LOCAL_IDENTITIES = [
   ["", "local.identityNone"],
   ["dev-applicant", "local.applicant"],
@@ -146,6 +158,8 @@ const LOCAL_IDENTITIES = [
 
 const state: AppState = {
   locale: readLocale(),
+  programView: "discover",
+  externalRecordId: sessionStorage.getItem(EXTERNAL_RECORD_KEY) ?? "",
   page: "assistant",
   discoveryArea: "all",
   employeePage: "assistant",
@@ -191,6 +205,8 @@ const state: AppState = {
   exploreOpen: true,
   historyOpen: true,
   historySearch: "",
+  searchOpen: false,
+  signInIntent: readSignInIntent(),
 };
 
 const root = document.querySelector<HTMLDivElement>("#app");
@@ -213,6 +229,7 @@ webAuth.subscribe((snapshot) => {
   state.applicationListLoadedFor = "";
   state.feedbackQueueLoadedFor = "";
   state.applicationQueueLoadedFor = "";
+  if (snapshot.status === "authenticated") continueAfterSignIn();
   render();
   void loadRecent(activeChatMode());
 });
@@ -221,6 +238,44 @@ void loadRecent("resident");
 void restoreChat("resident");
 void loadPostings();
 if (state.receiptCredentials) void refreshReceipt();
+
+function readSignInIntent(): AppState["signInIntent"] {
+  const value = sessionStorage.getItem(SIGNIN_INTENT_KEY);
+  return value === "resume" || value === "applications" || value === "profile" || value === "saved" || value === "staff" || value === "programs" || value === "external"
+    ? value : null;
+}
+
+function openSignIn(intent: AppState["signInIntent"] = null): void {
+  state.signInIntent = intent;
+  if (intent) sessionStorage.setItem(SIGNIN_INTENT_KEY, intent);
+  else sessionStorage.removeItem(SIGNIN_INTENT_KEY);
+  state.page = "signin";
+  state.sidebarOpen = false;
+  render();
+}
+
+function continueAfterSignIn(): void {
+  const intent = state.signInIntent;
+  if (!intent || !currentToken()) return;
+  if (intent === "staff") {
+    state.page = "employee";
+    state.employeePage = "assistant";
+  } else if (intent === "applications") state.page = "applications";
+  else if (intent === "saved") {
+    state.page = "discovery";
+    state.discoveryArea = "saved";
+  } else if (intent === "resume") {
+    state.page = "assistant";
+    state.chats.resident.tray = "actions";
+  } else if (intent === "programs") {
+    state.page = "programs";
+    state.programView = "discover";
+  } else if (intent === "external" && state.externalRecordId) {
+    state.page = "external-preparation";
+  } else state.page = "profile";
+  state.signInIntent = null;
+  sessionStorage.removeItem(SIGNIN_INTENT_KEY);
+}
 
 function render(): void {
   document.documentElement.lang = state.locale;
@@ -243,6 +298,7 @@ function render(): void {
   workspace.append(mainPage());
   shell.append(workspace);
   root!.append(shell);
+  if (state.searchOpen) root!.append(searchOverlay());
 }
 
 function header(): HTMLElement {
@@ -312,7 +368,15 @@ function navigation(): HTMLElement {
   });
   collapse.replaceChildren(iconNode("panel"));
   collapse.setAttribute("aria-label", t("app.collapseMenu"));
-  head.append(brand(), collapse);
+  const searchButton = button(t("assistant.searchChats"), "sidebar-search-button", () => {
+    state.searchOpen = true;
+    state.sidebarOpen = false;
+    render();
+    document.querySelector<HTMLInputElement>(".search-dialog-input")?.focus();
+  });
+  searchButton.replaceChildren(iconNode("search"));
+  searchButton.setAttribute("aria-label", t("assistant.searchChats"));
+  head.append(brand(), searchButton, collapse);
   sidebar.append(head);
 
   const tools = el("div", "sidebar-tools");
@@ -329,18 +393,6 @@ function navigation(): HTMLElement {
   });
   newChat.classList.add("sidebar-new-chat");
   tools.append(newChat);
-  const search = el("input", "sidebar-search") as HTMLInputElement;
-  search.type = "search";
-  search.placeholder = t("assistant.searchChats");
-  search.setAttribute("aria-label", t("assistant.searchChats"));
-  search.value = state.historySearch;
-  search.addEventListener("input", () => {
-    state.historySearch = search.value;
-    for (const item of sidebar.querySelectorAll<HTMLElement>("[data-history-label]")) {
-      item.hidden = !item.dataset.historyLabel?.includes(search.value.toLowerCase());
-    }
-  });
-  tools.append(search);
   sidebar.append(tools);
 
   const nav = el("nav", "primary-nav");
@@ -355,6 +407,7 @@ function navigation(): HTMLElement {
       staffViewAction("hiring", "briefcase", "sidebar.hiring"),
       staffViewAction("applicants", "users", "sidebar.applicants"),
       staffViewAction("analytics", "chart", "sidebar.analytics"),
+      programButton("sponsor", "sidebar.programSponsor", "building"),
       sidebarAction("files", t("sidebar.sources"), () => void openPluginTool("employee", "list_sources")),
       staffViewAction("taxonomy", "taxonomy", "sidebar.taxonomy"),
     );
@@ -364,6 +417,7 @@ function navigation(): HTMLElement {
       navButton("applications", "sidebar.myApplications", "briefcase"),
       navButton("profile", "sidebar.profile", "user"),
       discoveryButton("saved", "sidebar.saved"),
+      programButton("mine", "sidebar.programRequests", "files"),
     );
     if (state.receiptCredentials) nav.append(navButton("feedback", "sidebar.myFeedback", "feedback"));
     nav.append(
@@ -382,6 +436,7 @@ function navigation(): HTMLElement {
         discoveryButton("jobs", "sidebar.jobs"),
         discoveryButton("support", "sidebar.support"),
         discoveryButton("funding", "sidebar.funding"),
+        programButton("discover", "sidebar.programs", "files"),
         discoveryButton("nearby", "sidebar.nearby"),
         discoveryButton("participation", "sidebar.participation"),
         navButton("feedback", "nav.feedback", "feedback"),
@@ -416,15 +471,72 @@ function navigation(): HTMLElement {
   if (auth.status === "authenticated") {
     footer.append(el("p", "sidebar-account", auth.displayName ?? t("auth.account")));
     footer.append(sidebarAction("logout", t("auth.signOut"), () => void webAuth.logout()));
-  } else if (auth.status === "guest" || auth.status === "unconfigured") {
-    if (auth.status === "guest") footer.append(sidebarAction("login", t("auth.signIn"), () => void webAuth.login("applicant")));
-  }
-  const identity = devIdentityPanel();
-  if (identity) footer.append(identity);
+  } else footer.append(sidebarAction("login", t(state.localIdentity ? "auth.changeAccount" : "auth.signIn"), () => openSignIn()));
   if (state.page === "employee") footer.append(navButton("assistant", "sidebar.residentView", "chat"));
-  else footer.append(navButton("employee", "sidebar.staffView", "building"));
+  else {
+    const staff = navButton("employee", "sidebar.staffView", "building");
+    if (!currentToken()) disableGuestNavigation(staff);
+    footer.append(staff);
+  }
   sidebar.append(footer);
   return sidebar;
+}
+
+function searchOverlay(): HTMLElement {
+  const overlay = el("div", "search-overlay");
+  overlay.append(button(t("app.closeMenu"), "search-backdrop", () => {
+    state.searchOpen = false;
+    render();
+  }));
+  const dialog = el("section", "search-dialog");
+  dialog.setAttribute("role", "dialog");
+  dialog.setAttribute("aria-modal", "true");
+  dialog.setAttribute("aria-label", t("assistant.searchChats"));
+  const input = el("input", "search-dialog-input") as HTMLInputElement;
+  input.type = "search";
+  input.placeholder = t("assistant.searchChats");
+  input.setAttribute("aria-label", t("assistant.searchChats"));
+  input.value = state.historySearch;
+  const list = el("div", "search-results");
+  const entries = state.chats[activeChatMode()].history;
+  for (const item of entries) {
+    const row = button(item.label, "search-result", () => {
+      state.searchOpen = false;
+      void openConversation(activeChatMode(), item.id);
+    });
+    row.dataset.historyLabel = item.label.toLowerCase();
+    list.append(row);
+  }
+  if (!entries.length) list.append(el("p", "search-empty", t("assistant.noRecentChats")));
+  input.addEventListener("input", () => {
+    state.historySearch = input.value;
+    let visible = 0;
+    for (const row of list.querySelectorAll<HTMLElement>("[data-history-label]")) {
+      row.hidden = !row.dataset.historyLabel?.includes(input.value.toLowerCase());
+      if (!row.hidden) visible++;
+    }
+    let empty = list.querySelector<HTMLElement>(".search-empty");
+    if (!visible && !empty) {
+      empty = el("p", "search-empty", t("assistant.noMatchingChats"));
+      list.append(empty);
+    }
+    if (empty) empty.hidden = visible > 0;
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      state.searchOpen = false;
+      render();
+    }
+  });
+  dialog.append(input, el("span", "search-heading", t("sidebar.recent")), list);
+  overlay.append(dialog);
+  return overlay;
+}
+
+function disableGuestNavigation(item: HTMLButtonElement): void {
+  item.disabled = true;
+  item.setAttribute("aria-disabled", "true");
+  item.title = t("auth.signInRequired");
 }
 
 function sidebarHeading(label: string): HTMLElement {
@@ -474,7 +586,20 @@ function discoveryButton(area: DiscoveryArea, labelKey: MessageKey): HTMLButtonE
     render();
   });
   if (state.page === "discovery" && state.discoveryArea === area) result.classList.add("is-active");
+  if (area === "saved" && !currentToken()) disableGuestNavigation(result);
   return result;
+}
+
+function programButton(view: AppState["programView"], labelKey: MessageKey, icon: string): HTMLButtonElement {
+  const item = sidebarAction(icon, t(labelKey), () => {
+    state.page = "programs";
+    state.programView = view;
+    state.sidebarOpen = false;
+    render();
+  });
+  if (state.page === "programs" && state.programView === view) item.classList.add("is-active");
+  if (view !== "discover" && !currentToken()) disableGuestNavigation(item);
+  return item;
 }
 
 function navButton(
@@ -489,6 +614,7 @@ function navButton(
   button.type = "button";
   button.setAttribute("aria-current", state.page === page ? "page" : "false");
   button.append(iconNode(icon), el("span", "", t(key)));
+  if ((page === "applications" || page === "profile" || page === "employee") && !currentToken()) disableGuestNavigation(button);
   button.addEventListener("click", () => {
     if (state.page === "feedback" && page !== "feedback") void stopVoice();
     state.page = page;
@@ -526,6 +652,14 @@ function devIdentityPanel(): HTMLElement | null {
     state.applicationListLoadedFor = "";
     state.feedbackQueueLoadedFor = "";
     state.applicationQueueLoadedFor = "";
+    if (state.localIdentity) {
+      if (state.signInIntent) continueAfterSignIn();
+      else if (state.localIdentity === "dev-applicant") state.page = "profile";
+      else {
+        state.page = "employee";
+        state.employeePage = "assistant";
+      }
+    }
     render();
     void loadRecent(activeChatMode());
     if (state.page === "applications") void loadMyApplications();
@@ -546,21 +680,95 @@ function mainPage(): HTMLElement {
   if (state.notice) main.append(alertBox(state.notice, "", "notice"));
 
   if (state.page === "assistant") main.append(chatPage("resident"));
+  else if (state.page === "signin") main.append(signInPage());
   else if (state.page === "feedback") main.append(feedbackPage());
   else if (state.page === "applications") main.append(applicationsPage());
-  else if (state.page === "discovery") main.append(createDiscoveryPage({ area: state.discoveryArea, locale: state.locale, token: currentToken() || null }));
+  else if (state.page === "discovery") main.append(createDiscoveryPage({
+    area: state.discoveryArea,
+    locale: state.locale,
+    token: currentToken() || null,
+    onPrepare: (recordId) => {
+      state.externalRecordId = recordId;
+      sessionStorage.setItem(EXTERNAL_RECORD_KEY, recordId);
+      state.page = "external-preparation";
+      render();
+    },
+  }));
+  else if (state.page === "programs") main.append(createProgramIntakePage({
+    view: state.programView,
+    locale: state.locale,
+    token: currentToken() || null,
+    organizationId: state.programView === "sponsor" ? currentOrgId() : null,
+    onSignIn: () => openSignIn("programs"),
+  }));
+  else if (state.page === "external-preparation") main.append(createExternalPreparationPage({
+    recordId: state.externalRecordId,
+    locale: state.locale,
+    token: currentToken() || null,
+    onBack: () => { state.page = "discovery"; render(); },
+    onSignIn: () => openSignIn("external"),
+  }));
   else if (state.page === "profile") main.append(createProfilePage({ locale: state.locale, token: currentToken() || null }));
   else main.append(employeePage());
   return main;
 }
 
+function signInPage(): HTMLElement {
+  const page = el("section", "signin-page");
+  const intro = el("div", "signin-intro");
+  intro.append(el("h2", "", t("auth.welcome")), el("p", "", t("auth.intro")));
+  if (state.signInIntent === "resume") intro.append(el("p", "signin-intent", t("auth.resumeIntent")));
+  page.append(intro);
+  const choices = el("div", "signin-choices");
+  const personal = el("section", "signin-choice");
+  personal.append(
+    iconNode("user"),
+    el("h3", "", t("auth.personal")),
+    el("p", "", t("auth.personalDetail")),
+    button(t("auth.continuePersonal"), "button-primary", () => void beginAuth("applicant")),
+  );
+  const staff = el("section", "signin-choice");
+  staff.append(
+    iconNode("building"),
+    el("h3", "", t("auth.staff")),
+    el("p", "", t("auth.staffDetail")),
+    button(t("auth.continueStaff"), "button-secondary", () => void beginAuth("employee")),
+  );
+  if (webAuth.snapshot().status === "unconfigured") {
+    for (const item of [personal, staff]) item.querySelector("button")!.disabled = true;
+    page.append(el("p", "signin-unavailable", t("auth.unconfigured")));
+  }
+  choices.append(personal, staff);
+  page.append(choices, el("p", "signin-guest-note", t("auth.guestAccess")));
+  const identity = devIdentityPanel();
+  if (identity) {
+    const details = el("details", "signin-dev-access");
+    details.append(el("summary", "", t("auth.localAccess")), identity);
+    page.append(details);
+  }
+  return page;
+}
+
+async function beginAuth(mode: "applicant" | "employee"): Promise<void> {
+  state.signInIntent = mode === "employee" ? "staff"
+    : state.signInIntent && state.signInIntent !== "staff" ? state.signInIntent : "profile";
+  sessionStorage.setItem(SIGNIN_INTENT_KEY, state.signInIntent);
+  try {
+    await webAuth.login(mode);
+  } catch (error) {
+    state.error = { message: error instanceof Error ? error.message : t("error.generic"), requestId: "" };
+    render();
+  }
+}
+
 function chatPage(mode: ChatMode): HTMLElement {
   const chat = state.chats[mode];
-  const page = el("section", `chat-shell ${chat.messages.length ? "has-messages" : "is-empty"}`);
+  const hasContent = chat.messages.length > 0 || chat.proposals.some((item) => item.status === "pending");
+  const page = el("section", `chat-shell ${hasContent ? "has-messages" : "is-empty"}`);
 
   const thread = el("div", "chat-thread");
   thread.setAttribute("aria-live", "polite");
-  if (chat.messages.length === 0) {
+  if (!hasContent) {
     const welcome = el("div", "chat-welcome");
     welcome.append(el("h2", "", t("assistant.welcome")));
     thread.append(welcome);
@@ -611,9 +819,9 @@ function chatPage(mode: ChatMode): HTMLElement {
     }
   });
   const controls = el("div", "chat-composer-controls");
-  const add = button("", "chat-round-button chat-add-button", () => void openChatTray(mode, chat.tray ? null : "files"));
+  const add = button("", "chat-round-button chat-add-button", () => void openChatTray(mode, "actions"));
   add.append(iconNode("plus"));
-  add.setAttribute("aria-label", t("assistant.files"));
+  add.setAttribute("aria-label", t("assistant.addToChat"));
   const model = el("span", "chat-model", t("assistant.model"));
   const mic = button("", "chat-round-button chat-mic-button", () => {
     if (state.voiceStatus === "idle") void startVoice(mode);
@@ -628,24 +836,85 @@ function chatPage(mode: ChatMode): HTMLElement {
   send.disabled = chat.pending;
   controls.append(add, model, mic, send);
   composer.append(input, controls);
+  if (chat.tray === "actions") composer.append(chatActionMenu(mode));
+  composer.addEventListener("dragover", (event) => {
+    if (event.dataTransfer?.types.includes("Files")) {
+      event.preventDefault();
+      composer.classList.add("is-dragging");
+    }
+  });
+  composer.addEventListener("dragleave", () => composer.classList.remove("is-dragging"));
+  composer.addEventListener("drop", (event) => {
+    composer.classList.remove("is-dragging");
+    const file = event.dataTransfer?.files[0];
+    if (!file) return;
+    event.preventDefault();
+    void handleResumeFile(mode, file);
+  });
   composer.addEventListener("submit", (event) => {
     event.preventDefault();
     void sendChat(mode);
   });
   composeArea.append(composer);
-  const shortcuts = el("div", "chat-shortcuts");
-  shortcuts.append(
-    button(t("assistant.chooseArea"), "chat-shortcut", () => void openChatTray(mode, "area")),
-    button(t("assistant.files"), "chat-shortcut", () => void openChatTray(mode, "files")),
-    button(t("assistant.plugins"), "chat-shortcut", () => void openChatTray(mode, "plugins")),
-  );
-  composeArea.append(shortcuts);
   if (chat.contextArea) composeArea.append(el("span", "chat-context-area", chat.contextArea));
-  if (chat.tray) composeArea.append(chatTray(mode));
+  if (chat.savedResume) {
+    const chip = el("div", "chat-resume-chip");
+    chip.append(el("span", "", t("assistant.resumeSaved", { filename: chat.savedResume })));
+    chip.append(button(t("assistant.openProfile"), "button-link", () => {
+      state.page = "profile";
+      render();
+    }));
+    composeArea.append(chip);
+  }
+  if (chat.tray && chat.tray !== "actions") composeArea.append(chatTray(mode));
   if (state.voiceError) composeArea.append(el("p", "voice-error", state.voiceError));
   if (state.voicePrompt && state.voiceStatus !== "idle") composeArea.append(el("p", "voice-prompt", state.voicePrompt));
   page.append(composeArea);
   return page;
+}
+
+function chatActionMenu(mode: ChatMode): HTMLElement {
+  const menu = el("div", "chat-action-menu");
+  menu.setAttribute("role", "menu");
+  if (canUploadResume()) menu.append(resumeUploadControl(mode, "chat-action-item"));
+  else {
+    const upload = button(t("assistant.uploadResume"), "chat-action-item", () => openSignIn("resume"));
+    upload.prepend(iconNode("files"));
+    menu.append(upload);
+  }
+  const area = button(t("assistant.chooseArea"), "chat-action-item", () => void openChatTray(mode, "area"));
+  area.prepend(iconNode("map"));
+  const plugins = button(t("assistant.plugins"), "chat-action-item", () => void openChatTray(mode, "plugins"));
+  plugins.prepend(iconNode("plugins"));
+  const feedback = button(t("nav.feedback"), "chat-action-item", () => {
+    state.page = "feedback";
+    state.chats[mode].tray = null;
+    render();
+  });
+  feedback.prepend(iconNode("feedback"));
+  menu.append(area, plugins, feedback);
+  return menu;
+}
+
+function canUploadResume(): boolean {
+  const auth = webAuth.snapshot();
+  if (auth.status === "authenticated") return auth.mode === "applicant";
+  return state.localIdentity === "dev-applicant";
+}
+
+function resumeUploadControl(mode: ChatMode, className: string): HTMLElement {
+  const label = el("label", className);
+  label.append(iconNode("files"), el("span", "", t("assistant.uploadResume")));
+  const file = el("input") as HTMLInputElement;
+  file.type = "file";
+  file.accept = ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  file.setAttribute("aria-label", t("assistant.uploadResume"));
+  file.addEventListener("change", () => {
+    const selected = file.files?.[0];
+    if (selected) void handleResumeFile(mode, selected);
+  });
+  label.append(file);
+  return label;
 }
 
 function chatTray(mode: ChatMode): HTMLElement {
@@ -661,19 +930,8 @@ function chatTray(mode: ChatMode): HTMLElement {
       }),
     );
   } else if (chat.tray === "files") {
-    if (!currentToken()) tray.append(el("p", "chat-tray-note", t("assistant.filesSignIn")));
-    else {
-      const label = el("label", "chat-file-label", t("assistant.uploadResume"));
-      const file = el("input") as HTMLInputElement;
-      file.type = "file";
-      file.accept = ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      file.addEventListener("change", () => {
-        const selected = file.files?.[0];
-        if (selected) void uploadChatResume(mode, selected);
-      });
-      label.append(file);
-      tray.append(label);
-    }
+    if (canUploadResume()) tray.append(resumeUploadControl(mode, "chat-file-label"));
+    else tray.append(button(t("assistant.signInForResume"), "chat-tray-choice", () => openSignIn("resume")));
   } else if (chat.tray === "plugins") {
     const search = el("input", "chat-tool-search") as HTMLInputElement;
     search.type = "search";
@@ -699,6 +957,19 @@ function chatTray(mode: ChatMode): HTMLElement {
   return tray;
 }
 
+async function handleResumeFile(mode: ChatMode, file: File): Promise<void> {
+  if (!/\.(pdf|docx)$/i.test(file.name)) {
+    state.chats[mode].error = t("assistant.invalidResume");
+    render();
+    return;
+  }
+  if (!canUploadResume()) {
+    openSignIn("resume");
+    return;
+  }
+  await uploadChatResume(mode, file);
+}
+
 async function uploadChatResume(mode: ChatMode, file: File): Promise<void> {
   const chat = state.chats[mode];
   const token = currentToken();
@@ -708,7 +979,7 @@ async function uploadChatResume(mode: ChatMode, file: File): Promise<void> {
   render();
   try {
     const response = await api.uploadResume(token, file);
-    chat.messages.push({ role: "tool", content: `${t("assistant.uploadResume")}: ${response.resume.filename}` });
+    chat.savedResume = response.resume.filename;
     chat.tray = null;
   } catch (error) {
     chat.error = formatError(error).message;
@@ -719,48 +990,28 @@ async function uploadChatResume(mode: ChatMode, file: File): Promise<void> {
 }
 
 function proposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
+  if (proposal.preview.name === "create_feedback") return feedbackProposalCard(mode, proposal);
   const card = el("section", "proposal-card");
-  card.append(
-    el("h3", "", t("assistant.reviewAction")),
-    el(
-      "p",
-      "proposal-target",
-      `${proposal.preview.method ?? ""} ${proposal.preview.path ?? ""}`.trim(),
-    ),
-  );
-  if (proposal.preview.body && typeof proposal.preview.body === "object") {
-    const body = el("div", "proposal-fields");
-    for (const [key, value] of Object.entries(proposal.preview.body)) {
-      body.append(
-        labeledValue(
-          key,
-          typeof value === "string" ? value : String(JSON.stringify(value)),
-        ),
-      );
-    }
-    card.append(body);
+  card.append(el("h3", "", t("assistant.reviewAction")));
+  if (proposal.preview.name) {
+    const action = proposal.preview.name.replace(/^staff_/, "").replaceAll("_", " ");
+    card.append(el("p", "proposal-action", action.charAt(0).toUpperCase() + action.slice(1)));
   }
+  const fields = proposalFields(proposal.preview.body);
+  if (fields) card.append(fields);
   if (proposal.preview.destinationNotice) {
     card.append(el("p", "proposal-notice", proposal.preview.destinationNotice));
   }
-  const isFeedback = proposal.preview.name === "create_feedback";
-  if (isFeedback) {
+  if (proposal.preview.requiresSandboxAcknowledgment === true) {
     const acknowledgment = el("label", "checkbox-row proposal-ack");
     const check = el("input") as HTMLInputElement;
     check.type = "checkbox";
     check.checked = state.chats[mode].approvalChecked[proposal.id] === true;
     check.addEventListener("change", () => {
       state.chats[mode].approvalChecked[proposal.id] = check.checked;
-      const approve = card.querySelector<HTMLButtonElement>(
-        "[data-proposal-approve]",
-      );
-      if (approve)
-        approve.disabled = !check.checked || state.chats[mode].pending;
+      approve.disabled = state.chats[mode].pending || !check.checked;
     });
-    acknowledgment.append(
-      check,
-      el("span", "", t("feedback.sandboxAcknowledgement")),
-    );
+    acknowledgment.append(check, el("span", "", t("assistant.confirmPracticeDestination")));
     card.append(acknowledgment);
   }
   const actions = el("div", "form-actions");
@@ -775,10 +1026,81 @@ function proposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
     () => void decideProposal(mode, proposal, true),
   );
   approve.dataset.proposalApprove = "true";
-  approve.disabled =
-    state.chats[mode].pending ||
-    (isFeedback && !state.chats[mode].approvalChecked[proposal.id]);
+  approve.disabled = state.chats[mode].pending ||
+    (proposal.preview.requiresSandboxAcknowledgment === true && !state.chats[mode].approvalChecked[proposal.id]);
   decline.disabled = state.chats[mode].pending;
+  actions.append(decline, approve);
+  card.append(actions);
+  return card;
+}
+
+function proposalFields(value: unknown): HTMLElement | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const fields = el("div", "proposal-fields");
+  for (const [key, item] of Object.entries(value)) {
+    if (["locale", "sandboxAcknowledged", "organizationId", "requiresApproval", "expiresAt"].includes(key) || item === null || item === undefined) continue;
+    const label = key.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
+    const title = label.charAt(0).toUpperCase() + label.slice(1);
+    const text = typeof item === "object" && !Array.isArray(item)
+      ? Object.entries(item).map(([name, answer]) => `${name}: ${String(answer)}`).join("\n")
+      : Array.isArray(item) ? item.map(String).join(", ") : String(item);
+    fields.append(labeledValue(title, text));
+  }
+  return fields.childElementCount ? fields : null;
+}
+
+function feedbackProposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
+  const chat = state.chats[mode];
+  const raw = proposal.preview.body;
+  const body = raw && typeof raw === "object" && !Array.isArray(raw)
+    ? raw as Record<string, unknown> : {};
+  const original = typeof body.message === "string" ? body.message : "";
+  const card = el("section", "proposal-card feedback-proposal");
+  card.append(el("h3", "", t("assistant.reviewReport")));
+  const editor = textArea(
+    `proposal-message-${proposal.id}`,
+    t("feedback.messageLabel"),
+    t("feedback.messagePlaceholder"),
+    chat.reportEdits[proposal.id] ?? original,
+    (value) => { chat.reportEdits[proposal.id] = value; },
+    4,
+  );
+  const input = editor.querySelector("textarea")!;
+  input.maxLength = 4000;
+  card.append(editor);
+  if (typeof body.whatWouldImprove === "string" && body.whatWouldImprove.trim()) {
+    card.append(labeledValue(t("feedback.improvementLabel"), body.whatWouldImprove));
+  }
+  card.append(el("p", "proposal-notice", t("assistant.reportDestination")));
+
+  const acknowledgment = el("label", "checkbox-row proposal-ack");
+  const check = el("input") as HTMLInputElement;
+  check.type = "checkbox";
+  check.checked = chat.approvalChecked[proposal.id] === true;
+  check.addEventListener("change", () => {
+    chat.approvalChecked[proposal.id] = check.checked;
+    updateButton();
+  });
+  acknowledgment.append(check, el("span", "", t("assistant.confirmDestination")));
+  card.append(acknowledgment);
+
+  const actions = el("div", "form-actions");
+  const decline = button(t("assistant.decline"), "button-quiet", () => void decideProposal(mode, proposal, false));
+  const approve = button("", "button-primary", () => {
+    const edited = input.value.trim() !== original.trim();
+    if (edited) void prepareEditedFeedback(mode, proposal, input.value.trim());
+    else void decideProposal(mode, proposal, true);
+  });
+  approve.dataset.proposalApprove = "true";
+  function updateButton(): void {
+    const edited = input.value.trim() !== original.trim();
+    acknowledgment.hidden = edited;
+    approve.textContent = t(edited ? "assistant.reviewUpdatedReport" : "assistant.confirmReport");
+    approve.disabled = chat.pending || !input.value.trim() || (!edited && !chat.approvalChecked[proposal.id]);
+  }
+  input.addEventListener("input", updateButton);
+  updateButton();
+  decline.disabled = chat.pending;
   actions.append(decline, approve);
   card.append(actions);
   return card;
@@ -1070,12 +1392,20 @@ async function decideProposal(
 ): Promise<void> {
   const chat = state.chats[mode];
   if (!chat.id || chat.pending) return;
-  const sandboxAcknowledged =
-    proposal.preview.name === "create_feedback" &&
+  if (approved && proposal.preview.name === "create_feedback") {
+    const body = proposal.preview.body;
+    const original = body && typeof body === "object" && "message" in body
+      ? String(body.message) : "";
+    const edit = chat.reportEdits[proposal.id];
+    if (edit !== undefined && edit.trim() !== original.trim()) return;
+  }
+  const needsSandboxAcknowledgment = proposal.preview.requiresSandboxAcknowledgment === true ||
+    proposal.preview.name === "create_feedback";
+  const sandboxAcknowledged = needsSandboxAcknowledgment &&
     chat.approvalChecked[proposal.id] === true;
   if (
     approved &&
-    proposal.preview.name === "create_feedback" &&
+    needsSandboxAcknowledgment &&
     !sandboxAcknowledged
   )
     return;
@@ -1105,6 +1435,42 @@ async function decideProposal(
         content: visibleToolResult(response.result),
       });
     }
+  } catch (error) {
+    chat.error = formatError(error).message;
+  } finally {
+    chat.pending = false;
+    render();
+  }
+}
+
+async function prepareEditedFeedback(mode: ChatMode, previous: AgentProposal, message: string): Promise<void> {
+  const chat = state.chats[mode];
+  if (!chat.id || chat.pending || !message) return;
+  const raw = previous.preview.body;
+  const body = raw && typeof raw === "object" && !Array.isArray(raw)
+    ? raw as Record<string, unknown> : {};
+  if (typeof body.municipalityId !== "string") {
+    chat.error = t("error.invalidRequest");
+    render();
+    return;
+  }
+  const args: Record<string, unknown> = {
+    message,
+    municipalityId: body.municipalityId,
+    locale: state.locale,
+    sandboxAcknowledged: false,
+  };
+  if (typeof body.whatWouldImprove === "string") args.whatWouldImprove = body.whatWouldImprove;
+  if (typeof body.category === "string") args.category = body.category;
+  chat.pending = true;
+  chat.error = "";
+  render();
+  try {
+    const next = await api.invokeConversationTool(chat.id, chatCredentials(mode), "create_feedback", args);
+    if (!next.proposal) throw new Error(t("assistant.unavailable"));
+    chat.proposals.push(next.proposal);
+    await api.decideConversationProposal(chat.id, previous.id, "reject", chatCredentials(mode));
+    previous.status = "rejected";
   } catch (error) {
     chat.error = formatError(error).message;
   } finally {
@@ -1251,6 +1617,22 @@ function feedbackCaseDetail(receipt: FeedbackClientReceipt, mode: "resident" | "
   }
   if (receipt.outcome) properties.append(el("div", "case-property", el("span", "", t("feedback.outcome")), el("p", "", receipt.outcome)));
   for (const evidence of receipt.evidence) properties.append(el("span", "case-evidence", evidence.fileName));
+  if (mode === "staff") properties.append(staffFeedbackOperations({
+    token: currentToken(),
+    organizationId: currentOrgId(),
+    locale: state.locale,
+    submission: {
+      id: receipt.id,
+      status: receipt.status,
+      assignment: (receipt as FeedbackClientReceipt & {
+        assignment?: { departmentId: string; departmentName: string; assigneeSubject: string | null } | null;
+      }).assignment,
+    },
+    onChanged: async () => {
+      await refreshStaffCase(receipt.id);
+      await loadEmployeeQueue();
+    },
+  }));
   if (mode === "resident") properties.append(el("p", "quiet-note", t("feedback.receiptSecretHelp")));
   layout.append(main, properties);
   return layout;
@@ -1269,25 +1651,19 @@ function staffCaseActions(receipt: FeedbackClientReceipt): HTMLElement {
   });
   respond.disabled = state.pending === `detail-reply-${receipt.id}`;
   actions.append(reply, respond);
-  const status = selectStatuses(nextFeedbackStatuses(receipt.status), receipt.status, "feedback.nextStatus");
-  const outcome = textArea(`staff-detail-outcome-${receipt.id}`, t("feedback.outcomeLabel"), t("feedback.outcomeLabel"), "", () => {}, 2);
-  outcome.hidden = status.value !== "outcome_recorded";
-  status.addEventListener("change", () => { outcome.hidden = status.value !== "outcome_recorded"; });
+  const remaining = nextFeedbackStatuses(receipt.status).filter((value) =>
+    value !== "waiting_on_resident" && value !== "outcome_recorded");
+  if (!remaining.length) return actions;
+  const status = selectStatuses(remaining, receipt.status, "feedback.nextStatus");
   const update = button(t("feedback.updateStatus"), "button-secondary", () => {
-    const outcomeText = outcome.querySelector("textarea")?.value.trim() ?? "";
-    if (status.value === "outcome_recorded" && !outcomeText) {
-      state.error = { message: t("feedback.outcomeRequired"), requestId: "" };
-      render();
-      return;
-    }
     void withPending(`detail-status-${receipt.id}`, async () => {
-      await api.changeFeedbackStatus(currentToken(), currentOrgId(), receipt.id, status.value as FeedbackStatus, outcomeText);
+      await api.changeFeedbackStatus(currentToken(), currentOrgId(), receipt.id, status.value as FeedbackStatus, "");
       await refreshStaffCase(receipt.id);
       await loadEmployeeQueue();
     });
   });
   update.disabled = state.pending === `detail-status-${receipt.id}`;
-  actions.append(status, outcome, update);
+  actions.append(status, update);
   return actions;
 }
 
@@ -1818,7 +2194,7 @@ function signInPrompt(): HTMLElement {
   const auth = webAuth.snapshot();
   if (auth.status === "guest" || (state.page === "employee" && auth.status === "authenticated" && auth.mode !== "employee")) {
     prompt.append(button(t(state.page === "employee" ? "auth.staffSignIn" : "auth.signIn"), "button-primary", () => {
-      void webAuth.login(state.page === "employee" ? "employee" : "applicant");
+      openSignIn(state.page === "employee" ? "staff" : "profile");
     }));
   }
   if (webAuth.snapshot().error) prompt.append(alertBox(webAuth.snapshot().error!, ""));
@@ -1967,9 +2343,12 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 function pageTitle(): string {
   if (state.page === "assistant") return t("nav.assistant");
+  if (state.page === "signin") return t("auth.signIn");
   if (state.page === "feedback") return t("feedback.title");
   if (state.page === "applications") return t("application.title");
   if (state.page === "discovery") return t(`sidebar.${state.discoveryArea === "all" ? "explore" : state.discoveryArea}` as MessageKey);
+  if (state.page === "programs") return t(state.programView === "discover" ? "sidebar.programs" : state.programView === "mine" ? "sidebar.programRequests" : "sidebar.programSponsor");
+  if (state.page === "external-preparation") return t("sidebar.externalPreparation");
   if (state.page === "profile") return t("sidebar.profile");
   return t("nav.employee");
 }
