@@ -11,7 +11,7 @@ type Submission = {
   explanation: string;
   mode: string;
 };
-type Tab = "report" | "status" | "workspace" | "taxonomy";
+type Tab = "report" | "status" | "workspace" | "taxonomy" | "analytics";
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API}${path}`, {
@@ -218,6 +218,12 @@ function App({ auth }: { auth?: Auth }) {
                 onClick={() => setTab("taxonomy")}
               >
                 <span>◇</span> Taxonomy
+              </button>
+              <button
+                className={tab === "analytics" ? "nav active" : "nav"}
+                onClick={() => setTab("analytics")}
+              >
+                <span>▥</span> Analytics
               </button>
             </>
           )}
@@ -544,6 +550,7 @@ function App({ auth }: { auth?: Auth }) {
               }}
             />
           )}
+          {tab === "analytics" && <AnalyticsView adminHeaders={adminHeaders} />}
           {error && (
             <div className="toast" role="alert">
               {error}
@@ -556,6 +563,214 @@ function App({ auth }: { auth?: Auth }) {
         CivicResolve <span>·</span> A clearer path from report to resolution{" "}
         <span className="bottom-right">Built for communities, with care.</span>
       </footer>
+    </div>
+  );
+}
+
+type ScenarioMetrics = {
+  totalCases: number;
+  unresolvedBacklog: number;
+  medianFirstTriageHours: number;
+  medianAssignmentHours: number;
+  wrongDepartmentPercent: number;
+  humanReviewPercent: number;
+  medianResolutionDays: number;
+};
+type AnalyticsResult = {
+  source: string;
+  generatedCases: number;
+  baseline: ScenarioMetrics;
+  saturdayUpdate: ScenarioMetrics;
+  total: ScenarioMetrics;
+  categoryMix: { baselineWaterPercent: number; updateWaterPercent: number };
+  projectedValue: {
+    staffHoursSaved: number;
+    monthlyBenefit: number;
+    monthlyNet: number;
+    paybackMonths: number | null;
+    assumptions: {
+      manualTriageMinutes: number;
+      automatedTriageMinutes: number;
+      automationRate: number;
+      hourlyStaffCost: number;
+      implementationCost: number;
+      monthlyOperatingCost: number;
+    };
+  };
+  notes: string;
+};
+
+function AnalyticsView({
+  adminHeaders,
+}: {
+  adminHeaders: () => Promise<Record<string, string>>;
+}) {
+  const [data, setData] = useState<AnalyticsResult | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    adminHeaders()
+      .then((headers) =>
+        call<AnalyticsResult>("/api/admin/metrics", { headers }),
+      )
+      .then(setData)
+      .catch((cause) => setError((cause as Error).message));
+  }, []);
+  const percent = (value: number) => `${Math.round(value)}%`;
+  return (
+    <div className="page workspace analytics-page">
+      <div className="eyebrow">
+        OPERATIONS ANALYTICS <span className="eyebrow-line" />
+      </div>
+      <h1>
+        See the <em>whole picture.</em>
+      </h1>
+      <p className="lead">
+        A reproducible look at backlog, routing, and a Saturday surge.
+      </p>
+      <div className="synthetic-banner">
+        ◈ &nbsp; Synthetic scenario · Fixture data and projected assumptions,
+        not live Tiger metrics or observed CGI results.
+      </div>
+      {error && (
+        <div className="empty">
+          <h2>Analytics unavailable</h2>
+          <p>{error}</p>
+        </div>
+      )}
+      {!data && !error && <p className="lead">Loading scenario metrics…</p>}
+      {data && (
+        <>
+          <div className="metric-grid">
+            <div className="metric">
+              <span>SCENARIO CASES</span>
+              <strong>{data.generatedCases}</strong>
+              <small>Generated reports</small>
+            </div>
+            <div className="metric">
+              <span>UNRESOLVED BACKLOG</span>
+              <strong>{data.total.unresolvedBacklog}</strong>
+              <small>Across both phases</small>
+            </div>
+            <div className="metric">
+              <span>MEDIAN FIRST TRIAGE</span>
+              <strong>{data.total.medianFirstTriageHours}h</strong>
+              <small>Synthetic manual baseline</small>
+            </div>
+            <div className="metric">
+              <span>WRONG DEPARTMENT</span>
+              <strong>{percent(data.total.wrongDepartmentPercent)}</strong>
+              <small>Historical fixture labels</small>
+            </div>
+          </div>
+          <div className="analytics-grid">
+            <section className="queue analytics-panel">
+              <div className="queue-title">
+                <h2>Saturday scenario update</h2>
+                <span>Water complaint surge</span>
+              </div>
+              <div className="analytics-body">
+                <p>
+                  The share of water cases rises in the update phase. Staff can
+                  respond by adjusting the published taxonomy and routing rules.
+                </p>
+                <div className="bar-row">
+                  <span>Before</span>
+                  <div className="bar-track">
+                    <div
+                      className="bar-fill baseline"
+                      style={{
+                        width: percent(data.categoryMix.baselineWaterPercent),
+                      }}
+                    />
+                  </div>
+                  <strong>
+                    {percent(data.categoryMix.baselineWaterPercent)}
+                  </strong>
+                </div>
+                <div className="bar-row">
+                  <span>Saturday</span>
+                  <div className="bar-track">
+                    <div
+                      className="bar-fill"
+                      style={{
+                        width: percent(data.categoryMix.updateWaterPercent),
+                      }}
+                    />
+                  </div>
+                  <strong>
+                    {percent(data.categoryMix.updateWaterPercent)}
+                  </strong>
+                </div>
+                <div className="analytics-submetrics">
+                  <div>
+                    <span>MEDIAN ASSIGNMENT</span>
+                    <strong>{data.total.medianAssignmentHours}h</strong>
+                  </div>
+                  <div>
+                    <span>HUMAN REVIEW</span>
+                    <strong>{percent(data.total.humanReviewPercent)}</strong>
+                  </div>
+                  <div>
+                    <span>MEDIAN RESOLUTION</span>
+                    <strong>{data.total.medianResolutionDays}d</strong>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section className="queue analytics-panel">
+              <div className="queue-title">
+                <h2>Projected value case</h2>
+                <span>Assumptions only</span>
+              </div>
+              <div className="analytics-body">
+                <div className="value-number">
+                  {data.projectedValue.staffHoursSaved}
+                  <span> staff hours / month</span>
+                </div>
+                <p>
+                  Estimated triage time saved at 600 cases per month and{" "}
+                  {percent(
+                    data.projectedValue.assumptions.automationRate * 100,
+                  )}{" "}
+                  automated classification.
+                </p>
+                <div className="detail-row">
+                  <span>Staff cost</span>
+                  <strong>
+                    ${data.projectedValue.assumptions.hourlyStaffCost}/hour
+                  </strong>
+                </div>
+                <div className="detail-row">
+                  <span>Monthly net</span>
+                  <strong>
+                    $
+                    {Math.round(
+                      data.projectedValue.monthlyNet,
+                    ).toLocaleString()}
+                  </strong>
+                </div>
+                <div className="detail-row">
+                  <span>Payback</span>
+                  <strong>
+                    {data.projectedValue.paybackMonths?.toFixed(1) ?? "N/A"}{" "}
+                    months
+                  </strong>
+                </div>
+                <p className="small-note">
+                  Assumes {data.projectedValue.assumptions.manualTriageMinutes}{" "}
+                  min manual vs.{" "}
+                  {data.projectedValue.assumptions.automatedTriageMinutes} min
+                  assisted triage, $
+                  {data.projectedValue.assumptions.implementationCost.toLocaleString()}{" "}
+                  setup and $
+                  {data.projectedValue.assumptions.monthlyOperatingCost}/month
+                  operating cost.
+                </p>
+              </div>
+            </section>
+          </div>
+        </>
+      )}
     </div>
   );
 }

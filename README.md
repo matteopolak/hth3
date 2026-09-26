@@ -22,7 +22,7 @@ Set `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, and `VITE_AUTH0_AUDIENCE` for t
 
 ## Current scope
 
-The working local slice covers resident submission, a deterministic classification decision, human review for uncertain reports, status tracking, an admin queue, lifecycle transitions, taxonomy drafting/simulation/publication, and an append-only case event log. The 600-case scenario and value calculator are synthetic fixtures and must not be presented as observed CGI outcomes.
+The working local slice covers resident submission, a deterministic classification decision, human review for uncertain reports, status tracking, an admin queue, lifecycle transitions, taxonomy drafting/simulation/publication, synthetic scenario analytics, and an append-only case event log. The 600-case scenario and [provisional value case](docs/CGI-VALUE-CASE.md) are assumption-based fixtures and must not be presented as observed CGI outcomes.
 
 Jev and Workers AI classification adapters are implemented with schema and taxonomy validation; they have mock tests but have not been exercised with live service credentials. Set `JEV_API_KEY` as a Worker secret to enable Jev. The Worker has an `AI` binding for Workers AI fallback. Live mode rejects case creation if neither provider is available. A signed ElevenLabs post-call webhook handler is implemented and documented in [the voice setup guide](docs/VOICE_AGENT.md), but an agent and public webhook are not configured. Live Tiger, Vectorize, R2, mobile, Remotion, and Presage paths are not implemented yet. The Tiger SQL migration is a starting artifact and has not been run against a Tiger service. The repository does not include the six official CGI CSV files, so no claims are made from that pack.
 

@@ -20,7 +20,12 @@ import {
   fixtureClassify,
   requiresReview,
 } from "@civicresolve/domain";
-import { taxonomy as initialTaxonomy } from "@civicresolve/fixtures";
+import {
+  makeScenario,
+  projectedValue,
+  scenarioMetrics,
+  taxonomy as initialTaxonomy,
+} from "@civicresolve/fixtures";
 import { parseVoiceReport, verifyElevenLabsSignature } from "./voice";
 
 interface Env {
@@ -437,6 +442,40 @@ async function handle(request: Request, env: Env): Promise<Response> {
             );
     const rows = await query.all<CaseRow>();
     return json({ cases: rows.results.map(publicCase) });
+  }
+
+  if (path === "/api/admin/metrics" && request.method === "GET") {
+    const user = await principal(request, env);
+    if (!user || !canManageCases(user.role))
+      return error("Admin access required", 403);
+    if (env.DEMO_MODE !== "true")
+      return error("Tiger analytics not configured", 503);
+    const cases = makeScenario();
+    const baselineCases = cases.filter((item) => item.phase === "baseline");
+    const updateCases = cases.filter(
+      (item) => item.phase === "saturday_update",
+    );
+    return json({
+      source: "synthetic-fixture",
+      generatedCases: cases.length,
+      baseline: scenarioMetrics(baselineCases),
+      saturdayUpdate: scenarioMetrics(updateCases),
+      total: scenarioMetrics(cases),
+      projectedValue: projectedValue(600),
+      categoryMix: {
+        baselineWaterPercent:
+          (100 *
+            baselineCases.filter((item) => item.categoryId === "water")
+              .length) /
+          baselineCases.length,
+        updateWaterPercent:
+          (100 *
+            updateCases.filter((item) => item.categoryId === "water").length) /
+          updateCases.length,
+      },
+      notes:
+        "Synthetic scenario and assumptions; these are not observed Northwind outcomes or live Tiger metrics.",
+    });
   }
 
   const detailMatch = path.match(/^\/api\/admin\/cases\/([^/]+)$/);
