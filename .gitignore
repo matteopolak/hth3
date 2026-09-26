@@ -16,6 +16,7 @@ build/
 coverage/
 out/
 tmp/
+.wrangler/
 
 # Local configuration and secrets
 .env

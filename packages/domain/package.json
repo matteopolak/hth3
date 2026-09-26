@@ -1,0 +1,19 @@
+{
+  "name": "@civicresolve/domain",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@civicresolve/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@civicresolve/fixtures": "workspace:*"
+  }
+}

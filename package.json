@@ -1,0 +1,20 @@
+{
+  "name": "civicresolve",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @civicresolve/web --filter @civicresolve/worker dev",
+    "lint": "prettier --check apps packages package.json pnpm-workspace.yaml tsconfig.base.json README.md .github/workflows/check.yml",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:unit": "pnpm test",
+    "build": "pnpm -r build",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "deploy:worker": "pnpm --filter @civicresolve/worker deploy"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
