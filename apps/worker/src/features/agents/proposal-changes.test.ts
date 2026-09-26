@@ -166,4 +166,72 @@ describe("proposal changes", () => {
       ),
     ).toHaveLength(3);
   });
+
+  it("shows source correction review and rights/freshness consequences", () => {
+    expect(
+      proposalChanges(
+        "propose_source_correction",
+        { id: "official-one" },
+        {
+          changes: { publisher: "Updated publisher" },
+          reason: "Verified on the publisher site",
+          evidenceUrl: "https://example.com",
+        },
+        { source: { publisher: "Original publisher", version: 2 } },
+      ),
+    ).toEqual([
+      {
+        field: "Proposed metadata · Publisher",
+        before: "Original publisher",
+        after: "Updated publisher",
+      },
+      { field: "Review status", before: null, after: "pending" },
+    ]);
+    const changes = proposalChanges(
+      "decide_source_correction",
+      { id: "official-one", changeId: "change_1" },
+      {
+        expectedVersion: 1,
+        decision: "approve",
+        reason: "The official source confirms this.",
+      },
+      {
+        change: {
+          status: "pending",
+          proposed: { sourceUrl: "https://example.com/new" },
+        },
+        source: {
+          sourceUrl: "https://example.com/old",
+          termsStatus: "reviewed",
+          freshnessState: "current",
+          verifiedAt: "2026-09-01",
+        },
+      },
+    );
+    expect(changes).toContainEqual({
+      field: "Review status",
+      before: "pending",
+      after: "approved",
+    });
+    expect(changes).toContainEqual({
+      field: "Source metadata · Source Url",
+      before: "https://example.com/old",
+      after: "https://example.com/new",
+    });
+    expect(changes).toContainEqual({
+      field: "Terms status",
+      before: "reviewed",
+      after: "unreviewed",
+    });
+    expect(changes).toContainEqual({
+      field: "Freshness state",
+      before: "current",
+      after: "unknown",
+    });
+    expect(changes).toContainEqual({
+      field: "Verified At",
+      before: "2026-09-01",
+      after: null,
+    });
+  });
 });

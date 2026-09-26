@@ -157,6 +157,56 @@ export function proposalChanges(
       record(data.settings)?.reportingWindowDays,
       body?.reportingWindowDays,
     );
+  } else if (name === "propose_source_correction") {
+    addFields(
+      changes,
+      record(data.source),
+      record(body?.changes),
+      "Proposed metadata · ",
+    );
+    addChange(changes, "Review status", null, "pending");
+  } else if (name === "decide_source_correction") {
+    const change = record(data.change);
+    const decision = body?.decision;
+    addChange(
+      changes,
+      "Review status",
+      change?.status,
+      decision === "approve" ? "approved" : "rejected",
+    );
+    addChange(changes, "Review reason", null, body?.reason);
+    if (decision === "approve") {
+      const source = record(data.source);
+      const proposed = record(change?.proposed);
+      if (source && proposed) {
+        addFields(changes, source, proposed, "Source metadata · ");
+        if (
+          [
+            "publisher",
+            "sourceUrl",
+            "licenceName",
+            "licenceUrl",
+            "termsUrl",
+          ].some((field) => Object.hasOwn(proposed, field))
+        )
+          addChange(changes, "Terms status", source.termsStatus, "unreviewed");
+        if (Object.hasOwn(proposed, "sourceUrl")) {
+          addChange(
+            changes,
+            "Freshness state",
+            source.freshnessState,
+            "unknown",
+          );
+          for (const field of [
+            "fetchedAt",
+            "verifiedAt",
+            "expiresAt",
+            "lastError",
+          ])
+            addChange(changes, label(field), source[field], null);
+        }
+      }
+    }
   } else if (
     name === "edit_organization_posting" ||
     name === "edit_organization_program"

@@ -1,5 +1,10 @@
 import { expect, it } from "vitest";
-import { executeTool, prepareTool, ToolInputError, visibleTools } from "./tools.js";
+import {
+  executeTool,
+  prepareTool,
+  ToolInputError,
+  visibleTools,
+} from "./tools.js";
 
 it("keeps new agent actions on fixed, role-scoped routes", async () => {
   const org = "org_123";
@@ -20,9 +25,15 @@ it("keeps new agent actions on fixed, role-scoped routes", async () => {
   expect(employee).toContain("create_saved_view");
   expect(employee).toContain("run_saved_report");
   expect(employee).toContain("set_organization_reporting_window");
+  expect(employee).toContain("propose_source_correction");
+  const sourceOnly = visibleTools("employee", null).map((tool) => tool.name);
+  expect(sourceOnly).toContain("list_curator_sources");
+  expect(sourceOnly).toContain("decide_source_correction");
+  expect(sourceOnly).not.toContain("list_staff_feedback");
   expect(resident).not.toContain("theme_candidates");
   expect(resident).not.toContain("read_staff_workspace");
   expect(resident).not.toContain("read_staff_settings");
+  expect(resident).not.toContain("list_curator_sources");
   expect(employee).not.toContain("save_external_preparation");
 
   expect(
@@ -74,6 +85,51 @@ it("keeps new agent actions on fixed, role-scoped routes", async () => {
   const workspace = prepareTool("read_staff_workspace", {}, "employee", org);
   expect(workspace.path).toBe(`/api/v1/staff/organizations/${org}/workspace`);
   expect(workspace.tool.access).toBe("read");
+  const correction = prepareTool(
+    "propose_source_correction",
+    {
+      id: "canada.jobs",
+      expectedVersion: 2,
+      reason: "The publisher changed its official page.",
+      evidenceUrl: "https://canada.ca/evidence",
+      changes: { sourceUrl: "https://canada.ca/new-page" },
+    },
+    "employee",
+    null,
+  );
+  expect(correction.path).toBe("/api/v1/staff/sources/canada.jobs/changes");
+  expect(correction.body).toMatchObject({
+    expectedVersion: 2,
+    changes: { sourceUrl: "https://canada.ca/new-page" },
+  });
+  expect(
+    prepareTool(
+      "read_curator_source_change",
+      { id: "canada.jobs", changeId: "change_1" },
+      "employee",
+      null,
+    ).path,
+  ).toBe("/api/v1/staff/sources/canada.jobs/changes/change_1");
+  expect(() =>
+    prepareTool("list_staff_feedback", {}, "employee", null),
+  ).toThrow(ToolInputError);
+  expect(() =>
+    prepareTool("list_curator_sources", {}, "resident", null),
+  ).toThrow(ToolInputError);
+  expect(() =>
+    prepareTool(
+      "propose_source_correction",
+      {
+        id: "canada.jobs",
+        expectedVersion: 2,
+        reason: "The publisher changed its official page.",
+        evidenceUrl: "http://example.com",
+        changes: { sourceUrl: "https://canada.ca/new-page" },
+      },
+      "employee",
+      null,
+    ),
+  ).toThrow(ToolInputError);
   const view = prepareTool(
     "edit_saved_view",
     {
@@ -191,13 +247,13 @@ it("keeps new agent actions on fixed, role-scoped routes", async () => {
   expect(() =>
     prepareTool("prepare_feedback_evidence_upload", {}, "resident", null),
   ).toThrow(ToolInputError);
-  expect(await executeTool(
-    new Request("http://localhost"),
-    null!,
-    evidenceUpload,
-  )).toMatchObject({
+  expect(
+    await executeTool(new Request("http://localhost"), null!, evidenceUpload),
+  ).toMatchObject({
     status: 200,
-    data: { upload: { field: "file", requiresFileChooser: true, submitted: false } },
+    data: {
+      upload: { field: "file", requiresFileChooser: true, submitted: false },
+    },
   });
   expect(() =>
     prepareTool("staff_assign_feedback", {}, "resident", null),

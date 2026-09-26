@@ -22,10 +22,15 @@ import type {
 type Handler = typeof handleApplicationRequest;
 type ToolDefinition = {
   mode: AgentMode | "both";
+  scope?: "global";
   access: ToolAccess;
   description: string;
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  path: (args: ToolArguments, organizationId: string | null, conversationId?: string) => string;
+  path: (
+    args: ToolArguments,
+    organizationId: string | null,
+    conversationId?: string,
+  ) => string;
   handler: Handler | null;
   virtual?: "feedbackEvidenceUpload";
   body?: (args: ToolArguments) => unknown;
@@ -101,6 +106,104 @@ function sourceRecordId(args: ToolArguments): string {
   )
     throw new ToolInputError("id must be a source record identifier.");
   return value;
+}
+
+function sourceVersion(args: ToolArguments): number {
+  const value = args.expectedVersion;
+  if (!Number.isSafeInteger(value) || (value as number) < 1)
+    throw new ToolInputError(
+      "expectedVersion must be the current source or change version.",
+    );
+  return value as number;
+}
+
+function sourceReviewReason(args: ToolArguments): string {
+  const value = string(args, "reason").trim();
+  if (value.length < 12 || value.length > 1200)
+    throw new ToolInputError("reason must be 12 to 1200 characters.");
+  return value;
+}
+
+function sourceHttpsUrl(value: unknown, field: string): string {
+  if (typeof value !== "string")
+    throw new ToolInputError(`${field} must be an HTTPS URL.`);
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:" && url.hostname) return url.toString();
+  } catch {
+    // The input error below keeps the tool response free of URL details.
+  }
+  throw new ToolInputError(`${field} must be an HTTPS URL.`);
+}
+
+function sourceMetadataChanges(
+  args: ToolArguments,
+): Record<string, string | null> {
+  const input = object(args, "changes");
+  const allowed = new Set([
+    "name",
+    "publisher",
+    "sourceUrl",
+    "jurisdictionLevel",
+    "jurisdictionCode",
+    "jurisdictionName",
+    "municipalityCode",
+    "municipalityName",
+    "licenceName",
+    "licenceUrl",
+    "termsUrl",
+  ]);
+  const nullable = new Set([
+    "municipalityCode",
+    "municipalityName",
+    "licenceName",
+    "licenceUrl",
+    "termsUrl",
+  ]);
+  const changes: Record<string, string | null> = {};
+  for (const [field, value] of Object.entries(input)) {
+    if (!allowed.has(field))
+      throw new ToolInputError(`${field} is not editable source metadata.`);
+    if (value === null && nullable.has(field)) {
+      changes[field] = null;
+      continue;
+    }
+    if (typeof value !== "string" || !value.trim() || value.trim().length > 500)
+      throw new ToolInputError(
+        `${field} must be a nonempty value under 500 characters.`,
+      );
+    changes[field] = ["sourceUrl", "licenceUrl", "termsUrl"].includes(field)
+      ? sourceHttpsUrl(value.trim(), field)
+      : value.trim();
+    if (
+      field === "jurisdictionLevel" &&
+      !["federal", "provincial", "municipal", "regional", "community"].includes(
+        changes[field]!,
+      )
+    )
+      throw new ToolInputError("jurisdictionLevel is invalid.");
+  }
+  if (Object.keys(changes).length === 0)
+    throw new ToolInputError(
+      "changes must include at least one metadata field.",
+    );
+  if (
+    Object.hasOwn(changes, "municipalityCode") !==
+      Object.hasOwn(changes, "municipalityName") ||
+    (Object.hasOwn(changes, "municipalityCode") &&
+      (changes.municipalityCode === null) !==
+        (changes.municipalityName === null))
+  )
+    throw new ToolInputError(
+      "municipalityCode and municipalityName must change together.",
+    );
+  return changes;
+}
+
+function sourceDecision(args: ToolArguments): "approve" | "reject" {
+  if (args.decision !== "approve" && args.decision !== "reject")
+    throw new ToolInputError("decision must be approve or reject.");
+  return args.decision;
 }
 
 function themeId(args: ToolArguments): string {
@@ -279,6 +382,69 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     path: (args) =>
       `/api/v1/source-records/${sourceRecordId(args)}${args.includeSamples === true ? "?includeSamples=true" : ""}`,
     handler: handleSourceRequest,
+  },
+  list_curator_sources: {
+    mode: "employee",
+    scope: "global",
+    access: "read",
+    description:
+      "List source registry provenance, freshness, ingestion errors and pending curator changes; global source curator permission required.",
+    method: "GET",
+    path: () => "/api/v1/staff/sources",
+    handler: handleSourceRequest,
+  },
+  read_curator_source: {
+    mode: "employee",
+    scope: "global",
+    access: "read",
+    description:
+      "Read one source, up to 100 source-backed records, current metadata version and review history; source curator permission required.",
+    method: "GET",
+    path: (args) => `/api/v1/staff/sources/${sourceRecordId(args)}`,
+    handler: handleSourceRequest,
+  },
+  read_curator_source_change: {
+    mode: "employee",
+    scope: "global",
+    access: "read",
+    description:
+      "Read the current version and status of a proposed source metadata correction.",
+    method: "GET",
+    path: (args) =>
+      `/api/v1/staff/sources/${sourceRecordId(args)}/changes/${identifier(args, "changeId")}`,
+    handler: handleSourceRequest,
+  },
+  propose_source_correction: {
+    mode: "employee",
+    scope: "global",
+    access: "write",
+    description:
+      "Prepare a reviewed correction to official source registry metadata with an evidence URL and reason. This does not edit imported records or approve itself.",
+    method: "POST",
+    path: (args) => `/api/v1/staff/sources/${sourceRecordId(args)}/changes`,
+    handler: handleSourceRequest,
+    body: (args) => ({
+      expectedVersion: sourceVersion(args),
+      reason: sourceReviewReason(args),
+      evidenceUrl: sourceHttpsUrl(args.evidenceUrl, "evidenceUrl"),
+      changes: sourceMetadataChanges(args),
+    }),
+  },
+  decide_source_correction: {
+    mode: "employee",
+    scope: "global",
+    access: "write",
+    description:
+      "Prepare a reviewed approval or rejection of a pending source metadata correction; current version and reason required.",
+    method: "POST",
+    path: (args) =>
+      `/api/v1/staff/sources/${sourceRecordId(args)}/changes/${identifier(args, "changeId")}/decision`,
+    handler: handleSourceRequest,
+    body: (args) => ({
+      expectedVersion: sourceVersion(args),
+      decision: sourceDecision(args),
+      reason: sourceReviewReason(args),
+    }),
   },
   search_nearby: {
     mode: "both",
@@ -1417,9 +1583,19 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
 
 export function visibleTools(
   mode: AgentMode,
+  organizationId?: string | null,
 ): Array<{ name: string; access: ToolAccess; description: string }> {
   return Object.entries(AGENT_TOOLS)
-    .filter(([, tool]) => tool.mode === mode || tool.mode === "both")
+    .filter(
+      ([, tool]) =>
+        (tool.mode === mode || tool.mode === "both") &&
+        !(
+          mode === "employee" &&
+          organizationId === null &&
+          tool.mode === "employee" &&
+          tool.scope !== "global"
+        ),
+    )
     .map(([name, tool]) => ({
       name,
       access: tool.access,
@@ -1437,6 +1613,13 @@ export function prepareTool(
   const tool = AGENT_TOOLS[name];
   if (!tool || (tool.mode !== mode && tool.mode !== "both"))
     throw new ToolInputError("Tool is unavailable in this conversation.");
+  if (
+    mode === "employee" &&
+    !organizationId &&
+    tool.mode === "employee" &&
+    tool.scope !== "global"
+  )
+    throw new ToolInputError("An organization is required for this tool.");
   const path = tool.path(args, organizationId, conversationId);
   const body = tool.body?.(args);
   return {

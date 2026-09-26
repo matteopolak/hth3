@@ -138,7 +138,7 @@ async function createConversation(
         .first<{ id: string }>();
       organizationId = organization?.id ?? null;
     }
-    if (!organizationId)
+    if (!organizationId && !canPerformGlobalAction(actor!, "source:manage"))
       return featureError(
         context,
         "INVALID_REQUEST",
@@ -178,7 +178,7 @@ async function createConversation(
         updatedAt: now,
       },
       ...(guestToken ? { conversationToken: guestToken } : {}),
-      tools: visibleTools(mode),
+      tools: visibleTools(mode, organizationId),
     },
     201,
   );
@@ -237,8 +237,10 @@ async function loadConversation(
   if (
     row.mode === "employee" &&
     (!isEmployee(actor) ||
-      (actor.organizationId !== row.organization_id &&
-        !canPerformGlobalAction(actor, "taxonomy:manage")))
+      (row.organization_id === null
+        ? !canPerformGlobalAction(actor, "source:manage")
+        : actor.organizationId !== row.organization_id &&
+          !canPerformGlobalAction(actor, "taxonomy:manage")))
   )
     return featureError(context, "FORBIDDEN", "Employee access changed.", 403);
   return row;
@@ -267,7 +269,7 @@ async function conversationView(
     conversation: conversationSummary(conversation),
     messages: (messages.results ?? []).map(messageView),
     proposals: (proposals.results ?? []).map(proposalView),
-    tools: visibleTools(conversation.mode),
+    tools: visibleTools(conversation.mode, conversation.organization_id),
   });
 }
 
@@ -603,6 +605,19 @@ async function callTool(
     if (error instanceof ToolInputError)
       return featureError(context, "INVALID_TOOL_INPUT", error.message, 400);
     throw error;
+  }
+  if (
+    name === "propose_source_correction" ||
+    name === "decide_source_correction"
+  ) {
+    const actor = await authenticateRequest(request, context.env);
+    if (!actor || !canPerformGlobalAction(actor, "source:manage"))
+      return featureError(
+        context,
+        "FORBIDDEN",
+        "Source curator access required.",
+        403,
+      );
   }
   if (name === "prepare_feedback_evidence_upload") {
     const pending = await context.env.DB.prepare(
@@ -1168,6 +1183,8 @@ const VERSION_READ_TOOL: Readonly<Record<string, string>> = {
   delete_saved_report: "read_saved_report",
   set_staff_default_view: "read_staff_settings",
   set_organization_reporting_window: "read_staff_settings",
+  propose_source_correction: "read_curator_source",
+  decide_source_correction: "read_curator_source_change",
 };
 
 async function recordVersion(
@@ -1222,6 +1239,8 @@ async function recordVersion(
     view?: { version?: unknown };
     report?: { version?: unknown };
     settings?: { personalVersion?: unknown; organizationVersion?: unknown };
+    source?: { version?: unknown };
+    change?: { version?: unknown };
   };
   const proposed = prepareTool(
     name,
@@ -1229,8 +1248,46 @@ async function recordVersion(
     conversation.mode,
     conversation.organization_id,
   );
-  const changes = proposalChanges(name, args, proposed.preview.body, data);
+  let comparisonData: typeof data = data;
+  if (name === "decide_source_correction" && args.decision === "approve") {
+    const sourceResult = await executeTool(
+      request,
+      context,
+      prepareTool(
+        "read_curator_source",
+        { id: args.id },
+        conversation.mode,
+        conversation.organization_id,
+      ),
+    );
+    const source =
+      sourceResult.data && typeof sourceResult.data === "object"
+        ? (sourceResult.data as { source?: { version?: unknown } }).source
+        : undefined;
+    if (sourceResult.status < 400 && source)
+      comparisonData = {
+        ...data,
+        source,
+      };
+  }
+  const changes = proposalChanges(
+    name,
+    args,
+    proposed.preview.body,
+    comparisonData,
+  );
   const review = changes.length > 0 ? { changes } : {};
+  if (
+    readName === "read_curator_source" ||
+    readName === "read_curator_source_change"
+  ) {
+    const version = (
+      readName === "read_curator_source" ? data.source : data.change
+    )?.version;
+    return typeof version === "number"
+      ? { recordVersion: String(version), ...review }
+      : review;
+  }
   if (readName === "read_saved_view" || readName === "read_saved_report") {
     const version = (readName === "read_saved_view" ? data.view : data.report)
       ?.version;
@@ -1336,6 +1393,7 @@ function isEmployee(
   return (
     !!actor &&
     (canPerformGlobalAction(actor, "taxonomy:manage") ||
+      canPerformGlobalAction(actor, "source:manage") ||
       (!!actor.organizationId &&
         (canPerformOrganizationAction(
           actor,
@@ -1383,7 +1441,7 @@ function proposalView(row: ProposalRow) {
 }
 
 function systemPrompt(conversation: ConversationRow): string {
-  const tools = visibleTools(conversation.mode)
+  const tools = visibleTools(conversation.mode, conversation.organization_id)
     .map((tool) => `${tool.name} (${tool.access}): ${tool.description}`)
     .join("\n");
   return `You are Envoy's ${conversation.mode} assistant. Reply in ${conversation.locale === "fr" ? "French" : "English"} with at most two short, natural sentences. No emoji. Never invent URLs, menu names, click paths, official processes, source records, eligibility, locations, case status, or tool results. Do not claim an external application or report was submitted. Envoy is unaffiliated with government; the action preview discloses the queue destination. Do not include practice records unless the person asks for them, and disclose their status when recommending one. Never ask for or print access tokens. Direct emergencies to 911. Offer to prepare feedback when a resident describes an unresolved service problem. Before proposing feedback, check for a matching report; if found, say its status and only offer a separate report when the resident confirms a distinct issue or recurrence. Do not execute writes without the approval card. Employee tools access only the current role and organization.\nAvailable tools:\n${tools}\nRespond as compact JSON: {"message":"plain answer","tool":{"name":"one exact tool name","args":{}}}. Omit tool if none is needed. Use at most one tool per turn. Ask for missing details. For write tools, the server creates a proposal card.`;
