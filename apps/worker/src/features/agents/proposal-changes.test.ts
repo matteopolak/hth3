@@ -116,4 +116,54 @@ describe("proposal changes", () => {
       },
     ]);
   });
+
+  it("previews saved workspace definitions and separate settings versions", () => {
+    expect(
+      proposalChanges(
+        "edit_saved_view",
+        { id: "view_1", expectedVersion: 2 },
+        {
+          name: "Urgent cases",
+          days: 7,
+          status: "in_review",
+          category: "",
+          expectedVersion: 2,
+        },
+        {
+          view: {
+            name: "Open cases",
+            days: 30,
+            status: "in_review",
+            category: "",
+            version: 2,
+          },
+        },
+      ),
+    ).toEqual([
+      { field: "Name", before: "Open cases", after: "Urgent cases" },
+      { field: "Days", before: 30, after: 7 },
+    ]);
+    expect(
+      proposalChanges(
+        "set_organization_reporting_window",
+        { expectedVersion: 1 },
+        { reportingWindowDays: 90, expectedVersion: 1 },
+        {
+          settings: {
+            reportingWindowDays: 30,
+            organizationVersion: 1,
+            personalVersion: 5,
+          },
+        },
+      ),
+    ).toEqual([{ field: "Reporting window days", before: 30, after: 90 }]);
+    expect(
+      proposalChanges(
+        "create_saved_report",
+        {},
+        { name: "Monthly counts", days: 30, groupBy: "category" },
+        null,
+      ),
+    ).toHaveLength(3);
+  });
 });

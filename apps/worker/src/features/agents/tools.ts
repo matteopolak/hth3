@@ -116,6 +116,85 @@ function consultationId(args: ToolArguments): string {
   return value;
 }
 
+function workspaceVersion(args: ToolArguments): number {
+  const value = args.expectedVersion;
+  if (!Number.isInteger(value) || (value as number) < 0)
+    throw new ToolInputError("expectedVersion must be the current version.");
+  return value as number;
+}
+
+function workspaceDays(args: ToolArguments, key = "days"): 7 | 30 | 90 {
+  const value = args[key];
+  if (value !== 7 && value !== 30 && value !== 90)
+    throw new ToolInputError(`${key} must be 7, 30, or 90.`);
+  return value;
+}
+
+function workspaceViewBody(args: ToolArguments, edit = false) {
+  const status = args.status ?? "";
+  if (
+    typeof status !== "string" ||
+    ![
+      "",
+      "submitted",
+      "acknowledged",
+      "in_review",
+      "waiting_on_resident",
+      "outcome_recorded",
+      "closed",
+      "reopened",
+    ].includes(status)
+  )
+    throw new ToolInputError("status must be a feedback status or empty.");
+  const category = args.category ?? "";
+  if (
+    typeof category !== "string" ||
+    (category !== "" && !/^[A-Za-z0-9_-]{1,80}$/.test(category))
+  )
+    throw new ToolInputError("category must be an identifier or empty.");
+  return {
+    name: string(args, "name"),
+    days: workspaceDays(args),
+    status,
+    category,
+    ...(edit ? { expectedVersion: workspaceVersion(args) } : {}),
+  };
+}
+
+function workspaceDefaultView(args: ToolArguments): string {
+  const view = string(args, "defaultView");
+  if (
+    ![
+      "assistant",
+      "issues",
+      "overview",
+      "themes",
+      "analytics",
+      "hiring",
+      "applicants",
+      "taxonomy",
+      "audit",
+      "views",
+      "reports",
+      "settings",
+    ].includes(view)
+  )
+    throw new ToolInputError("defaultView must be a staff workspace tab.");
+  return view;
+}
+
+function workspaceReportBody(args: ToolArguments, edit = false) {
+  const groupBy = args.groupBy;
+  if (groupBy !== "status" && groupBy !== "category" && groupBy !== "intent")
+    throw new ToolInputError("groupBy must be status, category, or intent.");
+  return {
+    name: string(args, "name"),
+    days: workspaceDays(args),
+    groupBy,
+    ...(edit ? { expectedVersion: workspaceVersion(args) } : {}),
+  };
+}
+
 function discoveryQuery(
   args: ToolArguments,
   fields: readonly string[],
@@ -654,6 +733,161 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     method: "GET",
     path: (_args, org) => `${organizationPath(org)}/workspace`,
     handler: handleStaffWorkspaceRequest,
+  },
+  list_saved_views: {
+    mode: "employee",
+    access: "read",
+    description: "List this employee's private saved feedback queue views.",
+    method: "GET",
+    path: (_args, org) => `${organizationPath(org)}/workspace/views`,
+    handler: handleStaffWorkspaceRequest,
+  },
+  read_saved_view: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Read one of this employee's saved feedback view definitions and version.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/workspace/views/${identifier(args, "id")}`,
+    handler: handleStaffWorkspaceRequest,
+  },
+  run_saved_view: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Get exact count and latest matching case IDs for this employee's saved view.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/workspace/views/${identifier(args, "id")}/result`,
+    handler: handleStaffWorkspaceRequest,
+  },
+  create_saved_view: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a private saved feedback queue view with a name, 7/30/90-day window, and optional status/category filters.",
+    method: "POST",
+    path: (_args, org) => `${organizationPath(org)}/workspace/views`,
+    handler: handleStaffWorkspaceRequest,
+    body: (args) => workspaceViewBody(args),
+  },
+  edit_saved_view: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a full saved-view definition update using its current expectedVersion.",
+    method: "PATCH",
+    path: (args, org) =>
+      `${organizationPath(org)}/workspace/views/${identifier(args, "id")}`,
+    handler: handleStaffWorkspaceRequest,
+    body: (args) => workspaceViewBody(args, true),
+  },
+  delete_saved_view: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare deletion of this employee's saved view using its current expectedVersion.",
+    method: "DELETE",
+    path: (args, org) =>
+      `${organizationPath(org)}/workspace/views/${identifier(args, "id")}`,
+    handler: handleStaffWorkspaceRequest,
+    body: (args) => ({ expectedVersion: workspaceVersion(args) }),
+  },
+  list_saved_reports: {
+    mode: "employee",
+    access: "read",
+    description: "List this employee's private exact-count feedback reports.",
+    method: "GET",
+    path: (_args, org) => `${organizationPath(org)}/workspace/reports`,
+    handler: handleStaffWorkspaceRequest,
+  },
+  read_saved_report: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Read one of this employee's saved report definitions and version.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/workspace/reports/${identifier(args, "id")}`,
+    handler: handleStaffWorkspaceRequest,
+  },
+  run_saved_report: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Compute exact current feedback counts and recent source IDs for a saved report.",
+    method: "GET",
+    path: (args, org) =>
+      `${organizationPath(org)}/workspace/reports/${identifier(args, "id")}/result`,
+    handler: handleStaffWorkspaceRequest,
+  },
+  create_saved_report: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a private exact-count report grouped by status, category, or intent.",
+    method: "POST",
+    path: (_args, org) => `${organizationPath(org)}/workspace/reports`,
+    handler: handleStaffWorkspaceRequest,
+    body: (args) => workspaceReportBody(args),
+  },
+  edit_saved_report: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a full saved-report definition update using its current expectedVersion.",
+    method: "PATCH",
+    path: (args, org) =>
+      `${organizationPath(org)}/workspace/reports/${identifier(args, "id")}`,
+    handler: handleStaffWorkspaceRequest,
+    body: (args) => workspaceReportBody(args, true),
+  },
+  delete_saved_report: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare deletion of this employee's saved report using its current expectedVersion.",
+    method: "DELETE",
+    path: (args, org) =>
+      `${organizationPath(org)}/workspace/reports/${identifier(args, "id")}`,
+    handler: handleStaffWorkspaceRequest,
+    body: (args) => ({ expectedVersion: workspaceVersion(args) }),
+  },
+  read_staff_settings: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Read personal default tab and organization reporting window with independent versions.",
+    method: "GET",
+    path: (_args, org) => `${organizationPath(org)}/workspace/settings`,
+    handler: handleStaffWorkspaceRequest,
+  },
+  set_staff_default_view: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare a personal default tab change; the selected tab must be available to this role.",
+    method: "PATCH",
+    path: (_args, org) => `${organizationPath(org)}/workspace/settings`,
+    handler: handleStaffWorkspaceRequest,
+    body: (args) => ({
+      defaultView: workspaceDefaultView(args),
+      expectedVersion: workspaceVersion(args),
+    }),
+  },
+  set_organization_reporting_window: {
+    mode: "employee",
+    access: "write",
+    description:
+      "Prepare the organization's default 7/30/90-day report window; organization admin required.",
+    method: "PATCH",
+    path: (_args, org) => `${organizationPath(org)}/workspace/settings`,
+    handler: handleStaffWorkspaceRequest,
+    body: (args) => ({
+      reportingWindowDays: workspaceDays(args, "reportingWindowDays"),
+      expectedVersion: workspaceVersion(args),
+    }),
   },
   list_staff_feedback: {
     mode: "employee",

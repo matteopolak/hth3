@@ -16,8 +16,12 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
   expect(employee).toContain("search_nearby");
   expect(employee).toContain("list_consultations");
   expect(employee).toContain("read_staff_workspace");
+  expect(employee).toContain("create_saved_view");
+  expect(employee).toContain("run_saved_report");
+  expect(employee).toContain("set_organization_reporting_window");
   expect(resident).not.toContain("theme_candidates");
   expect(resident).not.toContain("read_staff_workspace");
+  expect(resident).not.toContain("read_staff_settings");
   expect(employee).not.toContain("save_external_preparation");
 
   expect(
@@ -69,6 +73,66 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
   const workspace = prepareTool("read_staff_workspace", {}, "employee", org);
   expect(workspace.path).toBe(`/api/v1/staff/organizations/${org}/workspace`);
   expect(workspace.tool.access).toBe("read");
+  const view = prepareTool(
+    "edit_saved_view",
+    {
+      id: "view_1",
+      name: "Open cases",
+      days: 30,
+      status: "in_review",
+      expectedVersion: 2,
+    },
+    "employee",
+    org,
+  );
+  expect(view.path).toBe(
+    `/api/v1/staff/organizations/${org}/workspace/views/view_1`,
+  );
+  expect(view.body).toMatchObject({
+    name: "Open cases",
+    days: 30,
+    expectedVersion: 2,
+  });
+  expect(
+    prepareTool("run_saved_report", { id: "report_1" }, "employee", org).path,
+  ).toBe(
+    `/api/v1/staff/organizations/${org}/workspace/reports/report_1/result`,
+  );
+  expect(
+    prepareTool(
+      "set_organization_reporting_window",
+      { reportingWindowDays: 90, expectedVersion: 1 },
+      "employee",
+      org,
+    ).body,
+  ).toEqual({ reportingWindowDays: 90, expectedVersion: 1 });
+  expect(() =>
+    prepareTool("delete_saved_view", { id: "view_1" }, "employee", org),
+  ).toThrow(ToolInputError);
+  expect(() =>
+    prepareTool(
+      "create_saved_report",
+      { name: "Counts", days: 30, groupBy: "invalid" },
+      "employee",
+      org,
+    ),
+  ).toThrow(ToolInputError);
+  expect(() =>
+    prepareTool(
+      "create_saved_view",
+      { name: "Cases", days: 30, status: "wrong" },
+      "employee",
+      org,
+    ),
+  ).toThrow(ToolInputError);
+  expect(() =>
+    prepareTool(
+      "set_staff_default_view",
+      { defaultView: "admin", expectedVersion: 0 },
+      "employee",
+      org,
+    ),
+  ).toThrow(ToolInputError);
   expect(
     prepareTool(
       "search_nearby",

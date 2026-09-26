@@ -19,6 +19,8 @@ const CREATION_FIELDS: Readonly<Record<string, readonly string[]>> = {
   submit_program_application: ["programId", "answers"],
   create_organization_posting: ["title", "description", "location"],
   create_organization_program: ["kind", "title", "summary", "questions"],
+  create_saved_view: ["name", "days", "status", "category"],
+  create_saved_report: ["name", "days", "groupBy"],
 };
 
 const MESSAGE_TOOLS = new Set([
@@ -125,6 +127,36 @@ export function proposalChanges(
       ? data.resumes.find((entry) => record(entry)?.id === args.id)
       : null;
     if (resume) addChange(changes, "Résumé", resume, null);
+  } else if (name === "edit_saved_view" || name === "edit_saved_report") {
+    const current = record(
+      name === "edit_saved_view" ? data.view : data.report,
+    );
+    const fields = body ? { ...body } : null;
+    if (fields) delete fields.expectedVersion;
+    addFields(changes, current, fields);
+  } else if (name === "delete_saved_view" || name === "delete_saved_report") {
+    const current = name === "delete_saved_view" ? data.view : data.report;
+    if (current)
+      addChange(
+        changes,
+        name === "delete_saved_view" ? "Saved view" : "Saved report",
+        current,
+        null,
+      );
+  } else if (name === "set_staff_default_view") {
+    addChange(
+      changes,
+      "Default view",
+      record(data.settings)?.defaultView,
+      body?.defaultView,
+    );
+  } else if (name === "set_organization_reporting_window") {
+    addChange(
+      changes,
+      "Reporting window days",
+      record(data.settings)?.reportingWindowDays,
+      body?.reportingWindowDays,
+    );
   } else if (
     name === "edit_organization_posting" ||
     name === "edit_organization_program"

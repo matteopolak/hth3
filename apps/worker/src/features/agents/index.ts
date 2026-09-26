@@ -1132,6 +1132,12 @@ const VERSION_READ_TOOL: Readonly<Record<string, string>> = {
   publish_taxonomy_draft: "read_taxonomy",
   create_taxonomy_draft: "read_taxonomy",
   correct_classification: "read_classification",
+  edit_saved_view: "read_saved_view",
+  delete_saved_view: "read_saved_view",
+  edit_saved_report: "read_saved_report",
+  delete_saved_report: "read_saved_report",
+  set_staff_default_view: "read_staff_settings",
+  set_organization_reporting_window: "read_staff_settings",
 };
 
 async function recordVersion(
@@ -1183,6 +1189,9 @@ async function recordVersion(
     items?: Array<{ item?: { id?: unknown }; updatedAt?: unknown }>;
     draft?: unknown;
     classification?: { id?: unknown };
+    view?: { version?: unknown };
+    report?: { version?: unknown };
+    settings?: { personalVersion?: unknown; organizationVersion?: unknown };
   };
   const proposed = prepareTool(
     name,
@@ -1192,6 +1201,22 @@ async function recordVersion(
   );
   const changes = proposalChanges(name, args, proposed.preview.body, data);
   const review = changes.length > 0 ? { changes } : {};
+  if (readName === "read_saved_view" || readName === "read_saved_report") {
+    const version = (readName === "read_saved_view" ? data.view : data.report)
+      ?.version;
+    return typeof version === "number"
+      ? { recordVersion: String(version), ...review }
+      : review;
+  }
+  if (readName === "read_staff_settings") {
+    const version =
+      name === "set_staff_default_view"
+        ? data.settings?.personalVersion
+        : data.settings?.organizationVersion;
+    return typeof version === "number"
+      ? { recordVersion: String(version), ...review }
+      : review;
+  }
   if (readName === "read_taxonomy" && data.draft)
     return {
       recordVersion: await sha256Hex(JSON.stringify(data.draft)),
