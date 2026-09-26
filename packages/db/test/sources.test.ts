@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { listSourceRegistry } from "../src/d1/sources.js";
+import { toSourceRegistryEntry } from "@civicresolve/sources";
 import type {
   D1Database,
   D1PreparedStatement,
@@ -109,5 +110,19 @@ describe("source registry reads", () => {
     const { database } = databaseWithRows([expiredRow]);
     const [source] = await listSourceRegistry(database);
     expect(source?.freshness).toBe("expired");
+  });
+
+  it("does not treat future source verification timestamps as current", () => {
+    const future = toSourceRegistryEntry(
+      {
+        ...baseRow,
+        fetched_at: "2099-01-01T00:00:00.000Z",
+        verified_at: "2099-01-01T00:00:00.000Z",
+        expires_at: "2099-01-02T00:00:00.000Z",
+        freshness_state: "current",
+      },
+      new Date("2026-09-26T00:00:00.000Z"),
+    );
+    expect(future.freshness).toBe("unknown");
   });
 });

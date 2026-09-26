@@ -131,12 +131,16 @@ export interface SourceRecordRow {
 
 export function toSourceRegistryEntry(
   row: SourceRegistryRow,
+  now = new Date(),
 ): SourceRegistryEntry {
   const isSample = row.origin === "sample";
-  const freshness =
-    row.expires_at && Date.parse(row.expires_at) <= Date.now()
-      ? "expired"
-      : row.freshness_state;
+  const freshness = effectiveFreshness(
+    row.freshness_state,
+    row.fetched_at,
+    row.verified_at,
+    row.expires_at,
+    now,
+  );
   return {
     id: row.id,
     origin: row.origin,
@@ -165,11 +169,17 @@ export function toSourceRegistryEntry(
   };
 }
 
-export function toSourceRecord(row: SourceRecordRow): SourceRecord {
-  const freshness =
-    row.expires_at && Date.parse(row.expires_at) <= Date.now()
-      ? "expired"
-      : row.freshness_state;
+export function toSourceRecord(
+  row: SourceRecordRow,
+  now = new Date(),
+): SourceRecord {
+  const freshness = effectiveFreshness(
+    row.freshness_state,
+    row.fetched_at,
+    row.verified_at,
+    row.expires_at,
+    now,
+  );
   const isSample = row.origin === "sample";
   return {
     id: row.id,
@@ -204,9 +214,44 @@ export function toSourceRecord(row: SourceRecordRow): SourceRecord {
     verified:
       !isSample &&
       row.terms_status === "permitted" &&
-      row.verified_at !== null &&
+      isAtOrBefore(row.verified_at, now) &&
       freshness === "current",
   };
+}
+
+function effectiveFreshness(
+  stored: SourceFreshness,
+  fetchedAt: string | null,
+  verifiedAt: string | null,
+  expiresAt: string | null,
+  now: Date,
+): SourceFreshness {
+  if (stored === "error") return stored;
+  const expiry = timestamp(expiresAt);
+  if (expiresAt !== null && expiry === null) return "unknown";
+  if (expiry !== null && expiry <= now.getTime()) return "expired";
+  if (
+    !isValidNotFutureOrNull(fetchedAt, now) ||
+    !isValidNotFutureOrNull(verifiedAt, now)
+  )
+    return "unknown";
+  return stored;
+}
+
+function isAtOrBefore(value: string | null, now: Date): boolean {
+  if (value === null) return false;
+  const parsed = timestamp(value);
+  return parsed !== null && parsed <= now.getTime();
+}
+
+function isValidNotFutureOrNull(value: string | null, now: Date): boolean {
+  return value === null || isAtOrBefore(value, now);
+}
+
+function timestamp(value: string | null): number | null {
+  if (value === null) return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export function isPublicSourceOrigin(value: unknown): value is SourceOrigin {

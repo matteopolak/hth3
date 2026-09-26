@@ -35,19 +35,23 @@ export interface Consultation {
   verifiedAt: string;
   expiresAt: string;
   lastError: string | null;
-  participationStatus: "open" | "closed" | "directory" | "check_official_source";
+  participationStatus:
+    | "open"
+    | "closed"
+    | "directory"
+    | "check_official_source";
   externalOnly: true;
   inAppSubmission: false;
 }
 
-/** Date-only deadlines remain date-only; the official site controls its closing time. */
+/** Date-only deadlines remain date-only; unknown cut-off times go to the publisher. */
 export function toConsultation(
   row: ConsultationRow,
   now = new Date(),
 ): Consultation {
-  const today = now.toISOString().slice(0, 10);
   const sourceState =
-    row.source_state === "current" && Date.parse(row.expires_at) <= now.getTime()
+    row.source_state === "current" &&
+    Date.parse(row.expires_at) <= now.getTime()
       ? "stale"
       : row.source_state;
   const participationStatus =
@@ -55,9 +59,7 @@ export function toConsultation(
       ? "directory"
       : sourceState !== "current"
         ? "check_official_source"
-        : row.deadline_date && row.deadline_date < today
-          ? "closed"
-          : "open";
+        : deadlineStatus(row, now);
   return {
     id: row.id,
     kind: row.kind,
@@ -80,4 +82,49 @@ export function toConsultation(
     externalOnly: true,
     inAppSubmission: false,
   };
+}
+
+function deadlineStatus(
+  row: ConsultationRow,
+  now: Date,
+): "open" | "closed" | "check_official_source" {
+  const deadline = row.deadline_date;
+  if (!deadline || !isValidDateOnly(deadline)) return "check_official_source";
+
+  const timeZone =
+    row.jurisdiction_code === "CA-BC"
+      ? "America/Vancouver"
+      : row.jurisdiction_code === "CA-ON"
+        ? "America/Toronto"
+        : "America/St_Johns";
+  const today = dateInTimeZone(now, timeZone);
+
+  if (deadline > today) return "open";
+  // The publisher's cutoff time is not stored. Do not claim open or closed on
+  // the deadline date; federal opportunities also span multiple time zones.
+  if (deadline === today || row.jurisdiction_code === "CA")
+    return "check_official_source";
+  return "closed";
+}
+
+function isValidDateOnly(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return (
+    Number.isFinite(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
+  );
+}
+
+function dateInTimeZone(value: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const values = Object.fromEntries(
+    parts.map((part) => [part.type, part.value]),
+  );
+  return `${values.year}-${values.month}-${values.day}`;
 }

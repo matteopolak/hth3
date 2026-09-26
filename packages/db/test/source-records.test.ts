@@ -185,4 +185,16 @@ describe("public source record reads", () => {
     });
     expect(hiddenFromPublic).toHaveLength(0);
   });
+
+  it("does not accept future verification timestamps as current evidence", () => {
+    const futureRecord = {
+      ...officialRecord,
+      fetched_at: "2099-01-01T00:00:00.000Z",
+      verified_at: "2099-01-01T00:00:00.000Z",
+      expires_at: "2099-01-02T00:00:00.000Z",
+    };
+    expect(
+      toSourceRecord(futureRecord, new Date("2026-09-26T00:00:00.000Z")),
+    ).toMatchObject({ freshness: "unknown", verified: false });
+  });
 });

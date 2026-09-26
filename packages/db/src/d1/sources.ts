@@ -19,5 +19,5 @@ export async function listSourceRegistry(
     ? `SELECT ${SOURCE_COLUMNS} FROM source_registry ORDER BY origin, name`
     : `SELECT ${SOURCE_COLUMNS} FROM source_registry WHERE origin <> 'sample' ORDER BY origin, name`;
   const result = await database.prepare(query).all<SourceRegistryRow>();
-  return (result.results ?? []).map(toSourceRegistryEntry);
+  return (result.results ?? []).map((row) => toSourceRegistryEntry(row));
 }

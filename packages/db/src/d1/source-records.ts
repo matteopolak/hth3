@@ -28,7 +28,7 @@ export async function listSourceRecords(
     )
     .bind(options.includeSamples ? 1 : 0)
     .all<SourceRecordRow>();
-  return (result.results ?? []).map(toSourceRecord);
+  return (result.results ?? []).map((row) => toSourceRecord(row));
 }
 
 export async function getSourceRecord(

@@ -2,7 +2,7 @@
 
 ## What it is
 
-The source registry records where public information comes from, while `source_records` stores per-record publisher, original URL, geography, licence and terms state, language, timestamps, payload hash, evidence link, and freshness/error state. Public reads exclude fictional records by default and never label unknown, stale, expired, or terms-unreviewed content as verified.
+The source registry records where public information comes from, while `source_records` stores per-record publisher, original URL, geography, licence and terms state, language, timestamps, payload hash, evidence link, and freshness/error state. These are global public-catalog tables, not tenant-isolated storage. Public reads exclude fictional records by default and never label unknown, stale, expired, or terms-unreviewed content as verified.
 
 ## How it works
 
@@ -10,11 +10,11 @@ Migration `0003_sources.sql` creates `source_registry` and seeds attributable of
 
 `GET /api/v1/sources` returns the non-sample registry. `GET /api/v1/sources?includeSamples=true` includes fictional source entries and carries a `sampleLabel` on each. `GET /api/v1/source-records` lists records whose terms are explicitly `permitted`; `GET /api/v1/source-records/{id}` reads one such record. Add `?includeSamples=true` to either record endpoint to include sample records. Sample details always carry their fictional label and `verified: false`.
 
-Record responses include source ID, external ID, publisher, source URL, jurisdiction and municipality, licence/terms state, language, fetch/verification/expiry timestamps, payload hash/evidence URL, and freshness/error state. `verified` is true only for non-sample content with permitted terms, a verification timestamp, and current freshness. An elapsed expiry overrides a stored `current` value. An official publisher or URL alone does not verify a record or grant reuse rights.
+Record responses include source ID, external ID, publisher, source URL, jurisdiction and municipality, licence/terms state, language, fetch/verification/expiry timestamps, payload hash/evidence URL, and freshness/error state. `verified` is true only for non-sample content with permitted terms, a valid verification timestamp that is not in the future, and current freshness. Invalid or future fetch/verification timestamps downgrade freshness to `unknown`; an elapsed expiry overrides a stored `current` value. An official publisher or URL alone does not verify a record or grant reuse rights.
 
 ## How to change it
 
-Register an official source only after confirming that its publisher and URL are attributable. Keep its initial terms state `unreviewed` and freshness `unknown` until a real review or fetch supplies evidence. Use the jurisdiction code and name for the actual coverage; fill municipality fields only for a municipality the source genuinely covers. Never transform a sample into official content. When real permitted data is imported, snapshot the source URL and terms, identify it with a publisher external ID where available, and save a payload hash plus evidence link when those are available. Persist only safe error codes, retain provenance on failures, and define explicit expiry/freshness rules before setting a record current.
+Register an official source only after confirming that its publisher and URL are attributable. Keep its initial terms state `unreviewed` and freshness `unknown` until a real review or fetch supplies evidence. Use the jurisdiction code and name for the actual coverage; fill municipality fields only for a municipality the source genuinely covers. Never transform a sample into official content. `source_registry` and `source_records` are global public data with no organization ownership or draft visibility flag: insert participating-organization records only after they are explicitly approved for public publication, and keep private or tenant-specific records in organization-scoped tables. When permitted data is imported, snapshot the source URL and terms, identify it with a publisher external ID where available, and save a payload hash plus evidence link when those are available. Persist only safe error codes, retain provenance on failures, and define explicit expiry/freshness rules before setting a record current.
 
 ## Configuration
 

@@ -10,7 +10,7 @@ Migration `0021_consultations.sql` seeds four individually reviewed opportunitie
 
 `GET /api/v1/consultations` optionally filters by `jurisdiction=CA|CA-BC|CA-ON`. `GET /api/v1/consultations/{id}` returns one item. `GET /api/v1/consultations/{id}/handoff` returns the official URL and an explicit instruction to complete participation there. No write route is exposed. The response marks `externalOnly: true` and `inAppSubmission: false`.
 
-`toConsultation` turns a stored `current` source into `stale` after `expiresAt`. An individually reviewed item reports `open` only while the source is current and its date-only deadline has not passed. Once the source is stale, its participation status becomes `check_official_source`; directories always use `directory`. Exact closing times, eligibility, and any changed status remain on the publisher’s page.
+`toConsultation` turns a stored `current` source into `stale` after `expiresAt`. For date-only deadlines, B.C. uses the Vancouver calendar date and Ontario uses the Toronto calendar date. On the deadline date the response says `check_official_source`, because the publisher's closing time is not stored; provincial records are marked `closed` only after that local date ends. Federal deadlines span multiple time zones, so the route switches to `check_official_source` on the earliest Canadian calendar date boundary and never infers `closed` automatically. Invalid or missing deadline dates also require checking the publisher. Stale/error sources use `check_official_source`; directories always use `directory`. Exact closing times, eligibility, and any changed status remain on the publisher’s page.
 
 ## How to change it
 

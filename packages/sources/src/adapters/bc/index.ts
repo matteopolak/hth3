@@ -207,6 +207,7 @@ async function fetchText(
   });
   if (!response.ok)
     throw new SourceFetchError(`SOURCE_HTTP_${response.status}`);
+  assertOfficialFinalUrl(response, url);
   const length = Number(response.headers.get("content-length"));
   if (Number.isFinite(length) && length > maxBytes)
     throw new SourceFetchError("SOURCE_TOO_LARGE");
@@ -214,6 +215,16 @@ async function fetchText(
   if (new TextEncoder().encode(body).byteLength > maxBytes)
     throw new SourceFetchError("SOURCE_TOO_LARGE");
   return body;
+}
+
+function assertOfficialFinalUrl(
+  response: Response,
+  requestedUrl: string,
+): void {
+  const requested = new URL(requestedUrl);
+  const finalUrl = new URL(response.url || requestedUrl);
+  if (requested.protocol !== "https:" || finalUrl.origin !== requested.origin)
+    throw new SourceFetchError("SOURCE_REDIRECTED_OFFICIAL_HOST");
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

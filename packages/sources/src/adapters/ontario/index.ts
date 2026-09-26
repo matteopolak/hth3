@@ -71,6 +71,7 @@ export async function fetchOntarioOfficialRecords(
       });
       if (!response.ok)
         throw new SourceFetchError(`SOURCE_HTTP_${response.status}`);
+      assertOfficialFinalUrl(response, finder.sourceUrl);
       const contentType = response.headers.get("content-type") ?? "";
       if (!contentType.toLowerCase().includes("text/html"))
         throw new SourceFetchError("SOURCE_CONTENT_TYPE_CHANGED");
@@ -112,6 +113,16 @@ export async function fetchOntarioOfficialRecords(
   }
 
   return { records, failedSources };
+}
+
+function assertOfficialFinalUrl(
+  response: Response,
+  requestedUrl: string,
+): void {
+  const requested = new URL(requestedUrl);
+  const finalUrl = new URL(response.url || requestedUrl);
+  if (requested.protocol !== "https:" || finalUrl.origin !== requested.origin)
+    throw new SourceFetchError("SOURCE_REDIRECTED_OFFICIAL_HOST");
 }
 
 class SourceFetchError extends Error {
