@@ -1,0 +1,22 @@
+name = "civicresolve-api-local"
+main = "src/platform/index.ts"
+compatibility_date = "2026-07-28"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+APP_ENV = "development"
+DEV_AUTH_ENABLED = "true"
+AUTH0_DOMAIN = "dev-ole6i03kzvf3yb8z.us.auth0.com"
+AUTH0_AUDIENCE = "https://civicresolve.example/api"
+ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+FEEDBACK_ABUSE_HMAC_KEY = "local-only-envoy-development-hmac-key-never-use-in-production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "civicresolve-local"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "../../packages/db/migrations"
+
+[[r2_buckets]]
+binding = "PRIVATE_ASSETS"
+bucket_name = "civicresolve-private-local"
