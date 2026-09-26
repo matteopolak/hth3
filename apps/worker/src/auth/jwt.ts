@@ -188,12 +188,17 @@ export async function verifyAuth0Token(
   }
 
   const signedContent = `${encodedHeader}.${encodedPayload}`;
-  const valid = await crypto.subtle.verify(
-    "RSASSA-PKCS1-v1_5",
-    cryptoKey,
-    decodeBase64Url(encodedSignature),
-    new TextEncoder().encode(signedContent),
-  );
+  let valid: boolean;
+  try {
+    valid = await crypto.subtle.verify(
+      "RSASSA-PKCS1-v1_5",
+      cryptoKey,
+      decodeBase64Url(encodedSignature),
+      new TextEncoder().encode(signedContent),
+    );
+  } catch {
+    throw new Auth0TokenError();
+  }
   if (!valid) throw new Auth0TokenError();
 
   const claims: Auth0Claims = { sub: payload.sub };
