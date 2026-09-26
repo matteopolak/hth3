@@ -15,7 +15,9 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
   expect(employee).toContain("theme_candidates");
   expect(employee).toContain("search_nearby");
   expect(employee).toContain("list_consultations");
+  expect(employee).toContain("read_staff_workspace");
   expect(resident).not.toContain("theme_candidates");
+  expect(resident).not.toContain("read_staff_workspace");
   expect(employee).not.toContain("save_external_preparation");
 
   expect(
@@ -64,6 +66,9 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
   );
   expect(candidates.tool.method).toBe("POST");
   expect(candidates.tool.access).toBe("read");
+  const workspace = prepareTool("read_staff_workspace", {}, "employee", org);
+  expect(workspace.path).toBe(`/api/v1/staff/organizations/${org}/workspace`);
+  expect(workspace.tool.access).toBe("read");
   expect(
     prepareTool(
       "search_nearby",

@@ -9,6 +9,7 @@ import { handleNearbyRequest } from "../nearby/index.js";
 import { handleProfileRequest } from "../profile/index.js";
 import { handleProgramIntakeRequest } from "../program-intake/index.js";
 import { handleSourceRequest } from "../sources/index.js";
+import { handleStaffWorkspaceRequest } from "../staff-workspace/index.js";
 import { handleTaxonomyRequest } from "../taxonomy/index.js";
 import { handleThemesRequest } from "../themes/index.js";
 import type {
@@ -644,6 +645,15 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       `/api/v1/program-applications/${identifier(args, "id")}/messages`,
     handler: handleProgramIntakeRequest,
     body: (args) => ({ message: string(args, "message") }),
+  },
+  read_staff_workspace: {
+    mode: "employee",
+    access: "read",
+    description:
+      "Read the current organization's role-filtered workspace capabilities and authorized audit activity without private event details.",
+    method: "GET",
+    path: (_args, org) => `${organizationPath(org)}/workspace`,
+    handler: handleStaffWorkspaceRequest,
   },
   list_staff_feedback: {
     mode: "employee",
