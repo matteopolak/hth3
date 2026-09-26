@@ -70,10 +70,48 @@ export async function mountTaxonomy(context: StaffPageContext): Promise<void> {
   );
   host.append(metadata);
   const doc = structuredClone(active.document);
-  const groups = node("div", "staff-taxonomy-groups");
-  for (const group of [...doc.groups].sort((a, b) => a.order - b.order)) {
-    const section = node("section", "staff-section");
-    section.append(node("h3", "", group.name[locale]));
+  const orderedGroups = [...doc.groups].sort((a, b) => a.order - b.order);
+  const layout = node("div", "staff-taxonomy-layout");
+  const navigation = node("nav", "staff-taxonomy-nav");
+  navigation.setAttribute(
+    "aria-label",
+    text(locale, "Category groups", "Groupes de catégories"),
+  );
+  const categories = node("section", "staff-taxonomy-content");
+  for (const group of orderedGroups) {
+    const count = doc.categories.filter(
+      (item) => item.groupId === group.id && !item.retired,
+    ).length;
+    const tab = button(
+      group.name[locale],
+      () => showGroup(group),
+      "staff-taxonomy-tab",
+    );
+    tab.dataset.groupId = group.id;
+    tab.append(node("span", "staff-taxonomy-count", String(count)));
+    navigation.append(tab);
+  }
+  layout.append(navigation, categories);
+  host.append(layout);
+  if (orderedGroups[0]) showGroup(orderedGroups[0]);
+
+  function showGroup(group: (typeof orderedGroups)[number]): void {
+    for (const tab of navigation.querySelectorAll<HTMLElement>(
+      ".staff-taxonomy-tab",
+    ))
+      tab.classList.toggle("is-selected", tab.dataset.groupId === group.id);
+    categories.replaceChildren();
+    const section = node("div", "staff-taxonomy-selected");
+    const top = node("div", "staff-taxonomy-selected-head");
+    top.append(node("h3", "", group.name[locale]));
+    top.append(
+      node(
+        "span",
+        "staff-muted",
+        `${doc.categories.filter((item) => item.groupId === group.id && !item.retired).length} ${text(locale, "categories", "catégories")}`,
+      ),
+    );
+    section.append(top);
     for (const category of doc.categories
       .filter((item) => item.groupId === group.id && !item.retired)
       .sort((a, b) => a.order - b.order)) {
@@ -112,9 +150,8 @@ export async function mountTaxonomy(context: StaffPageContext): Promise<void> {
         details.append(node("p", "staff-muted", category.description[locale]));
       section.append(details);
     }
-    groups.append(section);
+    categories.append(section);
   }
-  host.append(groups);
   if (draft) {
     const preview = node("section", "staff-section");
     preview.append(

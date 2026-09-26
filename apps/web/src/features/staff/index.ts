@@ -7,6 +7,8 @@ import type { StaffWorkspaceOptions } from "./types.js";
 import { empty, node, text } from "./ui.js";
 import "./staff.css";
 
+export { staffFeedbackOperations } from "./feedback-operations.js";
+export type { StaffFeedbackOperationsOptions } from "./feedback-operations.js";
 export type { StaffWorkspaceOptions, StaffWorkspaceView } from "./types.js";
 
 export function staffWorkspace(options: StaffWorkspaceOptions): HTMLElement {

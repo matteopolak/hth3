@@ -46,7 +46,15 @@ export async function mountApplicants(
     return;
   }
   host.replaceChildren(heading(text(locale, "Applicants", "Candidatures")));
-  const list = node("div", "staff-list");
+  host.append(
+    node(
+      "p",
+      "staff-page-note",
+      `${applications.length} ${text(locale, "applications", "candidatures")}`,
+    ),
+  );
+  const collection = node("div", "staff-collection");
+  const list = node("div", "staff-collection-list");
   if (!applications.length)
     list.append(
       empty(
@@ -59,10 +67,11 @@ export async function mountApplicants(
     );
   for (const application of applications) {
     const item = node("article", "staff-list-row");
+    item.dataset.id = application.id;
     item.append(
       button(
         application.postingTitle,
-        () => void openApplication(application.id),
+        () => void openApplication(application.id, true),
         "staff-link-button",
       ),
     );
@@ -70,22 +79,20 @@ export async function mountApplicants(
       node(
         "p",
         "staff-muted",
-        `${status(application.status, locale)} · ${date(application.submittedAt, locale)} · ${application.applicantSubject}`,
+        `${status(application.status, locale)} · ${date(application.submittedAt, locale)}`,
       ),
     );
-    if (application.sample)
-      item.append(
-        node(
-          "span",
-          "staff-source-label",
-          text(locale, "Practice application", "Candidature d’essai"),
-        ),
-      );
     list.append(item);
   }
-  host.append(list);
+  collection.append(list);
+  host.append(collection);
+  let selectedId = "";
+  if (applications[0]) void openApplication(applications[0].id);
 
-  async function openApplication(id: string): Promise<void> {
+  async function openApplication(id: string, scroll = false): Promise<void> {
+    selectedId = id;
+    for (const item of list.querySelectorAll<HTMLElement>(".staff-list-row"))
+      item.classList.toggle("is-selected", item.dataset.id === id);
     let application: Application;
     let messages: ApplicationMessage[];
     try {
@@ -107,7 +114,8 @@ export async function mountApplicants(
       setError(host, errorMessage(error, locale));
       return;
     }
-    host.querySelector(".staff-detail")?.remove();
+    if (selectedId !== id) return;
+    collection.querySelector(".staff-detail")?.remove();
     const panel = node("section", "staff-detail");
     const main = node("div", "staff-detail-main");
     const properties = node("aside", "staff-detail-properties");
@@ -223,8 +231,9 @@ export async function mountApplicants(
         ),
       );
     panel.append(main, properties);
-    host.append(panel);
-    panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    collection.append(panel);
+    if (scroll && window.innerWidth < 800)
+      panel.scrollIntoView({ block: "start", behavior: "smooth" });
 
     async function sendMessage(message: string): Promise<void> {
       if (!message) return;

@@ -159,10 +159,7 @@ export async function staffRequest<T>(
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-        ...(method === "PATCH" ||
-        (method === "POST" && path.includes("/messages"))
-          ? { "Idempotency-Key": crypto.randomUUID() }
-          : {}),
+        ...(method === "GET" ? {} : { "Idempotency-Key": crypto.randomUUID() }),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     },

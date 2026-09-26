@@ -33,13 +33,22 @@ export async function mountHiring(context: StaffPageContext): Promise<void> {
     openEditor(),
   );
   host.append(heading(text(locale, "Hiring", "Recrutement"), create));
-  const list = node("div", "staff-list");
+  host.append(
+    node(
+      "p",
+      "staff-page-note",
+      `${postings.length} ${text(locale, "postings", "offres")}`,
+    ),
+  );
+  const collection = node("div", "staff-collection");
+  const list = node("div", "staff-collection-list");
   if (!postings.length)
     list.append(
       empty(text(locale, "No postings yet.", "Aucune offre pour le moment.")),
     );
   for (const posting of postings) {
     const item = node("article", "staff-list-row");
+    item.dataset.id = posting.id;
     item.append(
       button(posting.title, () => showPosting(posting), "staff-link-button"),
     );
@@ -47,23 +56,18 @@ export async function mountHiring(context: StaffPageContext): Promise<void> {
       node(
         "p",
         "staff-muted",
-        `${posting.location} · ${status(posting.status, locale)} · ${date(posting.updatedAt, locale)}`,
+        `${posting.location} · ${status(posting.status, locale)}`,
       ),
     );
-    if (posting.sample)
-      item.append(
-        node(
-          "span",
-          "staff-source-label",
-          text(locale, "Practice employer", "Employeur d’essai"),
-        ),
-      );
     list.append(item);
   }
-  host.append(list);
+  collection.append(list);
+  host.append(collection);
+  if (postings[0]) showPosting(postings[0]);
 
   function openEditor(posting?: Posting): void {
-    host.querySelector(".staff-detail")?.remove();
+    collection.querySelector(".staff-detail")?.remove();
+    selectPosting(posting?.id);
     const panel = node("section", "staff-detail");
     const main = node("div", "staff-detail-main");
     const properties = node("aside", "staff-detail-properties");
@@ -124,7 +128,7 @@ export async function mountHiring(context: StaffPageContext): Promise<void> {
         );
     }
     panel.append(main, properties);
-    host.append(panel);
+    collection.append(panel);
     panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
 
     async function save(): Promise<void> {
@@ -156,7 +160,8 @@ export async function mountHiring(context: StaffPageContext): Promise<void> {
   }
 
   function showPosting(posting: Posting): void {
-    host.querySelector(".staff-detail")?.remove();
+    collection.querySelector(".staff-detail")?.remove();
+    selectPosting(posting.id);
     const panel = node("section", "staff-detail");
     const main = node("div", "staff-detail-main");
     main.append(
@@ -209,8 +214,14 @@ export async function mountHiring(context: StaffPageContext): Promise<void> {
         ),
       );
     panel.append(main, properties);
-    host.append(panel);
-    panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    collection.append(panel);
+  }
+
+  function selectPosting(id?: string): void {
+    for (const item of collection.querySelectorAll<HTMLElement>(
+      ".staff-list-row",
+    ))
+      item.classList.toggle("is-selected", item.dataset.id === id);
   }
 
   async function transition(
