@@ -11,6 +11,7 @@ import {
 import rawCaptures from "../capture-manifest.json";
 import tigerQuery from "../evidence/tiger-counts-2026-09-26.json";
 import tigerReportEvents from "../evidence/tiger-report-events-2026-09-26.json";
+import { draftClips } from "./draft-clips";
 import { draftStills } from "./draft-stills";
 import { scenes, type Scene, type SceneId } from "./story";
 
@@ -125,11 +126,22 @@ const TigerSnapshot = () => (
   </AbsoluteFill>
 );
 
-const SceneFrame = ({ scene, index }: { scene: Scene; index: number }) => {
+const SceneFrame = ({
+  scene,
+  index,
+  review,
+}: {
+  scene: Scene;
+  index: number;
+  review: boolean;
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const capture = captures[scene.id];
   const hasClip = capture.status === "captured" && Boolean(capture.file);
+  const draftClip = review ? draftClips[scene.id] : undefined;
+  const showDraftClip =
+    !hasClip && Boolean(draftClip) && frame < (draftClip?.seconds ?? 0) * fps;
   const stills = draftStills[scene.id];
   const still =
     stills?.[
@@ -217,6 +229,29 @@ const SceneFrame = ({ scene, index }: { scene: Scene; index: number }) => {
               style={{ width: "100%", height: "100%", objectFit: "contain" }}
               volume={0}
             />
+          ) : showDraftClip && draftClip ? (
+            <>
+              <OffthreadVideo
+                src={staticFile(draftClip.file)}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                volume={0}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 16,
+                  right: 16,
+                  padding: "9px 14px",
+                  borderRadius: 8,
+                  background: "rgba(255,255,255,0.93)",
+                  border: `1px solid ${colors.line}`,
+                  color: colors.muted,
+                  fontSize: 17,
+                }}
+              >
+                {draftClip.description}
+              </div>
+            </>
           ) : still ? (
             <>
               <Img
@@ -285,11 +320,13 @@ const SceneFrame = ({ scene, index }: { scene: Scene; index: number }) => {
         <div>
           {hasClip
             ? "Recorded product interaction"
-            : still
-              ? "Production screenshot · interaction footage pending · no narration"
-              : scene.id === "tiger"
-                ? "Dated query evidence · trend-view footage pending · no narration"
-                : "Storyboard placeholder — not product footage · no narration"}
+            : showDraftClip
+              ? "Production browser recording · partial scene coverage · no narration"
+              : still
+                ? "Production screenshot · full interaction footage pending · no narration"
+                : scene.id === "tiger"
+                  ? "Dated query evidence · trend-view footage pending · no narration"
+                  : "Storyboard placeholder — not product footage · no narration"}
         </div>
         <div>{scene.seconds}s</div>
       </div>
@@ -297,7 +334,7 @@ const SceneFrame = ({ scene, index }: { scene: Scene; index: number }) => {
   );
 };
 
-export const EnvoyEvidence = () => {
+export const EnvoyEvidence = ({ review = false }: { review?: boolean }) => {
   let start = 0;
   const { fps } = useVideoConfig();
   const narration = captures.narration;
@@ -312,7 +349,7 @@ export const EnvoyEvidence = () => {
         start += length;
         return (
           <Sequence key={scene.id} from={from} durationInFrames={length}>
-            <SceneFrame scene={scene} index={index} />
+            <SceneFrame scene={scene} index={index} review={review} />
           </Sequence>
         );
       })}

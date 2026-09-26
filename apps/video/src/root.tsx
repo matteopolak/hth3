@@ -2,6 +2,8 @@ import { Composition } from "remotion";
 import { EnvoyEvidence } from "./video";
 import { durationInFrames, FPS } from "./story";
 
+const Review = () => <EnvoyEvidence review />;
+
 export const Root = () => (
   <>
     <Composition
@@ -14,7 +16,7 @@ export const Root = () => (
     />
     <Composition
       id="EnvoyReview"
-      component={EnvoyEvidence}
+      component={Review}
       durationInFrames={300 * 15}
       fps={15}
       width={1920}

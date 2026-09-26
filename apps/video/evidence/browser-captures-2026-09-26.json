@@ -1,0 +1,32 @@
+{
+  "origin": "https://envoy-web.pages.dev/",
+  "recordedOn": "2026-09-26",
+  "method": "Isolated headless Chrome profile captured deployed Pages screenshots and encoded them as silent MP4 clips. The user's active Chrome profile was not used.",
+  "scope": "Visible UI behavior only. These clips are short review segments and do not satisfy the final capture manifest or show provider acceptance beyond what appears on screen.",
+  "clips": [
+    {
+      "file": "captures/pages-home-interaction-2026-09-26.mp4",
+      "seconds": 12,
+      "sha256": "c351d511e1c0abbc69a078693dd8f370654367e401e99deb8b7ffca7fcc036eb",
+      "observed": "Public guest assistant entry and navigation. No interaction beyond page display."
+    },
+    {
+      "file": "captures/pages-sources-interaction-2026-09-26.mp4",
+      "seconds": 28,
+      "sha256": "0d393b6f3ddd40919b42328582b186020d6fc72e173e33f440422f5de9987d43",
+      "observed": "Jobs, Nearby, Map, and List controls were clicked. Official source detail appears in the Nearby view."
+    },
+    {
+      "file": "captures/pages-agent-interaction-2026-09-26.mp4",
+      "seconds": 30,
+      "sha256": "d490fafa47870c1253c01a0a98089e6c2eec755a3729769e9f327e2235545695",
+      "observed": "Guest Toronto streetlight prompt was sent; Envoy returned an existing-report warning and a reviewable report proposal. The clip does not submit a report."
+    },
+    {
+      "file": "captures/pages-feedback-interaction-2026-09-26.mp4",
+      "seconds": 26,
+      "sha256": "dbdcb109812ab8c9731e82ce1563e51211e4d9888701c1dfb7adb0f6bc5b71b5",
+      "observed": "A plainly labeled practice report was typed into the public feedback form and advanced to the review step. The acknowledgement box remains unchecked and the report was not submitted."
+    }
+  ]
+}
