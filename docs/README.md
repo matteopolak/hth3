@@ -2,4 +2,4 @@
 
 | Document | Description |
 | --- | --- |
-| [Project plan](../PLAN.md) | Product scope, architecture, challenge coverage, integrations, security, and demo plan for CivicResolve. |
+| [Project plan](../PLAN.md) | Canada-wide bilingual web/mobile product scope, source provenance, native applications, civic feedback, architecture, challenge coverage, and delivery gates. |

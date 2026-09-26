@@ -1,25 +1,39 @@
-# CivicResolve — Hack the Hill III implementation plan
+# CivicResolve — Canada-wide civic everything-app implementation plan
 
 ## 1. Decision and product
 
-**Main track: Civic Technology.** A team may enter only one of Civic Technology, General, or CGI. CivicResolve will enter Civic Technology and the side challenges for which its finished product qualifies. The product will not claim a CGI or General entry.
+**Main track: Civic Technology.** A team may enter only one of Civic Technology, General, or CGI. CivicResolve will enter Civic Technology and only the side challenges demonstrated by working integrations. It will not claim a CGI or General entry.
 
-CivicResolve is a working civic feedback platform for constructive criticism, complaints, and improvement suggestions. A resident explains what happened and what should change in their own words, by text or voice. The platform asks only useful follow-up questions, creates a trackable submission, and routes it to the appropriate public-service team. Staff see a counted, summarized view of recurring issues before opening individual submissions. Authorized administrators can add, edit, retire, and route categories through manual screens or an agentic conversation. The system records consequential actions and shows whether concerns are acknowledged and addressed.
+CivicResolve is a bilingual (English/French) website and mobile app that helps people in Canada find public-sector jobs, benefits and food support, grants and scholarships, nearby public service locations, and ways to participate in civic decisions. It also contains a complete constructive-feedback system. Government organizations can join a shared staff workspace to publish jobs, receive applications and civic feedback, respond to residents, and understand recurring issues. The public app is task-oriented, not a single undifferentiated feed.
 
-The end-to-end path is:
+There are two kinds of opportunities, and the UI must not confuse them:
+
+1. **Verified external opportunities** come from an identifiable government or program source. Their original URL, jurisdiction, attribution, checked-at time, and application destination are visible. An in-app preparation flow may help users assemble answers, but the app must not claim to have submitted to an external agency unless an authorized integration confirms it.
+2. **Participating-employer opportunities** are published by an authenticated organization in CivicResolve. A person can upload a resume, complete a bilingual profile, review AI-suggested field values, and submit an application in the app. That application is persisted, visible to the employer in its dashboard, and has a real status and messaging trail.
+
+Synthetic records may fill visual and test gaps only when persistently marked **Sample / not a real opportunity or service** in the record, search result, detail page, map, and video. Never extrapolate a real vacancy, grant, office, eligibility decision, or official submission from incomplete data. Extrapolation may be used for clearly labeled estimates or aggregate illustrations, not fictional official facts. No synthetic record is mixed into a real search without an obvious filter and badge. Seeded government organizations are fictional until a real organization onboards and verifies its affiliation.
+
+The product has two complete loops:
 
 ```text
-Resident feedback → clarification → persisted submission → Jev categorization
-→ aggregated themes → staff review/action → resident update → measured outcome
+Discovery → verified source or participating employer → application preparation
+→ in-app submission only to participating employer → employer review → applicant update
+
+Resident feedback → clarification → Jev categorization → aggregate themes
+→ authorized government-team review and response → resident outcome
 ```
 
-The civic connection must be visible in the running product: a named public department owns a concern, staff can acknowledge or act on it, and the resident can see an outcome. Use a clearly fictional municipality for the hackathon rather than imply that a real city has integrated its systems.
+The civic connection must be visible in the running product. For a hackathon deployment without an actual government partner, a clearly fictional test municipality and employer can exercise every internal loop. The interface must never imply that the fictional account is a real Canadian government office or that feedback reached one.
 
 ### What “fully functional” means
 
 Every feature presented as working must execute against the deployed application and persist the result. Specifically:
 
-- Resident and staff interfaces call the same live Cloudflare Worker API.
+- Public web, mobile, and staff/employer web interfaces call the same live Cloudflare Worker API.
+- English and French navigation, forms, validation, status messages, and critical program/application explanations are complete; language is a user preference, not an AI-only translation toggle.
+- Discovery works by location, jurisdiction, audience, category, and source status, with an explicit no-results state rather than fabricated coverage.
+- A resume upload and profile can populate an application draft, but the applicant reviews and confirms every answer before submission.
+- Participating employers can create a listing, receive and review an application, update its state, and communicate with the applicant. API tenancy prevents one employer from reading another employer's applications.
 - Submitted feedback, messages, taxonomy versions, theme memberships, assignments, and audit events survive refresh and sign-in.
 - Role restrictions are enforced by the Worker, not only hidden in the UI.
 - Voice intake submits real feedback through the same API as text intake.
@@ -32,7 +46,21 @@ Every feature presented as working must execute against the deployed application
 - The React Native app performs the flows shown in the video against the live API.
 - The Remotion video records or composes evidence from functioning product flows; it does not invent successful calls or display fabricated integration results.
 
-Synthetic people, locations, and reports are appropriate test content. Test fixtures and mocked providers may be used in automated tests. They must not substitute for a claimed live feature in judging or the final video.
+Synthetic people, locations, and reports are appropriate **labeled** test content. Test fixtures and mocked providers may be used in automated tests. They must not substitute for a claimed live integration in judging or the final video.
+
+### First-pass source coverage
+
+Prioritize real federal sources and selected BC/Ontario sources, then extend to other jurisdictions source by source. Every adapter has a documented collection method, licence/terms check, refresh schedule, parser tests, and a freshness threshold. The [Open Government CKAN API](https://open.canada.ca/en/access-our-application-programming-interface-api) is a catalogue, not a unified live service API.
+
+| Domain | Starting official sources | Access reality |
+| --- | --- | --- |
+| Jobs | [GC Jobs](https://www.canada.ca/en/services/jobs/opportunities/government.html), [BC Public Service](https://www2.gov.bc.ca/gov/content/careers-myhr/job-seekers/current-job-postings), [Ontario Public Service](https://www.gojobs.gov.on.ca/Jobs.aspx), later other provincial and municipal employers | Distinct portals; use permitted feeds/exports first, then source-specific collection where allowed. Most applications remain on employer sites unless the employer posts in CivicResolve. |
+| Benefits and food support | [Federal Benefits Finder](https://www.canada.ca/en/services/benefits/finder.html), [BC Benefits Connector](https://www2.gov.bc.ca/bcbenefitsconnector), Ontario program pages, [211 Canada](https://211.ca/data/) by data-sharing request | No national SNAP-style application or universal benefit API. Preserve jurisdiction, eligibility caveats, and official application links. |
+| Grants and student funding | [Federal grants](https://www.canada.ca/en/government/grants-funding.html), [all provincial/territorial student-aid entry points](https://www.canada.ca/en/services/benefits/education/student-aid/grants-loans/province-apply.html), BC and Ontario aid and scholarship sources | Award-disclosure data is not an open-opportunity feed. Capture deadline and sponsor from current official opportunity pages. |
+| Offices and service map | [Service Canada offices](https://offices.service.canada.ca/en), [ServiceOntario](https://www.ontario.ca/locations/serviceontario/), BC government locators and municipal open data | A government-owned building is not necessarily public-facing. Verify public access, offered services, hours, and accessibility. |
+| Civic participation | [Federal consultations dataset](https://open.canada.ca/data/en/dataset/7c03f039-3753-4093-af60-74b0f7b2385d), [BC engagement](https://engage.gov.bc.ca/), official local 311 links | External consultations and 311 requests are official handoffs; CivicResolve feedback is its own separately labeled workflow. |
+
+Source-specific terms take precedence over a generic assumption that anything public may be scraped. [Open Government Licence datasets](https://open.canada.ca/en/open-government-licence-canada) require attribution; ordinary [Canada.ca page content has different terms](https://www.canada.ca/en/transparency/terms.html). Maintain a source registry and stop a broken or disallowed ingestion rather than silently replacing its results with generated entries.
 
 ## 2. Challenge coverage and judging
 
@@ -42,13 +70,13 @@ Civic and General use the same **45-point** rubric:
 
 | Criterion | Points | Product evidence |
 | --- | ---: | --- |
-| Technical execution | 15 | Live feedback intake, Jev taxonomy decisions, aggregated staff view, authorization, persistence, and audit trail. |
-| Idea and impact | 10 | A lower barrier to constructive civic feedback and a faster way for public teams to understand recurring concerns. |
-| Design and usability | 10 | Plain-language intake, optional identity, clear status timeline, accessible alternatives, and a useful staff overview. |
+| Technical execution | 15 | Working web/mobile discovery, résumé-assisted applications, employer review, feedback intake, Jev taxonomy decisions, aggregate staff view, authorization, persistence, and audit trail. |
+| Idea and impact | 10 | A simpler route from a person's need to the right public opportunity, service, or civic team. |
+| Design and usability | 10 | Distinct task-focused journeys, bilingual plain language, reviewable autofill, accessible alternatives, honest source labels, and useful staff overviews. |
 | Learning and technical decisions | 5 | Explain model boundaries, workflow safety, provider failures, and trade-offs made during the event. |
 | Presentation | 5 | Timed live demonstration and direct answers during questions. |
 
-Depth matters more than feature count. Judges assess what actually works in the normal in-person session. Mini-challenges are considered during that same session; there is no separate side-challenge presentation. The Devpost video supports the submitted project but does not replace the live demonstration.
+Judges assess what actually works in the normal in-person session. Mini-challenges are considered during that same session; there is no separate side-challenge presentation. The Devpost video supports the submitted project but does not replace the live demonstration. The broader product is not a reason to claim unfinished modules as complete.
 
 ### Targeted side challenges
 
@@ -65,6 +93,33 @@ Cloudflare Workers AI and Jev are product technologies rather than prize entries
 Only select a side challenge on Devpost after its working evidence exists. If a provider cannot be integrated, remove that claim and its prize selection rather than showing a simulation.
 
 ## 3. Scope and complete user journeys
+
+### Public product modules
+
+All modules must have functioning search/detail/action flows, loading/error/empty states, source provenance, and bilingual copy. A module is not “complete” because it has a homepage tile.
+
+| Module | Public journey | Staff/employer journey |
+| --- | --- | --- |
+| Government jobs | Search by role, location, employer, work arrangement, and deadline; save a posting; prepare an application from a résumé; apply inside CivicResolve only for participating employers. | Verified employer publishes/updates/closes a posting, reviews applications, records decisions, and sends applicant updates. |
+| Benefits and food support | Enter location and optional circumstances, compare relevant programs and community services, see requirements and official application steps, save a checklist. | Authorized curators correct source-backed records and refresh status; no staff member can manufacture an official eligibility result. |
+| Grants, bursaries, scholarships, student aid | Search by audience, study level, field, jurisdiction, amount and deadline; save opportunities, build a checklist, and follow the sponsor's actual application path. | Participating sponsors may publish a first-party opportunity and receive in-app applications; external awards remain official handoffs. |
+| Nearby services map | Find public-facing offices and relevant community support by place/service, inspect accessibility, hours, contact details, freshness, and directions. | Curators verify imported locations; participating organizations maintain their own locations. |
+| Civic feedback and complaints | Submit criticism or suggestions by text/voice, review the summary, receive a private receipt, follow status and replies, and reopen with more information. | Government teams review evidence-linked themes, assign and respond, manage category rules, and see exact counts. |
+| Civic participation | Find open consultations and the right official channel; distinguish them from CivicResolve feedback. | Curators maintain source adapters; authorized government teams can publish their own engagement items. |
+
+The app should also provide a small **My activity** area for saved items, applications, checklists, and feedback receipts. Status must reflect actual events in CivicResolve; “submitted” to an external employer or agency is never inferred from a click. An optional profile contains locale, location, accessibility preferences and résumé data. Browsing, map use, and guest feedback work without an account. In-app applications need an account so applicants can return to drafts and messages.
+
+### Résumé-assisted applications
+
+The applicant uploads PDF/DOCX or enters experience manually. The server extracts text and suggests structured education, work history, skills and contact fields with confidence/provenance; it must never invent qualifications. The user can edit or reject suggestions, attach the original résumé, answer posting-specific questions, review a final application, and explicitly submit. The in-app employer receives a persisted application and can shortlist, decline, request information, or send a decision. Every transition is audited and visible to the applicant. Personal data is private to the applicant and the receiving organization, with deletion/retention controls.
+
+For an external posting, the same form is an **application preparation workspace**. It may copy/export answers and open the official application URL, but its state remains “prepared for external application,” not “submitted.” No automation should bypass CAPTCHA, login, or portal terms. A real employer account can opt into native applications; a fictional seeded employer cannot be portrayed as an official public institution.
+
+### Source registry and provenance
+
+Each imported record stores source ID and URL, publisher, licence/terms, country/province/municipality, language, external ID, fetched/last-verified timestamps, expiry or deadline, original payload hash, and an evidence link for each critical claim. Source adapters classify records as `verified_external`, `participating_org`, or `sample`. A nightly refresh rechecks time-sensitive jobs and deadlines, expires stale records, and surfaces parser failures to admins. Benefits and office hours need their own slower review cadence; a stale record remains visibly stale, never silently “current.” Manual overrides require a reason and audit event. Search can default to real results only while permitting an explicitly labeled sample-data mode for development and judging.
+
+Normalize geography through province/territory plus municipality and postal-code location where supplied. Statistics Canada boundaries can aid routing, but statistical geography is not a guarantee of legal service jurisdiction. Personalizing search must not imply that an applicant is eligible; where rules are complex, show “may be relevant” with the official criteria and source.
 
 ### Default civic taxonomy
 
@@ -99,7 +154,7 @@ Publishing validates unique IDs, nonempty descriptions, a valid group, a real de
 
 The intake must work without a microphone, camera, address, or sign-in. Ask for contact details only if needed for follow-up, explain their use, and permit anonymous feedback. Protect guest receipt access with a high-entropy token stored hashed server-side; do not use the public case number as an access credential. Apply rate limits and an abuse-review path without putting an unnecessary form in front of every resident. Urgent emergencies must be directed to the appropriate emergency channel rather than treated as ordinary feedback.
 
-### Staff journey
+### Government staff and employer journey
 
 1. Sign in through Auth0 and see only authorized organization/department data.
 2. Start on an aggregate overview: volume by category and intent, change over time, recurring themes, and unanswered concerns.
@@ -109,13 +164,15 @@ The intake must work without a microphone, camera, address, or sign-in. Ask for 
 6. Send a response and move the concern through valid states; record an outcome and later reopening.
 7. Draft, preview, and publish a taxonomy or routing change when authorized.
 
+An organization administrator can verify an employer profile, publish a job or grant opportunity, inspect only its own applicants, change application state, and send a message. A government organization may hold both **employer** and **civic reviewer** permissions in one account; permissions remain separate, least-privilege scopes. A hiring reviewer cannot read private civic submissions merely because they work for the same organization, and a civic reviewer cannot see résumés without hiring permission. Platform curators approve organization verification and source adapters but cannot impersonate a government applicant or silently alter their submissions.
+
 The manual UI must support these operations even when the admin agent is unavailable.
 
 Do not expose a button, tab, or action as available unless it has a working API path and an honest loading, success, and failure state. Hide unfinished settings or policy features rather than leaving inert controls.
 
 ### Agentic staff journey
 
-The ChatGPT-like interface can operate the entire **authorized** staff workspace through typed tools. It can summarize grouped feedback, show counts and trends, open a filtered theme or submission tab, draft or retire a category, prepare a reply, propose reassignment, preview a taxonomy diff, and request approval for a write. Staff can edit the same objects manually in adjacent tabs.
+The ChatGPT-like interface can operate the entire **authorized** staff/employer workspace through typed tools. It can summarize grouped feedback, show counts and trends, open a filtered theme or submission tab, draft or retire a category, prepare a reply, propose reassignment, inspect the organization's job postings or applicant pipeline, draft a listing or applicant message, preview a taxonomy diff, and request approval for a write. Staff can edit the same objects manually in adjacent tabs. It cannot automatically reject applicants or infer protected traits from résumés.
 
 Read tools may run immediately. Writes require a rich preview card with affected records, changes, and an explicit approval action. The Worker rechecks Auth0 claims, record versions, organization scope, and idempotency keys at execution time. The agent cannot bypass permissions or silently publish a change.
 
@@ -129,6 +186,8 @@ The agent tool set must cover the same useful operations as the manual workspace
 | Residents | Read feedback conversation | Draft and send a message; request more information. |
 | Taxonomy | List categories and versions; compare changes | Add, edit, retire, restore, and publish categories and routing rules. |
 | Aggregates | Query exact counts, trends, and theme source links | Refresh summaries, correct a theme membership, save a view or report. |
+| Hiring | Read postings and authorized application records; filter a pipeline | Draft/publish/close a posting, propose an application state change or message. |
+| Sources | Inspect provenance, freshness, and ingestion errors | Propose a source correction; platform curator approval required for shared records. |
 | Workspace | Open tabs and inspect current context | Save or close a tab. |
 
 Tools must return typed data for rich cards. A card should state its source, affected record/version, proposed edit, approval status, and final result. An employee can refuse, revise, or carry out the change manually.
@@ -137,34 +196,36 @@ Tools must return typed data for rich cards. A card should state its source, aff
 
 ### Shared visual language
 
-Take interaction cues from ChatGPT, Stripe, Notion, Anthropic, and modern ticketing products while creating an original civic identity. Use readable typography, warm neutral surfaces, restrained blue/teal accents, modest radii, clear borders, and semantic status colors. Design tokens, copy, and status names are shared across web, mobile, and video.
+Take interaction cues from ChatGPT, Stripe, Notion, Anthropic, and modern ticketing products while creating an original civic identity. Use readable typography, warm neutral surfaces, restrained blue/teal accents, modest radii, clear borders, and semantic status colors. Design tokens, copy, and status names are shared across web, mobile, and video. Do not copy another product's branding or layout verbatim.
+
+Use different interaction patterns for different tasks: a compact search/results list for jobs and awards; an editorial, step-by-step matcher for benefits; a true spatial map/list switch for offices; a calm wizard for applications and feedback; a timeline for status; a dense table/queue for staff work; and rich, selective cards only where the agent proposes a decision. Avoid nested cards, repeated dashboards, oversized headings on every page, prose where labels and actions suffice, and AI-generated filler. Maintain clear information hierarchy, progressive disclosure, useful filters, sensible defaults, and responsive breakpoints. Use real content samples to test text length in both languages, not English-only placeholder copy.
 
 Prioritize meaningful states: empty, loading, listening, missing detail, awaiting approval, failed, retryable, completed, and read-only. Avoid decorative dashboards and fake AI activity.
 
 ### Staff web workspace
 
-Use a left rail with recent agent threads and manual tabs for Overview, Themes, Inbox, Submissions, Taxonomy, and Settings. The central surface shows a conversation or working tab. A context panel shows the selected theme or submission, source reports, audit history, and tool results.
+Use a left rail with recent agent threads and manual tabs for Overview, Feedback, Themes, Hiring, Applicants, Opportunities, Sources, Taxonomy, and Settings, filtered by role. The central surface shows a conversation or working tab. A context panel shows the selected theme, submission, posting, or application with its history and tool results. The agent conversation is not the only way to accomplish any core task.
 
 The default overview should answer “What are people telling us?” before showing a queue: total submissions in the selected period, category and intent distribution, rising topics, repeated requests, unanswered volume, and a short summary of each theme. Counts come from database queries; summaries link to the submissions that support them. Staff can change time range, category, department, and status, and drill from a theme into original feedback.
 
 Agent responses may render theme cards, submission cards, tables, charts, source links, taxonomy diffs, and approval cards. Every card should show its status and let the employee open the underlying object for manual editing. Keyboard navigation, search, visible focus, and clear error recovery are required.
 
-### Resident web experience
+### Public web experience
 
-Use a modern, calm feedback layout with one primary “Share feedback” action. Prompt for a concrete experience and an improvement that would help; let residents submit criticism without forcing a category, account, or location. Show the original wording and editable summary before submission. After submission, use a ticket-style receipt and timeline with department ownership and next steps in plain language. Keep internal confidence scores, model names, and routing rules out of the resident view.
+Use a prominent search/task entry that routes to Jobs, Support, Funding, Nearby, and Share feedback. Each area gets a purposeful visual structure. Source and sample badges, last-checked information, jurisdiction, deadline, and the true action destination must be visible on detail pages. Job/funding detail pages include a clear distinction between **Apply in CivicResolve** and **Continue on official site**.
+
+The feedback flow remains calm and low-friction: prompt for a concrete experience and improvement; do not force a category, account, or location. Show the original wording and editable summary before submission. After submission, use a ticket-style receipt and timeline with ownership and next steps in plain language. Keep internal confidence scores, model names, and routing rules out of the public view.
 
 ### React Native app
 
-Use Expo/React Native for the resident mobile experience. It can cover a narrower set of screens than the web app, but every screen shown in the video must work:
+Use Expo/React Native for a **real public mobile app**, not a video-only prop. It shares contracts, API, bilingual strings, and core public workflows with the web app. Build native-feeling navigation and layouts, not a web page in a shell. It must support:
 
-- Text or voice intake.
-- Follow-up questions.
-- Review and correction.
-- Submission through the live Worker API.
-- Secure guest receipt and status timeline loaded from the API.
+- Search/detail for jobs, support, funding, and nearby services, including source status and official handoff.
+- Profile, résumé upload, application draft/review/submission for participating employers, and application status/messages.
+- Text or voice feedback intake, follow-up, review/correction, live submission, and private receipt/status timeline.
 - Optional Presage consent and accessibility adjustment, if entered for that prize.
 
-Do not use local mock responses or a prerecorded success state in the shipped app. Mobile can be less polished outside the recorded flow, but the demonstrated path must be complete.
+Do not use local mock responses or a prerecorded success state in the shipped app. Platform administration and employer hiring review are web-first; mobile is for public users. If a staff mobile surface is later required, it is a separate scoped feature.
 
 Store the guest receipt secret in secure device storage on mobile. The web app should present the private link clearly at submission time and avoid exposing its secret to analytics, logs, or public pages.
 
@@ -175,24 +236,26 @@ Target WCAG 2.2 AA patterns where relevant: keyboard access and visible focus on
 ## 5. System architecture
 
 ```text
-Resident web + React Native app       Staff web workspace
+Public web + React Native app          Government staff/employer web
                  \                     /
                   Cloudflare Worker API
                   ├─ Auth0 staff roles / optional resident account
                   ├─ secure guest receipts and rate limits
+                  ├─ source registry / scheduled import adapters
+                  ├─ search, profiles, resume drafts, applications
                   ├─ domain commands and agent tools
                   ├─ Workers AI extraction, theme summaries, staff agent
                   ├─ Jev intent and category decisions
-                  ├─ Tiger Cloud feedback, taxonomy, themes, events
-                  ├─ R2 attachments and transcripts
+                  ├─ Tiger Cloud listings, applications, feedback, events
+                  ├─ R2 resumes, attachments and transcripts
                   ├─ Vectorize similar-feedback candidates
                   ├─ ElevenLabs voice agent webhooks
                   └─ Presage client data only when consented
 ```
 
-The Worker owns authorization, validation, orchestration, and external secrets. Clients do not call privileged providers directly. Tiger Cloud is the authoritative database for submissions, category configuration, theme membership, and metrics; avoid a second feedback store. R2 stores attachments and transcript artifacts with access controlled through the Worker.
+The Worker owns authorization, validation, orchestration, and external secrets. Clients do not call privileged providers directly. Tiger Cloud is the authoritative database for imported records, postings, applications, feedback, category configuration, theme membership, and metrics; avoid duplicate authoritative stores. R2 stores résumés, attachments and transcript artifacts with access controlled through the Worker. Search indexes and caches are derived and rebuildable. A scheduled import job updates source-backed records without exposing provider credentials to clients.
 
-The product can run for a fictional municipality without an external government integration. It must never imply that reports are being sent to a real public agency. Within its own resident and staff accounts, submission, assignment, communication, and resolution must all work.
+The product can run for a fictional municipality/employer without an external government integration. It must never imply that reports or applications are being sent to a real public agency. Within its own resident, applicant and staff accounts, posting, applying, review, feedback submission, assignment, communication, and resolution must all work.
 
 ### AI responsibilities
 
@@ -255,7 +318,9 @@ Do not count one submission multiple times within a category or theme. Show whet
 
 ### Data and events
 
-Core entities: organizations, users, departments, feedback submissions, guest access tokens, messages, attachments, classifications, category groups, categories, taxonomy versions, routing rules, themes, theme memberships, theme summaries, status transitions, voice sessions, agent threads/messages/tool calls, workspace tabs, and audit events.
+Core entities: organizations and their verification state; users, memberships and roles; source registry, ingestion runs and errors; source-backed opportunities, benefits, services and locations; first-party postings; public profiles and résumé assets; application drafts, answers, submissions, messages and transitions; saved items and checklists; feedback submissions, guest access tokens, messages, attachments, classifications, category groups, categories, taxonomy versions, routing rules, themes, theme memberships, theme summaries, status transitions, voice sessions, agent threads/messages/tool calls, workspace tabs, and audit events.
+
+Keep imported source data separate from organization-authored data and labeled samples. Use stable IDs and deduplication by publisher/external ID/source URL, plus a reviewed merge path when two sources describe the same opportunity. Preserve original source text and its last verified timestamp. Sensitive applicant information must not enter public analytics, agent prompts unrelated to hiring, or feedback aggregates. Encrypt transport/storage as supported by the providers, use short-lived signed asset access, enforce deletion/retention policies, and log access to résumés.
 
 At minimum, each event stores submission ID, event type, timestamp, actor, organization, and validated payload. Persist an event for creation, classification, correction, theme membership, assignment, status change, message, outcome, reopening, taxonomy publication, and agent approval/execution.
 
@@ -274,6 +339,8 @@ An outcome can be action taken, planned action, referral, or no action with an e
 ### Integrations
 
 - **Auth0:** real staff and administrator sign-in, optional resident accounts, organization/department roles, Worker-side JWT and scope validation, protected mutations, and an observable access-denied path. Guest feedback and private receipt links work without Auth0; their access tokens are checked by the Worker. Use step-up authentication for high-impact actions if available within the build time.
+- **Source ingestion:** one adapter per provider, using an approved API/feed/open dataset where possible. A portal without permitted machine access remains an official link or a manually reviewed record. Do not scrape authenticated application portals. Respect source terms, attribution, rate limits, and deletion notices. Provider failures are visible in Sources and never silently replenished with fake records.
+- **Résumé extraction:** parse PDF/DOCX through a bounded server-side pipeline, suggest fields with Workers AI where useful, and return source spans for user review. Store the original file privately; never auto-submit an unreviewed guess or infer protected personal attributes for ranking.
 - **ElevenLabs:** actual conversational agent that invites constructive detail (“What happened?” and “What would improve it?”), asks relevant follow-ups, confirms the summary, and submits feedback through a signed Worker webhook. Handle retries and duplicate webhooks.
 - **Tiger Data:** real PostgreSQL connection, schema migrations, feedback-event hypertable, continuous aggregates, and dashboard queries. Verify Worker connectivity early.
 - **Presage:** real SDK integration in the mobile app, explicit consent, one measurable interaction adaptation (for example, shorter prompts or a pause offer), and no service decision based on biometric output. Validate SDK/device feasibility early.
@@ -286,6 +353,10 @@ External calls need timeouts, request IDs, idempotency where relevant, retry/err
 The Worker should expose versioned, schema-validated routes for:
 
 - Guest submission, attachment upload, and private receipt/status access.
+- Public discovery search/detail and provenance for jobs, benefits, funding, consultations and locations; saved items and checklists.
+- Applicant profile/résumé upload, application draft/autofill/review/submission, and status/messages.
+- Participating organization verification, posting management, applicant queue, employer messages and audited decisions.
+- Source registry, import-run status, stale-record and sample-data controls for authorized curators.
 - Guest follow-up messages and optional account claim.
 - Staff overview counts, trends, theme summaries, and filtered source submissions.
 - Staff assignment, response, state transition, theme correction, and summary refresh.
@@ -293,7 +364,7 @@ The Worker should expose versioned, schema-validated routes for:
 - Agent threads, tool results, rich approval cards, and approved tool execution.
 - ElevenLabs signed webhook delivery and idempotent session completion.
 
-Each route needs an explicit auth mode: public submission with abuse controls, guest receipt token, authenticated resident, staff role, or administrator role. Do not let a public category count endpoint expose raw text or personally identifying details.
+Each route needs an explicit auth mode: public read, public feedback submission with abuse controls, guest receipt token, authenticated applicant/resident, scoped hiring reviewer, scoped civic staff, organization administrator, or platform curator. Never expose résumé data to a different organization, feedback text through public counts, or sampled records as if they were official.
 
 ## 6. pnpm workspace and CI
 
@@ -301,15 +372,17 @@ Use one pnpm lockfile and typed package boundaries:
 
 ```text
 apps/
-  web/          # resident and staff web UI
-  worker/       # Cloudflare API, guest access, auth, tools, webhooks
-  mobile/       # React Native/Expo resident app
+  web/          # public and government staff/employer web UI
+  worker/       # Cloudflare API, discovery, applications, feedback, tools, webhooks
+  mobile/       # React Native/Expo public app
   remotion/     # five-minute video composition
 packages/
-  contracts/    # request/response, events, tool and card schemas
-  domain/       # feedback states, permissions, taxonomy rules
+  contracts/    # bilingual request/response, events, tool and card schemas
+  domain/       # application/feedback states, permissions, provenance rules
   db/           # Tiger migrations and queries
-  ai/           # Workers AI and Jev adapters
+  ai/           # Workers AI, Jev, resume extraction adapters
+  sources/      # approved feeds, normalizers, registry and freshness rules
+  i18n/         # English/French message catalogues
   ui/           # shared web components
   design-tokens/
   fixtures/     # synthetic test data only
@@ -322,7 +395,7 @@ pnpm-lock.yaml
 
 Root commands: `pnpm dev`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm check`, `pnpm video:render`, and `pnpm deploy`. `pnpm check` is the local CI gate.
 
-CI runs on every push to `main`: frozen install, formatting/lint, typecheck, domain/permission/provider tests, migrations against a disposable database, application builds, and a Worker smoke test. Add an end-to-end test that submits guest feedback, categorizes it, groups it, assigns it, updates status, and verifies both the resident receipt and staff aggregate view. Provider adapters can be stubbed in automated tests; run a separate pre-submission integration check with real sponsor services.
+CI runs on every push to `main`: frozen install, formatting/lint, typecheck, domain/permission/provider tests, migrations against a disposable database, web/mobile builds, and a Worker smoke test. End-to-end tests must cover a verified-source search with official handoff; a labeled sample record; résumé draft/review/native application to a participating employer and its staff-side decision; and guest feedback from intake through a staff response and resident receipt. Add locale parity checks and an English/French flow test. Provider adapters can be stubbed in automated tests; run a separate pre-submission integration check with real sponsor services.
 
 Deployment is a separate job after checks pass. Secrets stay in Cloudflare/GitHub secret stores. The deployed app and video must use the same contracts and status vocabulary.
 
@@ -332,9 +405,9 @@ Use only Luna subagents at `high` or `xhigh` reasoning. All agents may work in t
 
 ### Sequential foundation gate
 
-One core subagent first builds a working vertical slice: pnpm workspace, contracts, feedback state machine, Worker/API, Tiger persistence, secure guest submission/receipt, Auth0 staff protection, a seeded editable taxonomy, manual staff queue, assignment/status mutation, and resident status view. It runs relevant checks, commits, and pushes before feature agents begin.
+One core subagent first builds a working vertical slice: pnpm workspace, contracts, English/French catalogues, Worker/API, Tiger persistence, scoped organization/applicant roles, source/sample provenance, one participating-employer posting and in-app application, secure guest feedback/receipt, a seeded taxonomy, manual staff queues, status mutations, and public web/mobile shells. It runs relevant checks, commits, and pushes before feature agents begin. External credentials are required for live provider acceptance; a local fixture may support tests but must be clearly marked and never represented as the live integration.
 
-The orchestrator verifies this live path and CI. Only then does it delegate feature-sized units with explicit package/file ownership, dependencies, acceptance behavior, and test commands. Suggested later units: ElevenLabs intake, Workers AI/Jev decisions, theme grouping and summaries, staff agent and rich cards, Tiger dashboard, mobile/Presage, design polish, and Remotion capture/render.
+The orchestrator verifies this path and CI. Only then does it delegate feature-sized units with explicit package/file ownership, dependencies, acceptance behavior, and test commands. Suggested later units: source adapters/search, résumé extraction/application UX, benefits and funding guidance, map/locations, ElevenLabs intake, Workers AI/Jev decisions, theme grouping and summaries, staff agent and rich cards, Tiger dashboard, mobile/Presage, design polish, and Remotion capture/render.
 
 For shared interface changes, commit a contract update first, then release dependent units. Synchronize `main` before pushing. Resolve cross-owner conflicts through the orchestrator; never discard another agent’s work. Run `pnpm check` after each integration wave.
 
@@ -344,27 +417,26 @@ Each completed unit is committed and pushed to `main` with a Conventional Commit
 
 ### In-person Civic presentation
 
-Five minutes to present and show the working product, followed by three minutes of questions. Show a resident submitting constructive criticism without choosing a category or signing in. Then show Jev categorizing it, the staff overview counting it inside a recurring theme, a department acknowledging or responding, and the resident viewing that response through the private receipt. Demonstrate an agent action with an approval card and a manual taxonomy edit if both are complete. Use real service integrations for any sponsor claim made during judging. Rehearse with network and device setup already complete.
+Five minutes to present and show the working product, followed by three minutes of questions. Lead with one person's path across a real sourced job/support search, a résumé-assisted application to a clearly fictional participating employer, and constructive feedback. Switch to the government workspace: the employer sees the application; civic staff see Jev categorization and recurring themes, respond, and the resident sees the response. Demonstrate an agent approval card and manual edit if complete. Say explicitly which opportunities are official external links and which are fictional sandbox records. Use real service integrations for any sponsor claim made during judging.
 
 ### Remotion Devpost video
 
 Remotion is an editor/compositor for a five-minute account of the **working** product. Capture actual web and mobile interactions, real voice audio/transcripts, real database-backed state changes, and real sponsor integration results. Use motion graphics to explain the architecture and transitions; do not animate a feature that has no working implementation.
 
-Suggested timing:
+Suggested timing (adjust to what is implemented and legible):
 
-1. 0:00–0:35 — why residents need an easier way to give constructive criticism.
-2. 0:35–1:25 — guest web/mobile intake and ElevenLabs follow-up.
-3. 1:25–2:05 — resident confirmation and Jev categorization from the live taxonomy.
-4. 2:05–3:05 — staff aggregate overview, source-linked summaries, agent rich cards, Auth0 approval, taxonomy edit.
-5. 3:05–3:50 — Tiger category trends, department response, and private resident status update.
-6. 3:50–4:25 — real Presage accessibility interaction, if working.
-7. 4:25–5:00 — feedback outcome, architecture, and limitations.
+1. 0:00–0:40 — the fragmented Canadian service journey and the location-aware entry point.
+2. 0:40–1:45 — verified jobs/support/funding and nearby offices; clear source and sample labels.
+3. 1:45–2:35 — résumé-assisted native application and employer review in the working fictional sandbox.
+4. 2:35–3:25 — guest web/mobile feedback, ElevenLabs follow-up and Jev categorization.
+5. 3:25–4:25 — aggregate civic dashboard, agent approval card, Tiger trends, staff response and resident status.
+6. 4:25–5:00 — real Presage interaction if working, architecture, bilingual experience, and honest limitations.
 
 Keep captions readable and the recorded UI legible at normal playback size. If a sponsor feature is incomplete, remove its segment and prize selection. The video cannot stand in for the in-person live evaluation.
 
 ## 9. Build order and acceptance
 
-### Gate A — complete civic loop
+### Gate A — complete shared platform and civic loop
 
 - A guest submits constructive criticism on the deployed site without choosing a category or creating an account.
 - Worker persists the original text, secure receipt token hash, submission, and event in Tiger.
@@ -372,8 +444,17 @@ Keep captions readable and the recorded UI legible at normal playback size. If a
 - Guest opens the private receipt link and sees the department, update, and outcome.
 - Guest can provide more information; authorized staff can reopen or close the submission.
 - Invalid token, role, and state transition are rejected.
+- Web and mobile use the same bilingual contracts and API; source/sample provenance and organization scope are enforced server-side.
 
-### Gate B — categorization, aggregation, and configuration
+### Gate B — discovery and in-app application
+
+- Real federal plus BC/Ontario source records are visible with source links, last-checked times, jurisdiction, and honest stale/no-results states.
+- Jobs, benefits/food support, funding, and nearby offices have functional search/detail/action flows on web and mobile, with accessible English and French UI.
+- A fictional participating government employer can publish a posting; a user can upload a résumé, edit extracted suggestions, apply, and receive a real status/message from that employer's scoped dashboard.
+- An external listing supports preparation and official-site handoff, never false “submitted” state.
+- A sample record remains labeled across search, detail, saved items, map, application preparation, and video.
+
+### Gate C — categorization, aggregation, and configuration
 
 - Workers AI extracts useful fields from a real submission without replacing the resident's original words.
 - Jev chooses intent and a published category; low confidence reaches human review.
@@ -384,7 +465,7 @@ Keep captions readable and the recorded UI legible at normal playback size. If a
 - Agent tools and manual tabs perform the same authorized commands.
 - Approval cards show exact changes and cannot execute after stale previews.
 
-### Gate C — side-challenge integrations
+### Gate D — side-challenge integrations
 
 - ElevenLabs voice session submits feedback with a transcript and a useful follow-up question.
 - Tiger dashboard reflects actual feedback events through a continuous aggregate.
@@ -392,18 +473,18 @@ Keep captions readable and the recorded UI legible at normal playback size. If a
 - Presage changes one consented mobile interaction from a real SDK signal.
 - Resident and staff UI are usable with keyboard/text alternatives.
 
-### Gate D — delivery
+### Gate E — delivery
 
 - Deployed web and Worker routes pass smoke tests.
 - Mobile app performs each recorded interaction against the deployed API.
 - Five-minute Remotion video is captured from the working build and rendered with captions.
 - Draft Devpost submission is created by Sunday 12:00 AM and final selection, roster, links, and video are submitted by Sunday 10:00 AM Eastern, per the event guide.
 
-If time is short, finish Gate A and the strongest achievable integrations before expanding the agent or adding screens. Do not mark an incomplete feature as functional.
+The end-state scope includes every module listed in Section 3; gates order implementation and verification rather than redefining an unfinished module as complete. Do not mark an incomplete feature as functional or fill missing coverage with unlabeled generated content. If external credentials or partner access are unavailable, report that acceptance blocker plainly.
 
 ## 10. Configuration and source references
 
-Expected configuration includes Auth0 domain/audience/client ID, Tiger connection settings, Cloudflare AI/R2/Vectorize bindings, ElevenLabs agent ID and webhook secret, Jev API credentials, and Presage SDK configuration. Use environment-specific secrets; never commit credentials, `.dev.vars`, or recordings containing real personal information.
+Expected configuration includes Auth0 domain/audience/client ID, Tiger connection settings, Cloudflare AI/R2/Vectorize bindings, source adapter URLs/keys and refresh schedules, ElevenLabs agent ID and webhook secret, Jev API credentials, and Presage SDK configuration. Use environment-specific secrets; never commit credentials, `.dev.vars`, real applicant résumés, or recordings containing real personal information. A deployment needs an explicitly configured application origin and permitted CORS origins for web/mobile.
 
 - [Hack the Hill III competition guide](https://tracker.hackthehill.com/resources)
 - [MLH Hack the Hill prize categories](https://www.mlh.com/events/hack-the-hill-30/prizes)
