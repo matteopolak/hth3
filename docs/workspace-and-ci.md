@@ -6,7 +6,7 @@ The repository uses a pnpm workspace for the Worker, public clients, and shared 
 
 ## How it works
 
-`pnpm-workspace.yaml` lists `apps/*` and `packages/*`. The root manifest pins pnpm 12.6.0 and defines local development, lint, typecheck, test, build, and aggregate check commands. Package-age policy blocks versions published within the previous 14 days and rejects packages whose publication time is missing. `.github/workflows/check.yml` applies the frozen lockfile install and check suite on pushes to `main`, pull requests, and manual runs.
+`pnpm-workspace.yaml` lists `apps/*` and `packages/*`. The root manifest pins pnpm 11.10.0 and defines local development, lint, typecheck, test, build, and aggregate check commands. This Node-based CLI avoids the macOS `ENOEXEC` failure seen when older pnpm launchers try to spawn pnpm 12's shebang-less native placeholder. It reads and enforces the strict 14-day release window and rejects missing registry timestamps. `.github/workflows/check.yml` applies the frozen lockfile install and check suite on pushes to `main`, pull requests, and manual runs.
 
 Dependency lifecycle scripts stay disabled unless explicitly addressed under `allowBuilds` in `pnpm-workspace.yaml`. Exact esbuild and workerd versions required by Vitest/Wrangler are allowed to install their runtimes; the unused sharp build is explicitly denied.
 
@@ -33,4 +33,4 @@ Add new workspaces under `apps/` or `packages/`, then add their dependencies thr
 
 ## Dependencies
 
-Node.js 22.14 or newer, pnpm 12.6.0, Vite, `@cloudflare/vite-plugin`, Wrangler, Prettier, TypeScript, and GitHub Actions. CI obtains dependencies from the pnpm lockfile and does not use secrets or deploy credentials.
+Node.js 22.14 or newer, pnpm 11.10.0, Vite, `@cloudflare/vite-plugin`, Wrangler, Prettier, TypeScript, and GitHub Actions. CI obtains dependencies from the pnpm lockfile and does not use secrets or deploy credentials.
