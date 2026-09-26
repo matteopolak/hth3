@@ -20,7 +20,7 @@ The matteopolak account's Cloudflare dashboard showed **Workers Free — Current
 
 ## Configuration
 
-The feature stays off unless both `THEME_AI_ENABLED=true` and `THEME_AI_NO_CHARGE_CONFIRMED=true` are set **and** the Worker has `AI` and `THEME_VECTORS` bindings. Production Wrangler binds `THEME_VECTORS` to the Free-plan `envoy-feedback-themes` index; enable the flags only while the account remains on Workers Free. Keep credentials in Cloudflare secrets, never in source. Recheck the account plan before enabling in another environment.
+The feature stays off unless both `THEME_AI_ENABLED=true` and `THEME_AI_NO_CHARGE_CONFIRMED=true` are set **and** the Worker has `AI` and `THEME_VECTORS` bindings. Production Wrangler sets both flags and binds `THEME_VECTORS` to the Free-plan `envoy-feedback-themes` index; retain this configuration only while the account remains on Workers Free. Keep credentials in Cloudflare secrets, never in source. Recheck the account plan before enabling in another environment.
 
 The model IDs, 24-submission cap, 0.84 cosine threshold, and five-source summary cap are constants in the integration files. The embedding model is multilingual, covering English and French reports. Workers AI Free provides [10,000 Neurons per day](https://developers.cloudflare.com/workers-ai/platform/pricing/) and fails when exhausted; a Paid account can bill beyond its allocation, which is why the gate requires account verification.
 
