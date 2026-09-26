@@ -1584,3 +1584,67 @@ body { min-width: 0; }
   .chat-prompt-card { min-height: 60px; padding: 10px 12px; }
   .chat-prompt-icon { flex-basis: 35px; width: 35px; height: 35px; }
 }
+
+/* Shared interaction floor for shell and feature controls. */
+:root {
+  --focus-ring: #202020;
+  --readable-muted: #626262;
+}
+:is(button, input, select, textarea, a, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring) !important;
+  outline-offset: 2px;
+}
+.chat-action-item:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.sidebar-section-label,
+.search-heading,
+.chat-model-menu-label,
+.chat-model-option-copy small,
+.chat-model-note,
+.chat-prompt-copy small,
+.case-key,
+.case-list-row time {
+  color: var(--readable-muted);
+}
+.sidebar .nav-item:disabled,
+.sidebar .nav-item[aria-disabled="true"],
+.sidebar .nav-item:disabled .nav-icon {
+  color: #626262;
+}
+.chat-model-option-copy small,
+.chat-model-note,
+.chat-prompt-copy small {
+  font-size: 12px;
+}
+
+@media (pointer: coarse) {
+  .sidebar-head { grid-template-columns: minmax(0, 1fr) 44px 44px; }
+  .sidebar-search-button,
+  .sidebar-collapse,
+  .mobile-menu-button { width: 44px; height: 44px; }
+  .sidebar button,
+  main button:not(.discovery-map-pin),
+  .locale-select,
+  main select,
+  main input:not([type="file"]):not([type="checkbox"]):not([type="radio"]) {
+    min-height: 44px;
+  }
+  .chat-round-button { min-width: 44px; }
+}
+
+@media (max-width: 620px) {
+  .chat-input { min-height: 94px; }
+}
+@media (max-width: 360px) {
+  .chat-input { min-height: 108px; }
+}
+
+@media (prefers-contrast: more) {
+  :root { --focus-ring: #000; --readable-muted: #3d3d3d; }
+  .sidebar,
+  .surface,
+  .chat-composer,
+  .discovery-search { border-color: #666; }
+}
