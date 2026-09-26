@@ -21,6 +21,7 @@ import {
   requiresReview,
 } from "@civicresolve/domain";
 import { taxonomy as initialTaxonomy } from "@civicresolve/fixtures";
+import { parseVoiceReport, verifyElevenLabsSignature } from "./voice";
 
 interface Env {
   DB: D1Database;
@@ -30,6 +31,8 @@ interface Env {
   WEB_ORIGIN?: string;
   JEV_API_KEY?: string;
   AI?: WorkersAIBinding;
+  ELEVENLABS_WEBHOOK_SECRET?: string;
+  ELEVENLABS_AGENT_ID?: string;
 }
 
 type Principal = {
@@ -213,6 +216,92 @@ async function handle(request: Request, env: Env): Promise<Response> {
   if (path === "/api/taxonomy" && request.method === "GET")
     return json({ categories: await activeTaxonomy(env.DB) });
 
+  if (
+    path === "/api/integrations/elevenlabs/webhook" &&
+    request.method === "POST"
+  ) {
+    if (!env.ELEVENLABS_WEBHOOK_SECRET || !env.ELEVENLABS_AGENT_ID)
+      return error("Voice integration unavailable", 503);
+    const rawBody = await request.text();
+    if (rawBody.length > 262_144) return error("Webhook too large", 413);
+    if (
+      !(await verifyElevenLabsSignature(
+        rawBody,
+        request.headers.get("ElevenLabs-Signature"),
+        env.ELEVENLABS_WEBHOOK_SECRET,
+      ))
+    )
+      return error("Invalid webhook signature", 401);
+    let report;
+    try {
+      report = parseVoiceReport(rawBody);
+    } catch {
+      return error("Invalid webhook payload", 400);
+    }
+    if (report.type === "ignored") return json({ status: "ignored" });
+    if (report.type === "incomplete")
+      return json({
+        status: "incomplete",
+        conversationId: report.conversationId,
+      });
+    if (report.agentId !== env.ELEVENLABS_AGENT_ID)
+      return error("Unexpected voice agent", 403);
+    const reserved = await env.DB.prepare(
+      "INSERT OR IGNORE INTO voice_sessions (conversation_id,agent_id,case_id,transcript,created_at) VALUES (?,?,NULL,?,?)",
+    )
+      .bind(
+        report.conversationId,
+        report.agentId,
+        JSON.stringify(report.transcript),
+        new Date().toISOString(),
+      )
+      .run();
+    if (reserved.meta.changes !== 1) {
+      const prior = await env.DB.prepare(
+        "SELECT case_id FROM voice_sessions WHERE conversation_id=?",
+      )
+        .bind(report.conversationId)
+        .first<{ case_id: string | null }>();
+      return json({
+        status: prior?.case_id ? "duplicate" : "processing",
+        caseId: prior?.case_id ?? null,
+      });
+    }
+    let created: Response;
+    try {
+      created = await handle(
+        new Request(new URL("/api/cases", request.url), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(report.intake),
+        }),
+        env,
+      );
+    } catch {
+      await env.DB.prepare(
+        "DELETE FROM voice_sessions WHERE conversation_id=? AND case_id IS NULL",
+      )
+        .bind(report.conversationId)
+        .run();
+      return error("Voice case creation failed", 503);
+    }
+    if (!created.ok) {
+      await env.DB.prepare(
+        "DELETE FROM voice_sessions WHERE conversation_id=? AND case_id IS NULL",
+      )
+        .bind(report.conversationId)
+        .run();
+      return error("Voice case creation failed", 503);
+    }
+    const result = (await created.json()) as { case: CaseRecord };
+    await env.DB.prepare(
+      "UPDATE voice_sessions SET case_id=? WHERE conversation_id=?",
+    )
+      .bind(result.case.id, report.conversationId)
+      .run();
+    return json({ status: "created", caseId: result.case.id });
+  }
+
   if (path === "/api/cases" && request.method === "POST") {
     const input = submitCaseSchema.safeParse(await request.json());
     if (!input.success)
@@ -348,6 +437,40 @@ async function handle(request: Request, env: Env): Promise<Response> {
             );
     const rows = await query.all<CaseRow>();
     return json({ cases: rows.results.map(publicCase) });
+  }
+
+  const detailMatch = path.match(/^\/api\/admin\/cases\/([^/]+)$/);
+  if (detailMatch && request.method === "GET") {
+    const user = await principal(request, env);
+    if (!user || !canManageCases(user.role))
+      return error("Admin access required", 403);
+    const row = await getCase(env.DB, detailMatch[1]);
+    if (!row) return error("Case not found", 404);
+    if (!(await allowedCase(request, env, row)))
+      return error("Case access denied", 403);
+    const events = await env.DB.prepare(
+      "SELECT * FROM case_events WHERE case_id=? ORDER BY occurred_at, id",
+    )
+      .bind(row.id)
+      .all<Record<string, unknown>>();
+    const voice = await env.DB.prepare(
+      "SELECT conversation_id, transcript FROM voice_sessions WHERE case_id=?",
+    )
+      .bind(row.id)
+      .first<{ conversation_id: string; transcript: string }>();
+    return json({
+      case: publicCase(row),
+      events: events.results.map((event) => ({
+        ...event,
+        payload: JSON.parse(String(event.payload)),
+      })),
+      voice: voice
+        ? {
+            conversationId: voice.conversation_id,
+            transcript: JSON.parse(voice.transcript),
+          }
+        : null,
+    });
   }
 
   const transitionMatch = path.match(
