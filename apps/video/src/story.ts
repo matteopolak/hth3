@@ -33,7 +33,7 @@ export const scenes = [
     seconds: 50,
     title: "Review before sending",
     caption:
-      "The resident confirms a non-emergency practice report and receives a private receipt. No government office receives it.",
+      "A practice draft is reviewed here. A separately submitted practice report has a private receipt. No government office receives it.",
     capture: "Practice notice, report submission, and redacted receipt",
     required: true,
   },

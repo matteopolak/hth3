@@ -1,0 +1,212 @@
+[
+  {
+    "sceneId": "home",
+    "text": "This is envoy. It helps residents find public services and take the next step when something is wrong.",
+    "file": "narration-draft/home-01.m4a",
+    "startSeconds": 2,
+    "durationSeconds": 6.339048
+  },
+  {
+    "sceneId": "home",
+    "text": "The workspace you are seeing is a practice environment. No municipality or employer is participating.",
+    "file": "narration-draft/home-02.m4a",
+    "startSeconds": 9.039048000000001,
+    "durationSeconds": 6.290204
+  },
+  {
+    "sceneId": "home",
+    "text": "Anyone can begin as a guest. The assistant, service finder, and feedback entry point are visible without an account.",
+    "file": "narration-draft/home-03.m4a",
+    "startSeconds": 16.029252,
+    "durationSeconds": 7.296054
+  },
+  {
+    "sceneId": "sources",
+    "text": "A useful civic journey starts with a source people can trust.",
+    "file": "narration-draft/sources-01.m4a",
+    "startSeconds": 2,
+    "durationSeconds": 3.730023
+  },
+  {
+    "sceneId": "sources",
+    "text": "Here, envoy opens the British Columbia job finder, then moves to nearby public service locations.",
+    "file": "narration-draft/sources-02.m4a",
+    "startSeconds": 6.430023,
+    "durationSeconds": 6.462222
+  },
+  {
+    "sceneId": "sources",
+    "text": "The Service BC office record shows its publisher, address, review date, and a link to the official site.",
+    "file": "narration-draft/sources-03.m4a",
+    "startSeconds": 13.592245,
+    "durationSeconds": 6.884626
+  },
+  {
+    "sceneId": "sources",
+    "text": "A finder link is a route to the publisher. It is not a claim that an individual vacancy is open or that someone qualifies for a program.",
+    "file": "narration-draft/sources-04.m4a",
+    "startSeconds": 21.176871,
+    "durationSeconds": 7.700635
+  },
+  {
+    "sceneId": "sources",
+    "text": "Before visiting, residents should confirm current hours and services with the source agency.",
+    "file": "narration-draft/sources-05.m4a",
+    "startSeconds": 29.577506,
+    "durationSeconds": 5.470748
+  },
+  {
+    "sceneId": "agent",
+    "text": "A resident can also describe a service problem in ordinary language, without choosing a form first.",
+    "file": "narration-draft/agent-01.m4a",
+    "startSeconds": 2,
+    "durationSeconds": 6.202948
+  },
+  {
+    "sceneId": "agent",
+    "text": "In this production chat, the question is about a broken streetlight in Toronto.",
+    "file": "narration-draft/agent-02.m4a",
+    "startSeconds": 8.902948,
+    "durationSeconds": 4.809705
+  },
+  {
+    "sceneId": "agent",
+    "text": "Workers AI responds with a reviewable report proposal. The model does not send the report on its own.",
+    "file": "narration-draft/agent-03.m4a",
+    "startSeconds": 14.412653,
+    "durationSeconds": 5.900091
+  },
+  {
+    "sceneId": "agent",
+    "text": "Because a similar practice report already exists, envoy warns about the duplicate and asks whether this is a different issue or a recurrence.",
+    "file": "narration-draft/agent-04.m4a",
+    "startSeconds": 21.012744,
+    "durationSeconds": 7.990068
+  },
+  {
+    "sceneId": "agent",
+    "text": "The resident can edit, decline, or deliberately approve the next step.",
+    "file": "narration-draft/agent-05.m4a",
+    "startSeconds": 29.702812,
+    "durationSeconds": 4.644218
+  },
+  {
+    "sceneId": "feedback",
+    "text": "This feedback form works for guests too. The words here are explicitly marked as a practice report.",
+    "file": "narration-draft/feedback-01.m4a",
+    "startSeconds": 2,
+    "durationSeconds": 6.243946
+  },
+  {
+    "sceneId": "feedback",
+    "text": "The form moves to a review screen and states that the City of Toronto does not receive it.",
+    "file": "narration-draft/feedback-02.m4a",
+    "startSeconds": 8.943946,
+    "durationSeconds": 4.862358
+  },
+  {
+    "sceneId": "feedback",
+    "text": "The acknowledgement is still unchecked in this recording, so this draft is not submitted here.",
+    "file": "narration-draft/feedback-03.m4a",
+    "startSeconds": 14.506304,
+    "durationSeconds": 5.454603
+  },
+  {
+    "sceneId": "feedback",
+    "text": "A separate captured practice report was submitted through envoy and received a private receipt. That receipt appears next, with its access token hidden.",
+    "file": "narration-draft/feedback-04.m4a",
+    "startSeconds": 20.660907,
+    "durationSeconds": 8.838413
+  },
+  {
+    "sceneId": "feedback",
+    "text": "For an emergency, residents must use emergency services. This inbox is not monitored for urgent response.",
+    "file": "narration-draft/feedback-05.m4a",
+    "startSeconds": 30.19932,
+    "durationSeconds": 7.23678
+  },
+  {
+    "sceneId": "tiger",
+    "text": "After an approved practice submission, D1 stores the case as the source of truth.",
+    "file": "narration-draft/tiger-01.m4a",
+    "startSeconds": 2,
+    "durationSeconds": 5.243447
+  },
+  {
+    "sceneId": "tiger",
+    "text": "An outbox sends privacy-safe event metadata to Tiger for time-series analysis. It does not send the resident's message body.",
+    "file": "narration-draft/tiger-02.m4a",
+    "startSeconds": 7.943447,
+    "durationSeconds": 7.967664
+  },
+  {
+    "sceneId": "tiger",
+    "text": "This read-only query was taken on September twenty-sixth at nineteen forty-one UTC.",
+    "file": "narration-draft/tiger-03.m4a",
+    "startSeconds": 16.611111,
+    "durationSeconds": 5.779546
+  },
+  {
+    "sceneId": "tiger",
+    "text": "It showed four delivered feedback events and four events in the daily aggregate. Two were submitted and classified events for the practice report shown earlier.",
+    "file": "narration-draft/tiger-04.m4a",
+    "startSeconds": 23.090657,
+    "durationSeconds": 8.466848
+  },
+  {
+    "sceneId": "tiger",
+    "text": "These are dated query results. A fresh event or dashboard view must be checked before claiming a current count.",
+    "file": "narration-draft/tiger-05.m4a",
+    "startSeconds": 32.257505,
+    "durationSeconds": 6.650159
+  },
+  {
+    "sceneId": "staff",
+    "text": "A staff workspace needs stronger evidence than a sign-in screen.",
+    "file": "narration-draft/staff-01.m4a",
+    "startSeconds": 2,
+    "durationSeconds": 3.869342
+  },
+  {
+    "sceneId": "staff",
+    "text": "Auth0 hosted sign-in and the practice organization are configured, but a live staff role token and scoped case action have not yet passed acceptance.",
+    "file": "narration-draft/staff-02.m4a",
+    "startSeconds": 6.569342,
+    "durationSeconds": 9.163401
+  },
+  {
+    "sceneId": "staff",
+    "text": "The intended boundary is an Auth0 grant plus matching organization membership checked by the Worker.",
+    "file": "narration-draft/staff-03.m4a",
+    "startSeconds": 16.432743,
+    "durationSeconds": 5.814512
+  },
+  {
+    "sceneId": "staff",
+    "text": "Until that is verified, this scene shows the boundary honestly and does not imitate a staff reply.",
+    "file": "narration-draft/staff-04.m4a",
+    "startSeconds": 22.947255,
+    "durationSeconds": 5.715374
+  },
+  {
+    "sceneId": "closing",
+    "text": "envoy combines official source handoffs, a guest assistant, and reviewable practice feedback.",
+    "file": "narration-draft/closing-01.m4a",
+    "startSeconds": 2,
+    "durationSeconds": 6.226168
+  },
+  {
+    "sceneId": "closing",
+    "text": "Real places and source links appear alongside clearly labeled fictional intake. No government office receives these practice reports.",
+    "file": "narration-draft/closing-02.m4a",
+    "startSeconds": 8.926168,
+    "durationSeconds": 7.758186
+  },
+  {
+    "sceneId": "closing",
+    "text": "Next, we need a participating organization and verified staff access.",
+    "file": "narration-draft/closing-03.m4a",
+    "startSeconds": 17.384354000000002,
+    "durationSeconds": 4.882721
+  }
+]

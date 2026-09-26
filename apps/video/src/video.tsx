@@ -12,6 +12,7 @@ import rawCaptures from "../capture-manifest.json";
 import tigerQuery from "../evidence/tiger-counts-2026-09-26.json";
 import tigerReportEvents from "../evidence/tiger-report-events-2026-09-26.json";
 import { draftClips } from "./draft-clips";
+import draftNarration from "./draft-narration.generated.json";
 import { draftStills } from "./draft-stills";
 import { scenes, type Scene, type SceneId } from "./story";
 
@@ -142,6 +143,16 @@ const SceneFrame = ({
   const draftClip = review ? draftClips[scene.id] : undefined;
   const showDraftClip =
     !hasClip && Boolean(draftClip) && frame < (draftClip?.seconds ?? 0) * fps;
+  const narration = review
+    ? draftNarration.filter((segment) => segment.sceneId === scene.id)
+    : [];
+  const activeSubtitle = narration.find((segment) => {
+    const seconds = frame / fps;
+    return (
+      seconds >= segment.startSeconds &&
+      seconds < segment.startSeconds + segment.durationSeconds
+    );
+  });
   const stills = draftStills[scene.id];
   const still =
     stills?.[
@@ -321,15 +332,86 @@ const SceneFrame = ({
           {hasClip
             ? "Recorded product interaction"
             : showDraftClip
-              ? "Production browser recording · partial scene coverage · no narration"
+              ? `Production browser recording · partial scene coverage · ${review ? "draft narration" : "no narration"}`
               : still
-                ? "Production screenshot · full interaction footage pending · no narration"
+                ? `Production screenshot · full interaction footage pending · ${review ? "draft narration" : "no narration"}`
                 : scene.id === "tiger"
-                  ? "Dated query evidence · trend-view footage pending · no narration"
-                  : "Storyboard placeholder — not product footage · no narration"}
+                  ? `Dated query evidence · trend-view footage pending · ${review ? "draft narration" : "no narration"}`
+                  : `Storyboard placeholder — not product footage · ${review ? "draft narration" : "no narration"}`}
         </div>
         <div>{scene.seconds}s</div>
       </div>
+
+      {scene.id === "home" && frame < 5 * fps ? (
+        <AbsoluteFill
+          style={{
+            backgroundColor: colors.paper,
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 26,
+            opacity: Math.min(1, Math.max(0, (5 * fps - frame) / (2 * fps))),
+          }}
+        >
+          <Brand />
+          <div style={{ fontSize: 50, fontWeight: 600, letterSpacing: -2 }}>
+            A clearer next step
+          </div>
+          <div style={{ fontSize: 23, color: colors.muted }}>
+            Public sources · practice civic workspace
+          </div>
+        </AbsoluteFill>
+      ) : null}
+
+      {scene.id === "closing" && frame >= (scene.seconds - 8) * fps ? (
+        <AbsoluteFill
+          style={{
+            backgroundColor: colors.paper,
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 28,
+            opacity: Math.min(1, (frame - (scene.seconds - 8) * fps) / fps),
+          }}
+        >
+          <Brand />
+          <div style={{ fontSize: 50, fontWeight: 600, letterSpacing: -2 }}>
+            Find the next step. Make it count.
+          </div>
+          <div style={{ fontSize: 23, color: colors.muted }}>
+            civicresolve-api-production.matteopolak.workers.dev
+          </div>
+          <div style={{ fontSize: 19, color: colors.muted }}>
+            Practice reports do not reach a government office.
+          </div>
+        </AbsoluteFill>
+      ) : null}
+
+      {narration.map((segment) => (
+        <Sequence
+          key={segment.file}
+          from={Math.round(segment.startSeconds * fps)}
+          durationInFrames={Math.ceil(segment.durationSeconds * fps)}
+        >
+          <Audio src={staticFile(segment.file)} />
+        </Sequence>
+      ))}
+
+      {activeSubtitle ? (
+        <div
+          style={{
+            position: "absolute",
+            left: 72,
+            bottom: 188,
+            width: 430,
+            borderTop: `1px solid ${colors.line}`,
+            paddingTop: 18,
+            color: colors.ink,
+            fontSize: 21,
+            lineHeight: 1.34,
+          }}
+        >
+          {activeSubtitle.text}
+        </div>
+      ) : null}
     </AbsoluteFill>
   );
 };

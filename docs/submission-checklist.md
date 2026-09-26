@@ -8,9 +8,9 @@ This is the release and evidence checklist for the Civic Technology submission. 
 
 ### Production run
 
-- [ ] Open `https://envoy-web.pages.dev` on a clean browser and confirm the deployed commit/build.
-- [ ] Confirm the production Worker responds from the Pages origin and the guest chat, source search, feedback, and receipt paths work end to end.
-- [ ] Recheck source freshness. The 2026-09-26 snapshot had 65 Service BC office records, three current BC finder links, and one stale federal consultation finder. Do not call a finder an individual vacancy, award, or eligibility result.
+- [ ] Open `https://civicresolve-api-production.matteopolak.workers.dev/` on a clean browser and confirm the deployed commit/build. The combined Worker serves the web app and `/api/*`.
+- [ ] Confirm guest chat, source search, feedback, and receipt paths work end to end from that one origin.
+- [ ] Recheck source freshness. The 2026-09-26 unified production view showed six job finders, four open consultations plus three official directories, and 78 Nearby results. A previous source snapshot had 65 Service BC office records. Do not call a finder an individual vacancy, award, or eligibility result.
 - [ ] Submit one new, clearly labeled practice report, confirm its private receipt, and verify persistence after refresh. Keep the token private.
 - [ ] Verify a new outbox event reaches Tiger; note synchronization time. The 2026-09-26 19:41 UTC read-only check showed four delivered and four aggregate events, including two sample events from the newly captured practice report. Recheck before presenting.
 - [ ] Verify Workers AI in a new production conversation and retain a redacted capture of the reviewable proposal. The Toronto streetlight prompt was previously accepted; verify the final deployed build again.
@@ -24,7 +24,7 @@ This is the release and evidence checklist for the Civic Technology submission. 
 | Civic Technology         | A live resident-to-practice-workspace report and receipt, with explicit non-affiliation.                                                                                                                                  |
 | Tiger Data               | A real feedback event in the hypertable and continuous aggregate, plus the deployed trend view if the video shows it. Four events were read from Tiger at 19:41 UTC on 2026-09-26; capture a fresh result before judging. |
 | Auth0                    | A real hosted sign-in, accepted Worker token, one permitted scoped action, and one denied unauthorized action. Hosted login appearance alone is insufficient.                                                             |
-| ElevenLabs               | A real voice session with follow-up, transcript review, and a submitted feedback record. The Worker has issued a signed URL with a limited key; a full voice-to-feedback acceptance run is still needed.                                 |
+| ElevenLabs               | A real voice session with follow-up, transcript review, and a submitted feedback record. The Worker has issued a signed URL with a limited key; a full voice-to-feedback acceptance run is still needed.                  |
 | Presage                  | A consented, stable physical-iPhone SDK signal that changes the mobile writing interface. Compilation alone is insufficient.                                                                                              |
 | UI/UX                    | Deployed, visually checked resident and employee paths, with accessible text alternatives and clear practice/source labels.                                                                                               |
 
@@ -32,15 +32,53 @@ Workers AI is part of the core product story and has a production proposal resul
 
 ### Devpost and judging handoff
 
-- [ ] Enter the Civic Technology main track; select only optional challenges whose claim gates above have passed.
+- [ ] Select the Civic Technology challenge; select only optional sponsor challenges whose claim gates above have passed.
 - [ ] Add the final public web URL, repository URL, short project description, accurate architecture and team roster.
 - [ ] Add the five-minute video after capturing and captioning actual working interactions. Check playback, audio, readability, and redaction; add the video URL to the final entry.
+- [ ] Replace the current review cut's short clips, dated stills, draft macOS narration, and Tiger query card with complete accepted footage and approved narration. Check that the exported video is five minutes, English captions are in sync, and every practice/provider limitation visible on screen is also accurate in the spoken script.
+- [ ] Run one timed four-minute live rehearsal against the final combined Worker deploy, followed by three minutes of questions as required by the [official rules](https://hack-the-hill-iii.devpost.com/rules). Record any fallback used and confirm the backup tabs are ready before judges arrive.
 - [ ] Include one clear sentence that the practice organization/employer is fictional and unaffiliated with any municipality or government office. Describe external source links as handoffs, not completed applications or reports.
 - [ ] Have another collaborator verify every sponsor and government-participation sentence against the footage and current build.
-- [ ] Confirm the live presentation slot and the **current official** draft/final deadlines before submission. `PLAN.md` targets a Sunday draft and final submission; use the event guide for the actual deadline.
+- [ ] Submit by **10:00 a.m. EDT on Sunday, September 27, 2026**. The [official rules](https://hack-the-hill-iii.devpost.com/rules) and the [Devpost requirements](https://hack-the-hill-iii.devpost.com/) say 10:00 a.m. for judging, while the page banner says 11:00 a.m.; use the earlier cutoff. Verify the on-site schedule separately.
 - [ ] Save a copy of the submitted text, selected tracks, URLs, and final video file/link for the team. Record the final submission receipt or confirmation.
 
 If a provider or staff role cannot pass live acceptance, remove that demo segment and side-challenge selection. The public BC source, guest agent proposal, practice report, private receipt, and Tiger delivery can still make an honest core story. Do not submit a fabricated success capture to preserve a planned segment.
+
+### Copy-ready Devpost draft
+
+Create this project under [Hack the Hill III](https://hack-the-hill-iii.devpost.com/), **save it as a draft**, and leave the final submission action untouched until the team has checked every field. The in-app browser was unavailable during preparation, so these fields have not yet been entered into Devpost. The [official rules](https://hack-the-hill-iii.devpost.com/rules) require a GitHub link and every teammate on the submission; they allow up to four people per team. The rules specify a four-minute live presentation with three minutes for questions. The page banner shows an 11:00 a.m. deadline but both the rules and requirements say 10:00 a.m. EDT on September 27, 2026; use **10:00 a.m.**
+
+**Project name:** envoy
+
+**Tagline:** Find public services, understand the next step, and turn civic issues into reviewable feedback.
+
+**Project story:**
+
+> Finding the right public service often means jumping between websites, interpreting unfamiliar language, and deciding which office can help. When something goes wrong, people should be able to describe the issue in their own words and review the destination before sending anything.
+>
+> envoy brings those steps into one resident experience. Guests can browse official public source links, inspect Service BC locations with attribution and freshness, and ask an assistant about a civic issue. In a live production check, Workers AI prepared a reviewable Toronto streetlight report proposal and warned that a similar practice report already existed. The model does not submit a report without a person's approval.
+>
+> The current report intake is a **practice workspace**. It uses real municipality names and sourced public information, but no municipality or employer is participating. Practice reports are stored in envoy and do not reach a government office. An earlier non-emergency practice report produced a private receipt; D1 kept the case and an outbox delivered privacy-safe feedback events to Tiger Data. A dated read-only query confirmed the submitted and classified events. We keep resident message bodies out of Tiger.
+>
+> The web experience is served from one Cloudflare Worker, with D1, R2, and Workers AI behind it and Tiger Data for event analytics. A native SwiftUI companion and Auth0-backed staff access are being developed, but device and live staff-role acceptance are still pending. Voice and sensing integrations are also pending complete live acceptance. Our next step is to connect an actual participating organization and verify the resident-to-staff journey with them.
+
+**What was challenging:** Keeping source provenance and freshness visible, making AI suggestions reviewable, and separating a working practice intake from any claim of government delivery.
+
+**What we learned:** A civic interface has to tell residents where information came from, when it was checked, and who will actually receive a report. An AI suggestion is useful only when the person stays in control.
+
+**Built with:** TypeScript, React, Cloudflare Workers, D1, R2, Workers AI, Tiger Data, SwiftUI, Auth0, Remotion. List ElevenLabs and Presage only after the final draft explicitly distinguishes configuration from completed live behavior.
+
+**Links to enter:**
+
+| Field           | Link or asset                                                                                                                                             | Gate                                                                                                    |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Code            | `https://github.com/matteopolak/hth3`                                                                                                                     | Include the repository link and confirm commits are within the event window.                            |
+| Web app and API | `https://civicresolve-api-production.matteopolak.workers.dev/`                                                                                            | Combined Worker origin returned HTTP 200 on 2026-09-26; recheck critical flows before final submission. |
+| Video           | `apps/video/out/envoy-review.mp4` is a **local draft only**                                                                                               | Upload an approved five-minute export and enter its public URL later.                                   |
+| Gallery         | `apps/video/public/captures/pages-home-2026-09-26.png`, `pages-jobs-2026-09-26.png`, `pages-nearby-2026-09-26.png`, `pages-agent-proposal-2026-09-26.png` | Refresh any frame whose UI changed; keep the practice notice legible.                                   |
+| Team            | Every actual teammate's Devpost account                                                                                                                   | Do not invent names or omit collaborators.                                                              |
+
+For the initial draft, choose the **Civic Technology** challenge and keep optional sponsor selections unselected until their claim gates above pass on the final deploy. Tiger Data has dated event evidence; recheck it and the visible analytics route before selecting that prize. Auth0, ElevenLabs, and Presage still need their live acceptance steps. The Devpost description should be refreshed once the final video and production URLs are ready.
 
 ## How to change it
 
@@ -48,7 +86,7 @@ Tick an item only after the corresponding deployed observation, and store a time
 
 ## Configuration
 
-Use production Pages, Worker, and read-only Tiger access. Keep provider keys, JWTs, guest receipt tokens, résumés, and private report text out of the public entry and footage. The exact web/API URLs and deploy commands are in [Deployment](deployment.md). This checklist does not publish to Devpost or configure video hosting.
+Use the production combined Worker origin and read-only Tiger access. Keep provider keys, JWTs, guest receipt tokens, résumés, and private report text out of the public entry and footage. The exact web/API URLs and deploy commands are in [Deployment](deployment.md). This checklist does not publish to Devpost or configure video hosting.
 
 ## Dependencies
 

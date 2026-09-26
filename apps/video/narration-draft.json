@@ -1,0 +1,51 @@
+{
+  "voice": "Daniel",
+  "rateWordsPerMinute": 160,
+  "gapSeconds": 0.7,
+  "scenes": {
+    "home": [
+      "This is envoy. It helps residents find public services and take the next step when something is wrong.",
+      "The workspace you are seeing is a practice environment. No municipality or employer is participating.",
+      "Anyone can begin as a guest. The assistant, service finder, and feedback entry point are visible without an account."
+    ],
+    "sources": [
+      "A useful civic journey starts with a source people can trust.",
+      "Here, envoy opens the British Columbia job finder, then moves to nearby public service locations.",
+      "The Service BC office record shows its publisher, address, review date, and a link to the official site.",
+      "A finder link is a route to the publisher. It is not a claim that an individual vacancy is open or that someone qualifies for a program.",
+      "Before visiting, residents should confirm current hours and services with the source agency."
+    ],
+    "agent": [
+      "A resident can also describe a service problem in ordinary language, without choosing a form first.",
+      "In this production chat, the question is about a broken streetlight in Toronto.",
+      "Workers AI responds with a reviewable report proposal. The model does not send the report on its own.",
+      "Because a similar practice report already exists, envoy warns about the duplicate and asks whether this is a different issue or a recurrence.",
+      "The resident can edit, decline, or deliberately approve the next step."
+    ],
+    "feedback": [
+      "This feedback form works for guests too. The words here are explicitly marked as a practice report.",
+      "The form moves to a review screen and states that the City of Toronto does not receive it.",
+      "The acknowledgement is still unchecked in this recording, so this draft is not submitted here.",
+      "A separate captured practice report was submitted through envoy and received a private receipt. That receipt appears next, with its access token hidden.",
+      "For an emergency, residents must use emergency services. This inbox is not monitored for urgent response."
+    ],
+    "tiger": [
+      "After an approved practice submission, D1 stores the case as the source of truth.",
+      "An outbox sends privacy-safe event metadata to Tiger for time-series analysis. It does not send the resident's message body.",
+      "This read-only query was taken on September twenty-sixth at nineteen forty-one UTC.",
+      "It showed four delivered feedback events and four events in the daily aggregate. Two were submitted and classified events for the practice report shown earlier.",
+      "These are dated query results. A fresh event or dashboard view must be checked before claiming a current count."
+    ],
+    "staff": [
+      "A staff workspace needs stronger evidence than a sign-in screen.",
+      "Auth0 hosted sign-in and the practice organization are configured, but a live staff role token and scoped case action have not yet passed acceptance.",
+      "The intended boundary is an Auth0 grant plus matching organization membership checked by the Worker.",
+      "Until that is verified, this scene shows the boundary honestly and does not imitate a staff reply."
+    ],
+    "closing": [
+      "envoy combines official source handoffs, a guest assistant, and reviewable practice feedback.",
+      "Real places and source links appear alongside clearly labeled fictional intake. No government office receives these practice reports.",
+      "Next, we need a participating organization and verified staff access."
+    ]
+  }
+}

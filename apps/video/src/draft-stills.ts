@@ -21,6 +21,10 @@ export const draftStills: Partial<Record<SceneId, Still[]>> = {
       file: "captures/pages-nearby-2026-09-26.png",
       description: "65 Service BC locations on production Pages",
     },
+    {
+      file: "captures/native-nearby-simulator-2026-09-26.png",
+      description: "Native SwiftUI Nearby map in iPhone simulator",
+    },
   ],
   agent: [
     {

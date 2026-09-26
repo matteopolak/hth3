@@ -7,6 +7,7 @@
     "studio": "remotion studio src/index.ts",
     "typecheck": "tsc --noEmit",
     "render:draft": "remotion render src/index.ts EnvoyReview out/envoy-review.mp4 --codec h264 --x264-preset veryfast",
+    "narration:draft": "node scripts/build-draft-narration.mjs",
     "render:final": "node scripts/check-footage.mjs && remotion render src/index.ts EnvoyEvidence out/envoy-final.mp4 --codec h264",
     "still": "remotion still src/index.ts EnvoyEvidence out/envoy-still.png --frame 15"
   },
