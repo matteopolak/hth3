@@ -45,6 +45,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@civicresolve/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@civicresolve/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -67,6 +70,22 @@ importers:
       wrangler:
         specifier: ^4.33.0
         version: 4.139.0(@cloudflare/workers-types@4.20260702.1)
+
+  packages/ai:
+    dependencies:
+      '@civicresolve/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@civicresolve/domain':
+        specifier: workspace:*
+        version: link:../domain
+      zod:
+        specifier: ^4.1.5
+        version: 4.6.5
+    devDependencies:
+      '@civicresolve/fixtures':
+        specifier: workspace:*
+        version: link:../fixtures
 
   packages/contracts:
     dependencies:

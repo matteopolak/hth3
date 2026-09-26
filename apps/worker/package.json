@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --var DEMO_MODE:true",
+    "dev": "wrangler dev --config wrangler.demo.jsonc --var DEMO_MODE:true",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "build": "wrangler deploy --dry-run --outdir dist",
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@civicresolve/contracts": "workspace:*",
+    "@civicresolve/ai": "workspace:*",
     "@civicresolve/domain": "workspace:*",
     "@civicresolve/fixtures": "workspace:*",
     "jose": "^6.1.0",

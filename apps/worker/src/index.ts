@@ -1,5 +1,12 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import {
+  classifyWithFallback,
+  FixtureClassificationProvider,
+  JevClassificationProvider,
+  WorkersAIClassificationProvider,
+  type WorkersAIBinding,
+} from "@civicresolve/ai";
+import {
   categorySchema,
   submitCaseSchema,
   transitionSchema,
@@ -21,6 +28,8 @@ interface Env {
   AUTH0_DOMAIN?: string;
   AUTH0_AUDIENCE?: string;
   WEB_ORIGIN?: string;
+  JEV_API_KEY?: string;
+  AI?: WorkersAIBinding;
 }
 
 type Principal = {
@@ -28,6 +37,7 @@ type Principal = {
   role: Role;
   scope: string[];
   steppedUp: boolean;
+  department: string | null;
 };
 type CaseRow = {
   id: string;
@@ -96,6 +106,7 @@ async function principal(
         role,
         scope: ["cases:read", "cases:write", "taxonomy:publish"],
         steppedUp: true,
+        department: null,
       };
     }
   }
@@ -130,6 +141,10 @@ async function principal(
       role,
       scope: permissions,
       steppedUp: amr.includes("mfa") && Date.now() / 1000 - authTime < 300,
+      department:
+        typeof payload["https://civicresolve.org/department"] === "string"
+          ? (payload["https://civicresolve.org/department"] as string)
+          : null,
     };
   } catch {
     return null;
@@ -177,7 +192,13 @@ async function allowedCase(
   if (token && (await hash(token)) === row.status_token_hash) return true;
   const user = await principal(request, env);
   return (
-    !!user && (user.sub === row.owner_subject || canManageCases(user.role))
+    !!user &&
+    (user.sub === row.owner_subject ||
+      user.role === "organization_owner" ||
+      (user.role === "reviewer" && row.status === "needs_review") ||
+      (user.role === "department_admin" &&
+        !!user.department &&
+        row.department === user.department))
   );
 }
 
@@ -197,7 +218,31 @@ async function handle(request: Request, env: Env): Promise<Response> {
     if (!input.success)
       return error("Check the description and location.", 400);
     const categories = await activeTaxonomy(env.DB);
-    const decision = fixtureClassify(input.data.description, categories);
+    const classifyInput = {
+      text: input.data.description,
+      taxonomy: categories,
+      extractedFields: { location: input.data.location },
+    };
+    let decision;
+    if (env.DEMO_MODE === "true") {
+      decision = await new FixtureClassificationProvider().classify(
+        classifyInput,
+      );
+    } else {
+      if (!env.JEV_API_KEY && !env.AI)
+        return error("Classification service unavailable", 503);
+      try {
+        decision = await classifyWithFallback(
+          classifyInput,
+          env.JEV_API_KEY
+            ? new JevClassificationProvider(env.JEV_API_KEY)
+            : null,
+          env.AI ? new WorkersAIClassificationProvider(env.AI) : null,
+        );
+      } catch {
+        return error("Classification service unavailable", 503);
+      }
+    }
     const category = categories.find(
       (item) => item.id === decision.categoryId,
     )!;
@@ -255,7 +300,7 @@ async function handle(request: Request, env: Env): Promise<Response> {
         explanation: review
           ? "A staff member will review your report before assignment."
           : category.publicExplanation,
-        mode: "fixture-classification",
+        mode: decision.provider,
       },
       201,
     );
@@ -287,9 +332,21 @@ async function handle(request: Request, env: Env): Promise<Response> {
     const user = await principal(request, env);
     if (!user || !canManageCases(user.role))
       return error("Admin access required", 403);
-    const rows = await env.DB.prepare(
-      "SELECT * FROM cases ORDER BY created_at DESC LIMIT 100",
-    ).all<CaseRow>();
+    if (user.role === "department_admin" && !user.department)
+      return error("Department claim required", 403);
+    const query =
+      user.role === "reviewer"
+        ? env.DB.prepare(
+            "SELECT * FROM cases WHERE status='needs_review' ORDER BY created_at DESC LIMIT 100",
+          )
+        : user.role === "department_admin"
+          ? env.DB.prepare(
+              "SELECT * FROM cases WHERE department=? ORDER BY created_at DESC LIMIT 100",
+            ).bind(user.department)
+          : env.DB.prepare(
+              "SELECT * FROM cases ORDER BY created_at DESC LIMIT 100",
+            );
+    const rows = await query.all<CaseRow>();
     return json({ cases: rows.results.map(publicCase) });
   }
 
@@ -302,6 +359,13 @@ async function handle(request: Request, env: Env): Promise<Response> {
       return error("Admin access required", 403);
     const row = await getCase(env.DB, transitionMatch[1]);
     if (!row) return error("Case not found", 404);
+    if (user.role === "reviewer" && row.status !== "needs_review")
+      return error("Reviewer scope exceeded", 403);
+    if (
+      user.role === "department_admin" &&
+      (!user.department || row.department !== user.department)
+    )
+      return error("Department scope exceeded", 403);
     const input = transitionSchema.safeParse(await request.json());
     if (!input.success) return error("Invalid transition", 400);
     if (row.version !== input.data.expectedVersion)
@@ -373,8 +437,8 @@ async function handle(request: Request, env: Env): Promise<Response> {
 
   if (path === "/api/admin/taxonomy/simulate" && request.method === "POST") {
     const user = await principal(request, env);
-    if (!user || !canManageCases(user.role))
-      return error("Admin access required", 403);
+    if (!user || !canPublishTaxonomy(user.role))
+      return error("Owner access required", 403);
     const body = (await request.json()) as { draftId?: string };
     if (!body.draftId) return error("Draft required", 400);
     const draft = await env.DB.prepare(
@@ -482,6 +546,20 @@ async function handle(request: Request, env: Env): Promise<Response> {
     );
     statements.push(
       env.DB.prepare("DELETE FROM taxonomy_drafts WHERE id=?").bind(draft.id),
+    );
+    statements.push(
+      env.DB.prepare("INSERT INTO audit_events VALUES (?,?,?,?,?,?,?)").bind(
+        crypto.randomUUID(),
+        user.sub,
+        user.role,
+        "taxonomy.published",
+        `taxonomy:${version}`,
+        now,
+        JSON.stringify({
+          previousVersion: current[0].version,
+          categoryId: draft.id,
+        }),
+      ),
     );
     await env.DB.batch(statements);
     return json({ version, publishedAt: now, categoryId: draft.id });
