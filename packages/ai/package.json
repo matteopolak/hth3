@@ -1,0 +1,14 @@
+{
+  "name": "@civicresolve/ai",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./workers-ai/grounded-themes": "./src/workers-ai/grounded-themes.ts",
+    "./vectorize/themes": "./src/vectorize/themes.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json"
+  }
+}

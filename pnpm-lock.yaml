@@ -236,6 +236,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@civicresolve/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@civicresolve/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -255,6 +258,8 @@ importers:
       wrangler:
         specifier: 4.113.0
         version: 4.113.0
+
+  packages/ai: {}
 
   packages/config: {}
 
