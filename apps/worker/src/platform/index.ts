@@ -213,7 +213,8 @@ async function refreshOfficialSourcesWhenDue(database: D1Database): Promise<void
     .bind("service-bc-office-locations")
     .first<{ fetched_at: string | null; updated_at: string; last_error: string | null }>();
   const lastAttempt = state?.fetched_at ?? (state?.last_error ? state.updated_at : null);
-  if (!lastAttempt || Date.now() - Date.parse(lastAttempt) >= 86_400_000)
+  const retryAfter = state?.last_error ? 15 * 60_000 : 86_400_000;
+  if (!lastAttempt || Date.now() - Date.parse(lastAttempt) >= retryAfter)
     await ingestOfficialSources(database);
 }
 

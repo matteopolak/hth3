@@ -19,6 +19,8 @@ This repository contains the product plan and the shared workspace/CI foundation
 | [Web discovery and profile](web/discovery-and-profile.md) | Source-backed opportunity browsing, private applicant profile, and résumé controls. |
 | [Staff workspace](web/staff-workspace.md) | Feedback operations, source-linked themes, taxonomy, hiring, applicants, and analytics. |
 | [Native iOS shell](native-mobile.md)                                         | SwiftUI feedback/applications, Auth0 sign-in, private profiles/résumés, and build configuration.                                                                         |
+| [Native discovery and applications](native-discovery.md) | SwiftUI source search, nearby map/list, saved checklists, official handoff, and application review. |
+| [Native resident assistant](native-assistant.md) | Guest and signed-in SwiftUI conversations, role tools, approval cards, and private receipts. |
 | [Native Presage accessibility](native-presage.md) | Consented breathing check and optional calmer feedback layout in SwiftUI. |
 | [Monochrome interface](design/monochrome-interface.md)                       | Envoy's compact black-and-white layout, conversation shell, responsive rules, and copy decisions.                                                             |
 | [Resident and employee conversations](agents/conversations.md)               | Persistent Workers AI conversations, role-scoped tools, write previews, and guest access.                                                                     |
