@@ -361,7 +361,7 @@ export function createProgramIntakePage(
     }</div>${Object.entries(application.answers)
       .map(
         ([key, value]) =>
-          `<div class="pi-answer"><span>${h(key.replaceAll("_", " "))}</span><strong>${h(value)}</strong></div>`,
+          `<div class="pi-answer"><span>${h(application.questions.find((question) => question.id === key)?.label ?? key.replaceAll("_", " "))}</span><strong>${h(value)}</strong></div>`,
       )
       .join(
         "",

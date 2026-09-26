@@ -29,6 +29,7 @@ export interface ProgramApplication {
   submittedAt: string;
   updatedAt: string;
   answers: Record<string, string>;
+  questions: ProgramQuestion[];
 }
 
 export interface ProgramMessage {

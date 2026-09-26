@@ -49,6 +49,7 @@ interface ApplicationRow {
   program_id: string;
   organization_id: string;
   program_title: string;
+  program_questions_json: string;
   applicant_subject: string;
   answers_json: string;
   status: ProgramApplicationStatus;
@@ -613,7 +614,7 @@ async function listOwnApplications(
   const actor = await applicantActor(request, false, context);
   if (actor instanceof Response) return actor;
   const result = await context.env.DB.prepare(
-    `SELECT a.*, p.organization_id, p.title AS program_title FROM program_applications a
+    `SELECT a.*, p.organization_id, p.title AS program_title, p.questions_json AS program_questions_json FROM program_applications a
      JOIN sponsor_programs p ON p.id = a.program_id WHERE a.applicant_subject = ?
      ORDER BY a.submitted_at DESC LIMIT 100`,
   )
@@ -633,7 +634,7 @@ async function listStaffApplications(
   const actor = await sponsorActor(request, orgId, context);
   if (actor instanceof Response) return actor;
   const result = await context.env.DB.prepare(
-    `SELECT a.*, p.organization_id, p.title AS program_title FROM program_applications a
+    `SELECT a.*, p.organization_id, p.title AS program_title, p.questions_json AS program_questions_json FROM program_applications a
      JOIN sponsor_programs p ON p.id = a.program_id WHERE p.organization_id = ?
      ORDER BY a.submitted_at DESC LIMIT 100`,
   )
@@ -895,7 +896,7 @@ async function findApplication(
 ): Promise<ApplicationRow | null> {
   return db
     .prepare(
-      `SELECT a.*, p.organization_id, p.title AS program_title FROM program_applications a
+      `SELECT a.*, p.organization_id, p.title AS program_title, p.questions_json AS program_questions_json FROM program_applications a
      JOIN sponsor_programs p ON p.id = a.program_id WHERE a.id = ?`,
     )
     .bind(id)
@@ -930,6 +931,7 @@ function applicationView(row: ApplicationRow) {
     submittedAt: row.submitted_at,
     updatedAt: row.updated_at,
     answers: JSON.parse(row.answers_json) as Record<string, string>,
+    questions: JSON.parse(row.program_questions_json) as ProgramQuestion[],
   };
 }
 
