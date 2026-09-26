@@ -28,7 +28,7 @@ Each adapter stores its collection method, licence/terms check, parser version, 
 
 ## How to change it
 
-Add a source registry entry before writing an adapter. Verify its terms and available API/feed/export, add parser fixtures and bilingual display names, and define freshness/expiry handling. Add an explicit `sample` fixture only for development or an honestly labeled sandbox. Do not extrapolate a real listing, award, service location, eligibility rule, or government application outcome from nearby records. When a source is removed, retain attribution/audit history while removing or expiring public records as required.
+Add a source registry entry before writing an adapter. Verify its terms and available API/feed/export, add parser fixtures and bilingual display names, and define freshness/expiry handling. Add an explicit `sample` fixture only for development or an honestly labeled sandbox. Municipality names and geographic boundaries must correspond to real places; the fictional Toronto sandbox organization is unaffiliated with the actual city. Do not extrapolate a real listing, award, service location, eligibility rule, or government application outcome from nearby records. When a source is removed, retain attribution/audit history while removing or expiring public records as required.
 
 ## Configuration
 
