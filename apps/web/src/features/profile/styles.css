@@ -1,8 +1,33 @@
 .profile-page {
-  max-width: 850px;
+  max-width: 1160px;
   margin: auto;
   color: #202020;
   font-size: 13px;
+}
+.profile-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.85fr);
+  align-items: start;
+  gap: 16px;
+}
+.profile-main,
+.profile-resume-section,
+.profile-extraction,
+.profile-share {
+  min-width: 0;
+  border: 1px solid #e4e4e4;
+  border-radius: 11px;
+  background: #fff;
+  padding: 22px;
+}
+.profile-aside {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.profile-main .profile-form,
+.profile-aside > section {
+  margin: 0;
 }
 .profile-section-title {
   margin: 0 0 16px;
@@ -16,10 +41,7 @@
 .profile-share {
   margin: 0 0 35px;
 }
-.profile-entry-section,
-.profile-resume-section,
-.profile-extraction,
-.profile-share {
+.profile-entry-section {
   border-top: 1px solid #e8e8e8;
   padding-top: 23px;
 }
@@ -116,9 +138,41 @@
   align-items: end;
   gap: 12px;
 }
-.profile-upload input {
-  max-width: 100%;
+.profile-upload {
+  align-items: stretch;
+  flex-direction: column;
+}
+.profile-dropzone {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  min-height: 104px;
+  place-content: center;
+  border: 1px solid #d6d6d6;
+  border-radius: 9px;
+  background: #fafafa;
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+}
+.profile-dropzone:hover,
+.profile-dropzone.is-dragging {
+  background: #f2f2f2;
+  border-color: #888;
+}
+.profile-dropzone:focus-within {
+  outline: 2px solid #202020;
+  outline-offset: 2px;
+}
+.profile-dropzone strong {
+  overflow-wrap: anywhere;
   font-size: 12px;
+}
+.profile-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 .profile-share-form .profile-field {
   flex: 1 1 170px;
@@ -141,6 +195,17 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+@media (max-width: 900px) {
+  .profile-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .profile-aside {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .profile-extraction {
+    grid-column: 1 / -1;
+  }
+}
 .profile-suggestion {
   border: 1px solid #e8e8e8;
   border-radius: 9px;
@@ -159,6 +224,15 @@
   margin-top: 12px;
 }
 @media (max-width: 620px) {
+  .profile-aside {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .profile-main,
+  .profile-resume-section,
+  .profile-extraction,
+  .profile-share {
+    padding: 16px;
+  }
   .profile-contact-grid,
   .profile-entry-grid {
     grid-template-columns: minmax(0, 1fr);

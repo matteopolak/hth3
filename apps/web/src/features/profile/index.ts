@@ -63,7 +63,7 @@ const copy = {
     endDate: "End date",
     description: "Description",
     resumes: "Résumés",
-    upload: "Upload PDF or DOCX",
+    upload: "Drop a PDF or DOCX, or choose a file",
     uploadButton: "Upload résumé",
     extract: "Review extracted text",
     delete: "Delete",
@@ -122,7 +122,7 @@ const copy = {
     endDate: "Date de fin",
     description: "Description",
     resumes: "CV",
-    upload: "Téléverser un PDF ou DOCX",
+    upload: "Déposez un PDF ou DOCX, ou choisissez un fichier",
     uploadButton: "Téléverser le CV",
     extract: "Examiner le texte extrait",
     delete: "Supprimer",
@@ -214,9 +214,15 @@ export function createProfilePage({ locale, token }: Options): HTMLElement {
     }
     if (error) root.append(node("p", "profile-alert", error));
     if (notice) root.append(node("p", "profile-notice", notice));
-    root.append(profileForm(), resumeSection());
-    if (extraction) root.append(extractionSection());
-    root.append(shareSection());
+    const workspace = node("div", "profile-workspace");
+    const main = node("div", "profile-main");
+    const aside = node("div", "profile-aside");
+    main.append(profileForm());
+    aside.append(resumeSection());
+    if (extraction) aside.append(extractionSection());
+    aside.append(shareSection());
+    workspace.append(main, aside);
+    root.append(workspace);
   }
 
   function profileForm(): HTMLElement {
@@ -315,26 +321,48 @@ export function createProfilePage({ locale, token }: Options): HTMLElement {
     const section = node("section", "profile-resume-section");
     section.append(node("h3", "profile-section-title", text.resumes));
     const upload = node("form", "profile-upload");
+    const dropzone = node("label", "profile-dropzone");
     const input = document.createElement("input");
     input.type = "file";
+    input.className = "profile-file-input";
     input.accept =
       ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     input.setAttribute("aria-label", text.upload);
     input.addEventListener("change", () => {
+      captureDraft();
       file = input.files?.[0] ?? null;
+      render();
     });
+    dropzone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      dropzone.classList.add("is-dragging");
+    });
+    dropzone.addEventListener("dragleave", () =>
+      dropzone.classList.remove("is-dragging"),
+    );
+    dropzone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      captureDraft();
+      file = event.dataTransfer?.files[0] ?? null;
+      render();
+    });
+    dropzone.append(
+      input,
+      node("strong", "", file?.name ?? text.upload),
+      node("span", "profile-muted", text.maxSize),
+    );
     const uploadButton = action(
       pending === "upload" ? `${text.uploadButton}…` : text.uploadButton,
       "profile-button",
     );
     uploadButton.type = "submit";
-    uploadButton.disabled = !!pending;
+    uploadButton.disabled = !!pending || !file;
     upload.addEventListener("submit", (event) => {
       event.preventDefault();
       void uploadResume();
     });
-    upload.append(input, uploadButton);
-    section.append(upload, node("p", "profile-muted", text.maxSize));
+    upload.append(dropzone, uploadButton);
+    section.append(upload);
     if (!resumes.length)
       section.append(node("p", "profile-muted", text.noResumes));
     for (const resume of resumes) {

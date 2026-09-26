@@ -13,6 +13,14 @@ export type DiscoveryArea =
 interface DiscoveryItem {
   id: string;
   origin: "official_external" | "participating_org" | "sample";
+  type:
+    | "jobs_finder"
+    | "benefits_finder"
+    | "funding_finder"
+    | "service_location"
+    | "consultation_finder"
+    | "source_record"
+    | "sample_record";
   title: string;
   summary: string;
   publisher: string;
@@ -21,6 +29,7 @@ interface DiscoveryItem {
   termsUrl: string | null;
   licence: { name: string | null; url: string | null };
   jurisdiction: { name: string; code: string };
+  coordinates: { latitude: number; longitude: number } | null;
   language: "en" | "fr" | "und";
   freshness: "current" | "stale" | "expired" | "error" | "unknown";
   verifiedAt: string | null;
@@ -61,7 +70,23 @@ const API = (
 const copy = {
   en: {
     search: "Search",
-    searchPlaceholder: "Search official sources",
+    keywords: "Keywords",
+    searchPlaceholder: "Role, program, or service",
+    location: "City or location",
+    locationPlaceholder: "City, province, or Canada",
+    filters: "Filters",
+    results: "Results",
+    finder: "Official finder",
+    verifiedListing: "Verified listing",
+    locationRecord: "Service location",
+    consultationFinder: "Consultation finder",
+    sourceRecord: "Official source",
+    chooseResult: "Choose a result to view details.",
+    list: "List",
+    map: "Map",
+    mapNote:
+      "Positions come from official source coordinates. This is a schematic map.",
+    mapUnavailable: "No verified coordinates are available for these results.",
     jurisdiction: "Jurisdiction",
     allJurisdictions: "All jurisdictions",
     currentOnly: "Current only",
@@ -109,7 +134,24 @@ const copy = {
   },
   fr: {
     search: "Rechercher",
-    searchPlaceholder: "Rechercher dans les sources officielles",
+    keywords: "Mots-clés",
+    searchPlaceholder: "Poste, programme ou service",
+    location: "Ville ou lieu",
+    locationPlaceholder: "Ville, province ou Canada",
+    filters: "Filtres",
+    results: "Résultats",
+    finder: "Moteur de recherche officiel",
+    verifiedListing: "Annonce vérifiée",
+    locationRecord: "Point de service",
+    consultationFinder: "Recherche de consultations",
+    sourceRecord: "Source officielle",
+    chooseResult: "Choisissez un résultat pour voir les détails.",
+    list: "Liste",
+    map: "Carte",
+    mapNote:
+      "Les positions viennent des coordonnées de la source officielle. Cette carte est schématique.",
+    mapUnavailable:
+      "Aucune coordonnée vérifiée n’est disponible pour ces résultats.",
     jurisdiction: "Territoire",
     allJurisdictions: "Tous les territoires",
     currentOnly: "Actuels seulement",
@@ -169,9 +211,13 @@ export function createDiscoveryPage({
   const text = copy[locale];
   const root = node("section", "discovery-page");
   let query = "";
-  let jurisdiction = "";
+  let queryDraft = "";
+  let location = "";
+  let locationDraft = "";
   let currentOnly = false;
   let includeSamples = false;
+  let display: "list" | "map" = "list";
+  let mobileDetail = false;
   let offset = 0;
   let total = 0;
   let records: DiscoveryItem[] = [];
@@ -203,7 +249,7 @@ export function createDiscoveryPage({
         });
         if (area !== "all") params.set("area", area);
         if (query) params.set("q", query);
-        if (jurisdiction) params.set("jurisdiction", jurisdiction);
+        if (location) params.set("location", location);
         if (currentOnly) params.set("freshness", "current");
         if (includeSamples) params.set("includeSamples", "true");
         const result = await request<{ items: DiscoveryItem[]; total: number }>(
@@ -211,13 +257,24 @@ export function createDiscoveryPage({
         );
         records = append ? records.concat(result.items) : result.items;
         total = result.total;
+        if (!append && !records.some((item) => item.id === selected?.id)) {
+          selected = records[0] ?? null;
+          mobileDetail = false;
+        }
         if (token) {
           const savedResult = await request<{ items: SavedItem[] }>(
             `/discovery/saved?includeSamples=${includeSamples}`,
             token,
-          );
-          saved = savedResult.items;
+          ).catch(() => null);
+          if (savedResult) saved = savedResult.items;
         }
+      }
+      if (
+        area === "saved" &&
+        !saved.some((entry) => entry.item.id === selected?.id)
+      ) {
+        selected = saved[0]?.item ?? null;
+        mobileDetail = false;
       }
     } catch (cause) {
       error = message(cause);
@@ -229,32 +286,50 @@ export function createDiscoveryPage({
 
   function render(): void {
     root.replaceChildren();
-    if (selected) {
-      const heading = node("div", "discovery-heading");
-      heading.append(
-        action(text.back, "discovery-link", () => {
-          selected = null;
-          notice = "";
-          render();
-        }),
-      );
-      root.append(heading, detail(selected));
-      return;
-    }
     if (area !== "saved") root.append(filters());
-    else if (!token) root.append(node("p", "discovery-muted", text.signIn));
+    const tools = node("div", "discovery-toolbar");
+    const displayed =
+      area === "saved" ? saved.map((entry) => entry.item) : records;
+    tools.append(
+      node(
+        "strong",
+        "discovery-result-count",
+        `${area === "saved" ? displayed.length : total} ${text.resultCount}`,
+      ),
+    );
     const practice = node("label", "discovery-check");
     const practiceInput = document.createElement("input");
     practiceInput.type = "checkbox";
     practiceInput.checked = includeSamples;
     practiceInput.addEventListener("change", () => {
       includeSamples = practiceInput.checked;
+      query = queryDraft.trim();
+      location = locationDraft.trim();
       offset = 0;
       void refresh();
     });
     practice.append(practiceInput, node("span", "", text.practice));
-    root.append(practice);
-    if (notice) root.append(node("p", "discovery-notice", notice));
+    tools.append(practice);
+    if (area === "nearby" && displayed.some((item) => item.coordinates)) {
+      const switcher = node("div", "discovery-view-switch");
+      for (const mode of ["list", "map"] as const) {
+        const choice = action(
+          text[mode],
+          display === mode ? "is-active" : "",
+          () => {
+            display = mode;
+            mobileDetail = false;
+            render();
+          },
+        );
+        choice.setAttribute("aria-pressed", String(display === mode));
+        switcher.append(choice);
+      }
+      tools.append(switcher);
+    }
+    root.append(tools);
+    if (area === "saved" && !token)
+      root.append(node("p", "discovery-muted", text.signIn));
     if (error) {
       const alert = node("div", "discovery-alert");
       alert.append(
@@ -263,67 +338,80 @@ export function createDiscoveryPage({
       );
       root.append(alert);
     }
-    if (loading && !records.length && !saved.length)
-      root.append(node("p", "discovery-muted", text.loading));
-    const list = node("div", "discovery-list");
-    const displayed =
-      area === "saved" ? saved.map((entry) => entry.item) : records;
-    for (const item of displayed) list.append(row(item));
-    root.append(list);
-    if (!loading && !error && displayed.length === 0)
-      root.append(
+    const workspace = node(
+      "div",
+      `discovery-workspace ${mobileDetail ? "is-detail-open" : ""} ${selected ? "" : "is-empty"}`,
+    );
+    const results = node("section", "discovery-results");
+    if (loading && !displayed.length)
+      results.append(node("p", "discovery-empty", text.loading));
+    else if (!error && !displayed.length)
+      results.append(
         node(
           "p",
           "discovery-empty",
           area === "saved" ? text.noSaved : text.noResults,
         ),
       );
-    if (area !== "saved" && records.length < total) {
-      root.append(
-        action(text.more, "discovery-button", () => {
-          offset += 30;
-          void refresh(true);
-        }),
-      );
+    else if (display === "map" && area === "nearby")
+      results.append(map(displayed));
+    else {
+      for (const item of displayed) results.append(row(item));
+      if (area !== "saved" && records.length < total) {
+        results.append(
+          action(text.more, "discovery-button discovery-more", () => {
+            offset += 30;
+            void refresh(true);
+          }),
+        );
+      }
     }
+    const panel = node("section", "discovery-detail-panel");
+    panel.append(
+      selected
+        ? detail(selected)
+        : node("p", "discovery-empty", text.chooseResult),
+    );
+    workspace.append(results, panel);
+    root.append(workspace);
   }
 
   function filters(): HTMLElement {
-    const form = node("form", "discovery-filters");
+    const form = node("form", "discovery-search");
+    const fields = node("div", "discovery-search-fields");
+    const keywordField = node("label", "discovery-search-field");
+    keywordField.append(node("span", "", text.keywords));
     const search = document.createElement("input");
     search.className = "discovery-input";
     search.type = "search";
     search.maxLength = 120;
     search.placeholder = text.searchPlaceholder;
-    search.setAttribute("aria-label", text.search);
-    search.value = query;
+    search.value = queryDraft;
     search.addEventListener("input", () => {
-      query = search.value;
+      queryDraft = search.value;
     });
-    const region = document.createElement("select");
-    region.className = "discovery-select";
-    region.setAttribute("aria-label", text.jurisdiction);
-    for (const [value, label] of [
-      ["", text.allJurisdictions],
-      ["CA", "Canada"],
-      ["CA-ON", "Ontario"],
-      ["CA-BC", "British Columbia"],
-    ] as Array<[string, string]>) {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = label;
-      option.selected = value === jurisdiction;
-      region.append(option);
-    }
-    region.addEventListener("change", () => {
-      jurisdiction = region.value;
+    keywordField.append(search);
+    const locationField = node("label", "discovery-search-field");
+    locationField.append(node("span", "", text.location));
+    const place = document.createElement("input");
+    place.className = "discovery-input";
+    place.type = "search";
+    place.maxLength = 80;
+    place.placeholder = text.locationPlaceholder;
+    place.value = locationDraft;
+    place.addEventListener("input", () => {
+      locationDraft = place.value;
     });
+    locationField.append(place);
+    fields.append(keywordField, locationField);
     const current = node("label", "discovery-check");
     const currentInput = document.createElement("input");
     currentInput.type = "checkbox";
     currentInput.checked = currentOnly;
     currentInput.addEventListener("change", () => {
       currentOnly = currentInput.checked;
+      query = queryDraft.trim();
+      location = locationDraft.trim();
       offset = 0;
       void refresh();
     });
@@ -335,27 +423,42 @@ export function createDiscoveryPage({
     submit.type = "submit";
     form.addEventListener("submit", (event) => {
       event.preventDefault();
+      query = queryDraft.trim();
+      location = locationDraft.trim();
       offset = 0;
+      mobileDetail = false;
       void refresh();
     });
-    form.append(search, region, current, submit);
+    const bottom = node("div", "discovery-search-actions");
+    bottom.append(current, submit);
+    form.append(fields, bottom);
     return form;
   }
 
   function row(item: DiscoveryItem): HTMLElement {
-    const entry = node("article", "discovery-row");
+    const entry = node(
+      "article",
+      `discovery-row ${selected?.id === item.id ? "is-selected" : ""}`,
+    );
+    entry.append(node("span", "discovery-type", itemType(item)));
     const title = action(item.title, "discovery-row-title", () => {
       selected = item;
+      mobileDetail = true;
       notice = "";
       render();
     });
-    entry.append(title, node("p", "discovery-summary", item.summary));
+    const compactSummary =
+      item.type === "service_location"
+        ? item.summary
+            .replace(/^Service BC office at /, "")
+            .replace(/\. Confirm hours.*$/i, "")
+        : item.summary;
+    entry.append(title, node("p", "discovery-summary", compactSummary));
     const meta = node("div", "discovery-meta");
     meta.append(
       node("span", "", item.publisher),
       node("span", "", item.jurisdiction.name),
     );
-    if (item.area) meta.append(node("span", "", text[item.area]));
     if (item.origin === "sample")
       meta.append(node("span", "discovery-practice", text.practiceLabel));
     else if (item.freshness !== "current")
@@ -364,21 +467,102 @@ export function createDiscoveryPage({
     return entry;
   }
 
+  function map(items: DiscoveryItem[]): HTMLElement {
+    const points = items.filter(
+      (
+        item,
+      ): item is DiscoveryItem & {
+        coordinates: { latitude: number; longitude: number };
+      } => !!item.coordinates && item.origin !== "sample",
+    );
+    if (!points.length)
+      return node("p", "discovery-empty", text.mapUnavailable);
+    const latitudes = points.map((item) => item.coordinates.latitude);
+    const longitudes = points.map((item) => item.coordinates.longitude);
+    const minLat = Math.min(...latitudes) - 0.3;
+    const maxLat = Math.max(...latitudes) + 0.3;
+    const minLon = Math.min(...longitudes) - 0.3;
+    const maxLon = Math.max(...longitudes) + 0.3;
+    const view = node("div", "discovery-map");
+    view.append(node("span", "discovery-map-north", "N"));
+    for (const item of points) {
+      const marker = action(item.title, "discovery-map-pin", () => {
+        selected = item;
+        mobileDetail = true;
+        render();
+      });
+      marker.textContent = "";
+      marker.setAttribute("aria-label", item.title);
+      marker.title = item.title;
+      marker.style.left = `${7 + ((item.coordinates.longitude - minLon) / (maxLon - minLon)) * 86}%`;
+      marker.style.top = `${7 + (1 - (item.coordinates.latitude - minLat) / (maxLat - minLat)) * 86}%`;
+      if (selected?.id === item.id) marker.classList.add("is-selected");
+      view.append(marker);
+    }
+    const container = node("div", "discovery-map-wrap");
+    container.append(view, node("p", "discovery-muted", text.mapNote));
+    return container;
+  }
+
+  function itemType(item: DiscoveryItem): string {
+    if (item.origin === "sample") return text.practiceLabel;
+    if (item.origin === "participating_org") return text.verifiedListing;
+    if (item.type === "service_location") return text.locationRecord;
+    if (item.type === "consultation_finder") return text.consultationFinder;
+    if (item.type.endsWith("_finder")) return text.finder;
+    return text.sourceRecord;
+  }
+
   function detail(item: DiscoveryItem): HTMLElement {
     const view = node("article", "discovery-detail");
     view.append(
+      action(text.back, "discovery-back discovery-link", () => {
+        mobileDetail = false;
+        render();
+      }),
+    );
+    view.append(
+      node("span", "discovery-type", itemType(item)),
       node("h3", "", item.title),
+      node(
+        "p",
+        "discovery-detail-publisher",
+        `${item.publisher} · ${item.jurisdiction.name}`,
+      ),
       node("p", "discovery-summary", item.summary),
     );
     if (item.origin === "sample")
       view.append(node("p", "discovery-notice", text.practiceNote));
     if (item.freshness !== "current")
       view.append(node("p", "discovery-muted", text.staleNote));
+    const actions = node("div", "discovery-actions");
+    if (item.handoff) {
+      actions.append(
+        action(
+          text.official,
+          "discovery-button discovery-button-primary",
+          () => void openOfficial(item),
+        ),
+      );
+    }
+    if (token) {
+      const wasSaved = saved.some((entry) => entry.item.id === item.id);
+      actions.append(
+        action(
+          wasSaved ? text.remove : text.save,
+          "discovery-button",
+          () => void toggleSave(item, wasSaved),
+        ),
+      );
+    }
+    view.append(actions);
+    if (item.handoff)
+      view.append(node("p", "discovery-muted", text.officialNote));
+    else view.append(node("p", "discovery-muted", text.noHandoff));
+    if (!token) view.append(node("p", "discovery-muted", text.signIn));
+    if (notice) view.append(node("p", "discovery-notice", notice));
     const facts = node("dl", "discovery-facts");
     for (const [label, value] of [
-      [text.area, item.area ? text[item.area] : text.unknown],
-      [text.publisher, item.publisher],
-      [text.jurisdiction, item.jurisdiction.name],
       [text.freshness, item.freshness],
       [
         text.verified,
@@ -404,29 +588,6 @@ export function createDiscoveryPage({
       provenance.append(link);
     }
     if (provenance.childElementCount) view.append(provenance);
-    if (notice) view.append(node("p", "discovery-notice", notice));
-    const actions = node("div", "discovery-actions");
-    if (item.handoff) {
-      actions.append(
-        action(
-          text.official,
-          "discovery-button discovery-button-primary",
-          () => void openOfficial(item),
-        ),
-      );
-      view.append(node("p", "discovery-muted", text.officialNote));
-    } else view.append(node("p", "discovery-muted", text.noHandoff));
-    if (token) {
-      const wasSaved = saved.some((entry) => entry.item.id === item.id);
-      actions.append(
-        action(
-          wasSaved ? text.remove : text.save,
-          "discovery-button",
-          () => void toggleSave(item, wasSaved),
-        ),
-      );
-    } else view.append(node("p", "discovery-muted", text.signIn));
-    view.append(actions);
     const savedEntry = saved.find((entry) => entry.item.id === item.id);
     if (savedEntry) view.append(checklist(item, savedEntry.checklist));
     return view;
@@ -531,6 +692,10 @@ export function createDiscoveryPage({
           "DELETE",
         );
         saved = saved.filter((entry) => entry.item.id !== item.id);
+        if (area === "saved") {
+          selected = saved[0]?.item ?? null;
+          mobileDetail = false;
+        }
       } else {
         const result = await request<{ checklist: ChecklistEntry[] }>(
           `/discovery/saved/${encodeURIComponent(item.id)}?includeSamples=${includeSamples}`,
