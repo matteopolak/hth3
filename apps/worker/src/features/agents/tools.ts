@@ -25,8 +25,9 @@ type ToolDefinition = {
   access: ToolAccess;
   description: string;
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  path: (args: ToolArguments, organizationId: string | null) => string;
-  handler: Handler;
+  path: (args: ToolArguments, organizationId: string | null, conversationId?: string) => string;
+  handler: Handler | null;
+  virtual?: "feedbackEvidenceUpload";
   body?: (args: ToolArguments) => unknown;
 };
 
@@ -543,6 +544,20 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
     path: (args) =>
       `/api/v1/feedback/receipts/${feedbackId(args)}/attachments/${evidenceId(args)}`,
     handler: handleFeedbackRequest,
+  },
+  prepare_feedback_evidence_upload: {
+    mode: "resident",
+    access: "read",
+    description:
+      "Get the file-picker handoff for attaching a PDF, PNG, or JPEG to a pending feedback proposal. File bytes stay outside model tools.",
+    method: "POST",
+    path: (_args, _organizationId, conversationId) => {
+      if (!conversationId)
+        throw new ToolInputError("A conversation is required.");
+      return `/api/v1/agent/conversations/${conversationId}/feedback-evidence`;
+    },
+    handler: null,
+    virtual: "feedbackEvidenceUpload",
   },
   emergency_guidance: {
     mode: "resident",
@@ -1417,11 +1432,12 @@ export function prepareTool(
   args: ToolArguments,
   mode: AgentMode,
   organizationId: string | null,
+  conversationId?: string,
 ) {
   const tool = AGENT_TOOLS[name];
   if (!tool || (tool.mode !== mode && tool.mode !== "both"))
     throw new ToolInputError("Tool is unavailable in this conversation.");
-  const path = tool.path(args, organizationId);
+  const path = tool.path(args, organizationId, conversationId);
   const body = tool.body?.(args);
   return {
     tool,
@@ -1439,6 +1455,21 @@ export async function executeTool(
   approvalKey?: string,
   agentConversationId?: string,
 ): Promise<{ status: number; data: unknown }> {
+  if (prepared.tool.virtual === "feedbackEvidenceUpload")
+    return {
+      status: 200,
+      data: {
+        upload: {
+          path: prepared.path,
+          method: "POST",
+          contentType: "multipart/form-data",
+          field: "file",
+          accept: ["application/pdf", "image/png", "image/jpeg"],
+          requiresFileChooser: true,
+          submitted: false,
+        },
+      },
+    };
   const url = new URL(prepared.path, request.url);
   const headers = new Headers();
   for (const key of ["Authorization", "Accept-Language", "CF-Connecting-IP"]) {
@@ -1462,6 +1493,8 @@ export async function executeTool(
       ? { body: JSON.stringify(prepared.body) }
       : {}),
   });
+  if (!prepared.tool.handler)
+    return { status: 404, data: { error: { code: "TOOL_ROUTE_UNAVAILABLE" } } };
   const response = await prepared.tool.handler(internal, url, context);
   if (!response)
     return { status: 404, data: { error: { code: "TOOL_ROUTE_UNAVAILABLE" } } };

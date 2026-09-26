@@ -1375,6 +1375,11 @@ body { min-width: 0; }
 .feedback-proposal h3 { margin: 0 0 18px; font-size: 16px; font-weight: 630; }
 .feedback-proposal .field { width: 100%; }
 .feedback-proposal textarea { min-height: 108px; }
+.feedback-proposal-evidence { margin-top: 14px; }
+.feedback-proposal-evidence .chat-file-label { display: inline-flex; width: auto; margin: 0; }
+.feedback-proposal-evidence .chat-tray-note { margin: 8px 0 0; }
+.feedback-evidence-list { margin: 8px 0 0; padding-left: 20px; font-size: 13px; }
+.feedback-evidence-list li { overflow-wrap: anywhere; }
 .feedback-proposal .proposal-notice {
   border: 1px solid #e7e7e7;
   border-radius: 8px;

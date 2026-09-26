@@ -1,13 +1,14 @@
 import { expect, it } from "vitest";
-import { prepareTool, ToolInputError, visibleTools } from "./tools.js";
+import { executeTool, prepareTool, ToolInputError, visibleTools } from "./tools.js";
 
-it("keeps new agent actions on fixed, role-scoped routes", () => {
+it("keeps new agent actions on fixed, role-scoped routes", async () => {
   const org = "org_123";
   const resident = visibleTools("resident").map((tool) => tool.name);
   const employee = visibleTools("employee").map((tool) => tool.name);
   expect(resident).toContain("save_external_preparation");
   expect(resident).toContain("submit_program_application");
   expect(resident).toContain("check_feedback_duplicate");
+  expect(resident).toContain("prepare_feedback_evidence_upload");
   expect(resident).toContain("search_nearby");
   expect(resident).toContain("get_consultation_handoff");
   expect(resident).not.toContain("staff_assign_feedback");
@@ -176,6 +177,28 @@ it("keeps new agent actions on fixed, role-scoped routes", () => {
     null,
   );
   expect(feedback.body).toMatchObject({ duplicateOverride: false });
+  const evidenceUpload = prepareTool(
+    "prepare_feedback_evidence_upload",
+    {},
+    "resident",
+    null,
+    `conv_${"a".repeat(32)}`,
+  );
+  expect(evidenceUpload.path).toBe(
+    `/api/v1/agent/conversations/conv_${"a".repeat(32)}/feedback-evidence`,
+  );
+  expect(evidenceUpload.tool.access).toBe("read");
+  expect(() =>
+    prepareTool("prepare_feedback_evidence_upload", {}, "resident", null),
+  ).toThrow(ToolInputError);
+  expect(await executeTool(
+    new Request("http://localhost"),
+    null!,
+    evidenceUpload,
+  )).toMatchObject({
+    status: 200,
+    data: { upload: { field: "file", requiresFileChooser: true, submitted: false } },
+  });
   expect(() =>
     prepareTool("staff_assign_feedback", {}, "resident", null),
   ).toThrow(ToolInputError);

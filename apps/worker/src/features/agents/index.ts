@@ -423,6 +423,14 @@ async function sendMessage(
       }
     }
   }
+  if (
+    instruction.tool?.name === "prepare_feedback_evidence_upload" &&
+    (toolResult as { status?: number } | undefined)?.status === 200
+  )
+    assistantText =
+      conversation.locale === "fr"
+        ? "Choisissez un fichier PDF, PNG ou JPEG à joindre au brouillon. Rien ne sera envoyé avant votre approbation."
+        : "Choose a PDF, PNG, or JPEG to attach to the draft. Nothing is submitted until you approve it.";
   const selectedDuplicate = feedbackDuplicateStatus(toolResult);
   if (selectedDuplicate)
     assistantText = duplicateMessage(selectedDuplicate, conversation.locale);
@@ -514,7 +522,7 @@ async function sendMessage(
     !proposal &&
     (claimsUnverifiedAction(assistantText) ||
       ((toolStatus === undefined || toolStatus >= 400) &&
-        /\b(?:preview|proposal|draft|prepared|created|submitted|sent|filed|published|updated|closed)\b/i.test(
+        /\b(?:preview|proposal|draft|prepared|created|submitted|sent|filed|published|updated|closed|uploaded|attached)\b/i.test(
           assistantText,
         )))
   )
@@ -577,6 +585,22 @@ async function callTool(
       "Tool arguments are too large.",
       400,
     );
+  if (name === "prepare_feedback_evidence_upload") {
+    const pending = await context.env.DB.prepare(
+      `SELECT id FROM agent_proposals
+       WHERE conversation_id = ? AND tool_name = 'create_feedback'
+         AND status = 'pending' AND expires_at > ? LIMIT 1`,
+    )
+      .bind(conversation.id, new Date().toISOString())
+      .first<{ id: string }>();
+    if (!pending)
+      return featureError(
+        context,
+        "FEEDBACK_PROPOSAL_REQUIRED",
+        "Prepare a feedback preview before attaching evidence.",
+        409,
+      );
+  }
   let prepared: ReturnType<typeof prepareTool>;
   try {
     prepared = prepareTool(
@@ -584,6 +608,7 @@ async function callTool(
       args,
       conversation.mode,
       conversation.organization_id,
+      conversation.id,
     );
   } catch (error) {
     if (error instanceof ToolInputError)
@@ -1421,7 +1446,7 @@ function requestsFeedbackPreparation(message: string): boolean {
 }
 
 function claimsUnverifiedAction(message: string): boolean {
-  return /\b(?:i(?:'ve| have)?(?: now| just)?\s+(?:prepared|created|drafted|called|submitted|sent|filed|published|updated|closed)|(?:proposal card|action preview|feedback preview|report draft)\s+(?:is|has been)\s+(?:ready|displayed|prepared|created)|(?:here(?:'s| is)|below is)\s+(?:the|your|a)\s+(?:feedback\s+)?(?:report\s+)?(?:preview|draft|proposal)|(?:j['’]ai|je viens de)\s+(?:préparé|créé|rédigé|envoyé|soumis)|(?:aperçu|brouillon)\s+(?:est|a été)\s+(?:prêt|préparé|créé))/i.test(
+  return /\b(?:i(?:'ve| have)?(?: now| just)?\s+(?:prepared|created|drafted|called|submitted|sent|filed|published|updated|closed|uploaded|attached)|(?:proposal card|action preview|feedback preview|report draft)\s+(?:is|has been)\s+(?:ready|displayed|prepared|created)|(?:here(?:'s| is)|below is)\s+(?:the|your|a)\s+(?:feedback\s+)?(?:report\s+)?(?:preview|draft|proposal)|(?:j['’]ai|je viens de)\s+(?:préparé|créé|rédigé|envoyé|soumis)|(?:aperçu|brouillon)\s+(?:est|a été)\s+(?:prêt|préparé|créé))/i.test(
     message,
   );
 }

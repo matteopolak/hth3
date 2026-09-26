@@ -135,6 +135,35 @@ export const api = {
         body: { tool, args },
       },
     ),
+  uploadFeedbackEvidence: (
+    id: string,
+    credentials: ConversationCredentials,
+    file: File,
+  ) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request<{
+      asset: { id: string; fileName: string; contentType: string; byteSize: number };
+    }>(`/agent/conversations/${encodeURIComponent(id)}/feedback-evidence`, {
+      method: "POST",
+      headers: conversationHeaders(credentials),
+      formData,
+    });
+  },
+  attachFeedbackEvidence: (
+    id: string,
+    proposalId: string,
+    credentials: ConversationCredentials,
+    assetId: string,
+  ) =>
+    request<{ proposal: AgentProposal }>(
+      `/agent/conversations/${encodeURIComponent(id)}/proposals/${encodeURIComponent(proposalId)}/feedback-evidence`,
+      {
+        method: "POST",
+        headers: conversationHeaders(credentials),
+        body: { assetId },
+      },
+    ),
   getProfile: (token: string) =>
     request<ProfileResponse>("/profile", {
       headers: { Authorization: `Bearer ${token}` },

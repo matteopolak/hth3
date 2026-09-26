@@ -70,7 +70,7 @@ interface ChatState {
   duplicateOverrideChecked: Record<string, boolean>;
   reportEdits: Record<string, string>;
   tools: AgentTool[];
-  tray: "actions" | "area" | "files" | "plugins" | null;
+  tray: "actions" | "area" | "files" | "feedback-files" | "plugins" | null;
   toolSearch: string;
   history: ChatHistoryEntry[];
   historyLoaded: boolean;
@@ -954,10 +954,12 @@ function chatPage(mode: ChatMode): HTMLElement {
   composer.addEventListener("dragleave", () => composer.classList.remove("is-dragging"));
   composer.addEventListener("drop", (event) => {
     composer.classList.remove("is-dragging");
-    const file = event.dataTransfer?.files[0];
-    if (!file) return;
+    const files = Array.from(event.dataTransfer?.files ?? []);
+    if (!files.length) return;
     event.preventDefault();
-    void handleResumeFile(mode, file);
+    const feedbackProposal = mode === "resident" ? pendingFeedbackProposal(mode) : null;
+    if (feedbackProposal) void uploadFeedbackEvidenceFiles(mode, feedbackProposal, files);
+    else void handleResumeFile(mode, files[0]!);
   });
   composer.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -1056,6 +1058,9 @@ function chatActionMenu(mode: ChatMode): HTMLElement {
     upload.prepend(iconNode("files"));
     menu.append(upload);
   }
+  const feedbackProposal = mode === "resident" ? pendingFeedbackProposal(mode) : null;
+  if (feedbackProposal)
+    menu.append(feedbackEvidenceControl(mode, feedbackProposal, "chat-action-item action-upload"));
   const area = button(t("assistant.chooseArea"), "chat-action-item action-area", () => void openChatTray(mode, "area"));
   area.prepend(iconNode("map"));
   const plugins = button(t("assistant.plugins"), "chat-action-item action-tools", () => void openChatTray(mode, "plugins"));
@@ -1161,6 +1166,31 @@ function resumeUploadControl(mode: ChatMode, className: string): HTMLElement {
   return label;
 }
 
+function pendingFeedbackProposal(mode: ChatMode): AgentProposal | null {
+  return [...state.chats[mode].proposals].reverse().find((proposal) =>
+    proposal.status === "pending" && proposal.preview.name === "create_feedback") ?? null;
+}
+
+function feedbackEvidenceControl(
+  mode: ChatMode,
+  proposal: AgentProposal,
+  className: string,
+): HTMLElement {
+  const label = el("label", className);
+  label.append(iconNode("files"), el("span", "", t("assistant.attachEvidence")));
+  const input = el("input") as HTMLInputElement;
+  input.type = "file";
+  input.multiple = true;
+  input.accept = ".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg";
+  input.setAttribute("aria-label", t("assistant.attachEvidence"));
+  input.addEventListener("change", () => {
+    const files = Array.from(input.files ?? []);
+    if (files.length) void uploadFeedbackEvidenceFiles(mode, proposal, files);
+  });
+  label.append(input);
+  return label;
+}
+
 function chatTray(mode: ChatMode): HTMLElement {
   const chat = state.chats[mode];
   const tray = el("div", "chat-tray");
@@ -1179,6 +1209,12 @@ function chatTray(mode: ChatMode): HTMLElement {
       tray.append(resumeUploadControl(mode, "chat-file-label"));
     }
     else tray.append(button(t("assistant.signInForResume"), "chat-tray-choice", () => openSignIn("resume")));
+  } else if (chat.tray === "feedback-files") {
+    const proposal = pendingFeedbackProposal(mode);
+    if (proposal) {
+      tray.append(el("p", "chat-tray-note", t("assistant.feedbackEvidenceHint")));
+      tray.append(feedbackEvidenceControl(mode, proposal, "chat-file-label"));
+    } else tray.append(el("p", "chat-tray-note", t("assistant.feedbackEvidenceNeedsDraft")));
   } else if (chat.tray === "plugins") {
     const search = el("input", "chat-tool-search") as HTMLInputElement;
     search.type = "search";
@@ -1227,6 +1263,43 @@ async function uploadChatResume(mode: ChatMode, file: File): Promise<void> {
   try {
     const response = await api.uploadResume(token, file);
     chat.savedResume = response.resume.filename;
+    chat.tray = null;
+  } catch (error) {
+    chat.error = formatError(error).message;
+  } finally {
+    chat.pending = false;
+    render();
+  }
+}
+
+async function uploadFeedbackEvidenceFiles(
+  mode: ChatMode,
+  proposal: AgentProposal,
+  files: File[],
+): Promise<void> {
+  const chat = state.chats[mode];
+  if (mode !== "resident" || !chat.id || chat.pending || proposal.status !== "pending") return;
+  if (files.some((file) =>
+    !["application/pdf", "image/png", "image/jpeg"].includes(file.type) ||
+    file.size === 0 || file.size > 5 * 1024 * 1024)) {
+    chat.error = t("assistant.invalidEvidence");
+    render();
+    return;
+  }
+  chat.pending = true;
+  chat.error = "";
+  render();
+  try {
+    for (const file of files) {
+      const uploaded = await api.uploadFeedbackEvidence(chat.id, chatCredentials(mode), file);
+      const attached = await api.attachFeedbackEvidence(
+        chat.id,
+        proposal.id,
+        chatCredentials(mode),
+        uploaded.asset.id,
+      );
+      proposal.preview = attached.proposal.preview;
+    }
     chat.tray = null;
   } catch (error) {
     chat.error = formatError(error).message;
@@ -1361,6 +1434,23 @@ function feedbackProposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElem
   card.append(editor);
   if (typeof body.whatWouldImprove === "string" && body.whatWouldImprove.trim()) {
     card.append(labeledValue(t("feedback.improvementLabel"), body.whatWouldImprove));
+  }
+  if (proposal.status === "pending") {
+    const evidence = el("div", "feedback-proposal-evidence");
+    evidence.append(feedbackEvidenceControl(mode, proposal, "chat-file-label"));
+    evidence.append(el("p", "chat-tray-note", t("assistant.feedbackEvidenceHint")));
+    const attached = Array.isArray(proposal.preview.feedbackEvidence)
+      ? proposal.preview.feedbackEvidence : [];
+    if (attached.length) {
+      const list = el("ul", "feedback-evidence-list");
+      for (const item of attached) {
+        if (!item || typeof item !== "object") continue;
+        const file = item as { fileName?: unknown };
+        if (typeof file.fileName === "string") list.append(el("li", "", file.fileName));
+      }
+      evidence.append(list);
+    }
+    card.append(evidence);
   }
   card.append(el("p", "proposal-notice", t("assistant.reportDestination")));
 
@@ -1588,6 +1678,7 @@ const DIRECT_READ_TOOLS = new Set([
   "list_postings", "list_sources", "list_source_records", "read_profile", "list_resumes",
   "list_my_applications", "list_staff_feedback", "read_feedback_analytics",
   "list_staff_applications", "read_taxonomy", "list_taxonomy_versions", "prepare_resume_upload",
+  "prepare_feedback_evidence_upload",
 ]);
 
 async function openPluginTool(mode: ChatMode, name: string): Promise<void> {
@@ -1617,6 +1708,9 @@ async function openPluginTool(mode: ChatMode, name: string): Promise<void> {
       if (isResumeUploadHandoff(response.result)) {
         chat.messages.push({ role: "assistant", content: t("assistant.resumeUploadReady") });
         chat.tray = "files";
+      } else if (isFeedbackEvidenceUploadHandoff(response.result)) {
+        chat.messages.push({ role: "assistant", content: t("assistant.feedbackEvidenceHint") });
+        chat.tray = "feedback-files";
       } else chat.messages.push({ role: "tool", content: visibleToolResult(response.result), result: response.result });
     }
     if (response.proposal) chat.proposals.push(response.proposal);
@@ -1626,6 +1720,7 @@ async function openPluginTool(mode: ChatMode, name: string): Promise<void> {
     chat.pending = false;
     render();
     if (chat.tray === "files") focusResumeUpload();
+    if (chat.tray === "feedback-files") focusFeedbackEvidenceUpload();
   }
 }
 
@@ -1700,6 +1795,7 @@ async function sendChat(mode: ChatMode): Promise<void> {
     chat.messages.push({ role: "assistant", content: response.message });
     if (response.toolResult !== undefined && !feedbackDuplicateStatusFromResult(response.toolResult)) {
       if (isResumeUploadHandoff(response.toolResult)) chat.tray = "files";
+      else if (isFeedbackEvidenceUploadHandoff(response.toolResult)) chat.tray = "feedback-files";
       else chat.messages.push({
           role: "tool",
           content: visibleToolResult(response.toolResult),
@@ -1716,6 +1812,7 @@ async function sendChat(mode: ChatMode): Promise<void> {
     chat.pending = false;
     render();
     if (chat.tray === "files") focusResumeUpload();
+    if (chat.tray === "feedback-files") focusFeedbackEvidenceUpload();
   }
 }
 
@@ -1879,9 +1976,30 @@ function isResumeUploadHandoff(value: unknown): boolean {
     details.requiresFileChooser === true && details.submitted === false;
 }
 
+function isFeedbackEvidenceUploadHandoff(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const result = value as { status?: unknown; data?: unknown };
+  if (result.status !== 200 || !result.data || typeof result.data !== "object") return false;
+  const upload = (result.data as { upload?: unknown }).upload;
+  if (!upload || typeof upload !== "object") return false;
+  const details = upload as Record<string, unknown>;
+  return typeof details.path === "string" &&
+    /^\/api\/v1\/agent\/conversations\/conv_[a-f0-9]{32}\/feedback-evidence$/.test(details.path) &&
+    details.method === "POST" && details.field === "file" &&
+    details.requiresFileChooser === true && details.submitted === false;
+}
+
 function focusResumeUpload(): void {
   requestAnimationFrame(() => {
     const input = document.querySelector<HTMLInputElement>(".chat-file-label input[type=file]");
+    input?.focus();
+    input?.closest(".chat-tray")?.scrollIntoView({ block: "nearest" });
+  });
+}
+
+function focusFeedbackEvidenceUpload(): void {
+  requestAnimationFrame(() => {
+    const input = document.querySelector<HTMLInputElement>(".chat-tray .chat-file-label input[type=file]");
     input?.focus();
     input?.closest(".chat-tray")?.scrollIntoView({ block: "nearest" });
   });
