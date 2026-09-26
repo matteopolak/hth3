@@ -13,7 +13,9 @@
       "Here, envoy opens official job finders, current public consultations, and nearby service locations.",
       "The Service BC office record shows its publisher, address, review date, and a link to the official site. Participation links also lead to the government publisher.",
       "A finder link is a route to the publisher. It is not a claim that an individual vacancy is open or that someone qualifies for a program.",
-      "Before visiting, residents should confirm current hours and services with the source agency."
+      "Before visiting, residents should confirm current hours and services with the source agency.",
+      "The native SwiftUI Nearby map appears next in an iPhone simulator.",
+      "This simulator image does not establish physical-device or production API acceptance."
     ],
     "agent": [
       "A resident can describe a civic issue in ordinary language, without choosing a form first.",

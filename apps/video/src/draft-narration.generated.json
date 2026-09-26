@@ -56,6 +56,20 @@
     "durationSeconds": 5.470748
   },
   {
+    "sceneId": "sources",
+    "text": "The native SwiftUI Nearby map appears next in an iPhone simulator.",
+    "file": "narration-draft/sources-06.m4a",
+    "startSeconds": 40.078775,
+    "durationSeconds": 4.212018
+  },
+  {
+    "sceneId": "sources",
+    "text": "This simulator image does not establish physical-device or production API acceptance.",
+    "file": "narration-draft/sources-07.m4a",
+    "startSeconds": 44.990793,
+    "durationSeconds": 5.524127
+  },
+  {
     "sceneId": "agent",
     "text": "A resident can describe a civic issue in ordinary language, without choosing a form first.",
     "file": "narration-draft/agent-01.m4a",

@@ -265,10 +265,38 @@ const SceneFrame = ({
             </>
           ) : still ? (
             <>
-              <Img
-                src={staticFile(still.file)}
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
-              />
+              {still.file.includes("native-nearby-simulator") ? (
+                <div style={{ display: "flex", height: "100%", gap: 16, padding: 16 }}>
+                  {["top", "bottom"].map((position) => (
+                    <div
+                      key={position}
+                      style={{
+                        width: "50%",
+                        height: "100%",
+                        overflow: "hidden",
+                        position: "relative",
+                        border: `1px solid ${colors.line}`,
+                        borderRadius: 12,
+                      }}
+                    >
+                      <Img
+                        src={staticFile(still.file)}
+                        style={{
+                          width: "100%",
+                          height: "auto",
+                          position: "absolute",
+                          [position]: 0,
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <Img
+                  src={staticFile(still.file)}
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
+              )}
               <div
                 style={{
                   position: "absolute",
@@ -334,7 +362,9 @@ const SceneFrame = ({
             : showDraftClip
               ? `Production browser recording · partial scene coverage · ${review ? "draft narration" : "no narration"}`
               : still
-                ? `Production screenshot · full interaction footage pending · ${review ? "draft narration" : "no narration"}`
+                ? still.file.includes("native-nearby-simulator")
+                  ? `iPhone simulator capture · API origin unverified · physical-device acceptance pending`
+                  : `Production screenshot · full interaction footage pending · ${review ? "draft narration" : "no narration"}`
                 : scene.id === "tiger"
                   ? `Dated query evidence · trend-view footage pending · ${review ? "draft narration" : "no narration"}`
                   : `Storyboard placeholder — not product footage · ${review ? "draft narration" : "no narration"}`}

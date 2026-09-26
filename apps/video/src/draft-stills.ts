@@ -22,8 +22,8 @@ export const draftStills: Partial<Record<SceneId, Still[]>> = {
       description: "Live public consultation links on unified production",
     },
     {
-      file: "captures/unified-nearby-2026-09-26.png",
-      description: "78 public service records on unified production",
+      file: "captures/native-nearby-simulator-2026-09-26.png",
+      description: "Native SwiftUI Nearby · separate simulator build · 2026-09-26",
     },
   ],
   agent: [
