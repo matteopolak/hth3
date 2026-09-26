@@ -12,6 +12,8 @@ import { createParticipationPage } from "../features/participation/index.js";
 import { createPublicApplicationsPage } from "../features/applications/index.js";
 import { createPublicProgramsPage } from "../features/programs/index.js";
 import { createExternalPreparationPage } from "../features/external-preparation/index.js";
+import { createResidentFeedbackCase } from "../features/feedback/resident-case.js";
+import { reopenResidentFeedback } from "../features/feedback/api.js";
 import { agentApprovalIntro, agentApprovalState, agentResult } from "../features/agent-results/index.js";
 import { staffFeedbackOperations, staffWorkspace } from "../features/staff/index.js";
 import { webAuth } from "./auth0.js";
@@ -1862,12 +1864,19 @@ function visibleToolResult(value: unknown): string {
 
 function feedbackPage(): HTMLElement {
   if (state.receipt && !state.showFeedbackForm) {
-    const detail = feedbackCaseDetail(state.receipt, "resident");
-    detail.append(button(t("feedback.newReport"), "button-quiet", () => {
-      state.showFeedbackForm = true;
-      render();
-    }));
-    return detail;
+    return createResidentFeedbackCase({
+      receipt: state.receipt,
+      locale: state.locale,
+      error: state.receiptError || state.error?.message || "",
+      busy: Boolean(state.pending),
+      onRefresh: () => void refreshReceipt(),
+      onReply: (message) => void submitResidentFollowUp(message),
+      onReopen: (message) => void reopenResidentCase(message),
+      onNew: () => {
+        state.showFeedbackForm = true;
+        render();
+      },
+    });
   }
   const layout = el("div", "two-column feedback-flow");
   const left = el("section", "surface primary-surface feedback-main");
@@ -3003,7 +3012,10 @@ async function showEmergencyGuidance(): Promise<void> {
 
 async function refreshReceipt(showPending = true): Promise<void> {
   if (!state.receiptCredentials) return;
-  if (showPending) state.pending = "receipt";
+  if (showPending) {
+    state.pending = "receipt";
+    render();
+  }
   state.receiptError = "";
   try {
     const response = await api.getReceipt(state.receiptCredentials);
@@ -3026,6 +3038,22 @@ async function submitResidentFollowUp(message: string): Promise<void> {
     await refreshReceipt(false);
   } catch (error) {
     state.error = formatError(error);
+  } finally {
+    state.pending = "";
+    render();
+  }
+}
+
+async function reopenResidentCase(message: string): Promise<void> {
+  if (!state.receiptCredentials || !message.trim()) return;
+  state.pending = "resident-reopen";
+  state.error = null;
+  state.receiptError = "";
+  render();
+  try {
+    state.receipt = await reopenResidentFeedback(state.receiptCredentials, message);
+  } catch (error) {
+    state.receiptError = error instanceof Error ? error.message : t("error.generic");
   } finally {
     state.pending = "";
     render();

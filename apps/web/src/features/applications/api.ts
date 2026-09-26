@@ -6,6 +6,7 @@ export interface Posting extends PublicPostingView {
 }
 export interface OfficialJob {
   id: string;
+  origin: "official_external" | "participating_org" | "sample";
   title: string;
   summary: string;
   publisher: string;
@@ -54,7 +55,11 @@ export const applicationsApi = {
         "/discovery?area=jobs&limit=100",
         null,
       )
-    ).items.filter((item) => item.sourceUrl.startsWith("https://")),
+    ).items.filter(
+      (item) =>
+        item.origin === "official_external" &&
+        item.sourceUrl.startsWith("https://"),
+    ),
   own: async (token: string): Promise<ApplicationView[]> =>
     (await api.getApplications(token)).applications,
   resumes: async (token: string): Promise<ResumeView[]> =>
