@@ -1,6 +1,6 @@
 # Web and mobile experience principles
 
-Planning status: these are design requirements for the future web and mobile applications, not a claim that the UI exists.
+These principles describe the current web and native iOS interfaces and guide subsequent changes.
 
 ## What it is
 
@@ -14,7 +14,7 @@ The staff workspace uses a restrained left rail for agent threads and manual tab
 
 Use an original civic identity informed by the clarity of Stripe, the quiet workspace feel of ChatGPT/Notion, and the editorial restraint of Anthropic without copying any one site. Prefer modest type scale, strong hierarchy, neutral surfaces, restrained accents, semantic status colors, visible focus and ample but not wasteful spacing. Avoid nested cards, ubiquitous oversized headings, repetitive three-column feature grids, filler paragraphs and inert controls. Every page needs real loading, error, empty, stale and permission-denied states. Test at phone, tablet and desktop widths and with long French text.
 
-The iOS app is a native SwiftUI public client of the same Worker API, not a webview or a presentation-only mock. Its core search, application, feedback and status flows must use real API responses. Employer and platform administration are web-first. Text alternatives exist for voice; map results also have an accessible list; autofill never commits an answer without review.
+The iOS app is a native SwiftUI public client of the same Worker API. Explore groups jobs, support, funding, nearby services, consultations, and private saved checklists. The nearby map uses only source coordinates and always has a list. An official handoff confirms that the action continues on the publisher's site; it never marks an external application as submitted. Participating-employer applications require editable answers and applicant confirmation, with the private résumé shared separately. Practice postings and feedback are disclosed at the action. Employer and platform administration are web-first. Text alternatives exist for voice.
 
 ## How to change it
 
