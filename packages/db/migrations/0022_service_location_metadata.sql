@@ -15,7 +15,9 @@ CREATE TABLE service_location_metadata (
   details_source_url TEXT CHECK (
     details_source_url IS NULL OR details_source_url LIKE 'https://%'),
   coordinates_source_url TEXT CHECK (
-    coordinates_source_url IS NULL OR coordinates_source_url LIKE 'https://%')
+    coordinates_source_url IS NULL OR coordinates_source_url LIKE 'https://%'),
+  map_location_precision TEXT NOT NULL DEFAULT 'site'
+    CHECK (map_location_precision IN ('site', 'station'))
 );
 
 CREATE INDEX service_location_metadata_category

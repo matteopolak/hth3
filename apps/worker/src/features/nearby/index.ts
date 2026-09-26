@@ -94,7 +94,8 @@ async function loadMetadata(
   const rows = await context.env.DB.prepare(
     `SELECT record_id, service_category, address, public_access_summary,
             services_summary, hours_summary, accessibility_summary,
-            details_verified_at, details_source_url, coordinates_source_url
+            details_verified_at, details_source_url, coordinates_source_url,
+            map_location_precision
      FROM service_location_metadata`,
   ).all<ServiceLocationMetadata>();
   return new Map((rows.results ?? []).map((row) => [row.record_id, row]));

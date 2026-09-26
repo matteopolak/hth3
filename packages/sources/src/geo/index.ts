@@ -17,6 +17,7 @@ export interface ServiceLocationMetadata {
   details_verified_at: string | null;
   details_source_url: string | null;
   coordinates_source_url: string | null;
+  map_location_precision: "site" | "station";
 }
 
 export interface ServiceFact {
@@ -36,6 +37,7 @@ export interface ServiceLocationView {
   pinEligible: boolean;
   pinKind: "official" | "sample" | null;
   coordinatesSourceUrl: string | null;
+  locationPrecision: "site" | "station";
 }
 
 export interface ServiceLocationInput {
@@ -81,6 +83,7 @@ export function serviceBcMetadata(
     details_source_url: BC_SERVICE_URL,
     coordinates_source_url:
       "https://delivery.maps.gov.bc.ca/arcgis/rest/services/whse/bcgw_pub_whse_imagery_and_base_maps/MapServer/51",
+    map_location_precision: "site",
   };
 }
 
@@ -147,6 +150,7 @@ export function serviceLocationView(
         : "official"
       : null,
     coordinatesSourceUrl: metadata?.coordinates_source_url ?? null,
+    locationPrecision: metadata?.map_location_precision ?? "site",
   };
 }
 
