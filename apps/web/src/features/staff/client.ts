@@ -22,12 +22,14 @@ export interface TaxonomyDocument {
 
 export interface Theme {
   id: string;
+  categoryId: string;
   title: { en: string; fr: string };
   summary: { en: string; fr: string };
   count: number;
   previousCount: number;
   change: number;
   sample: boolean;
+  summaryEvidenceRestricted: boolean;
   summaryGeneratedAt: string | null;
   summaryStale: boolean;
   sourceIds: string[];
@@ -38,11 +40,33 @@ export interface ThemesResponse {
   previousTotalSubmissions: number;
   unansweredSubmissions: number;
   generatedAt: string;
+  analyticsAsOf: string | null;
+  analyticsPendingEvents: number;
   categories: Array<{ key: string; count: number }>;
   intents: Array<{ key: string; count: number }>;
   statuses: Array<{ key: string; count: number }>;
   daily: Array<{ day: string; count: number }>;
   themes: Theme[];
+}
+
+export interface ThemeCandidate {
+  submissionId: string;
+  currentThemeId: string;
+  suggestedThemeId: string;
+  categoryId: string;
+  sourceIds: [string, string];
+  similarityScore: number;
+  reviewRequired: true;
+}
+
+export interface ThemeCandidatesResponse {
+  groundingStatus:
+    | "disabled"
+    | "capacity_limit"
+    | "provider_unavailable"
+    | "grounded";
+  reviewRequired: true;
+  suggestions: ThemeCandidate[];
 }
 
 export interface ThemeDetail {

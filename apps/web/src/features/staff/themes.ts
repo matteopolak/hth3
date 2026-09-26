@@ -1,6 +1,8 @@
 import {
   staffRequest,
   type Theme,
+  type ThemeCandidate,
+  type ThemeCandidatesResponse,
   type ThemeDetail,
   type ThemesResponse,
 } from "./client.js";
@@ -22,6 +24,8 @@ export async function mountThemes(context: StaffPageContext): Promise<void> {
   const { host, token, organizationId, locale } = context;
   const view = context.view;
   const path = "/themes?days=30";
+  const candidatePanel = node("section", "staff-theme-review staff-section");
+  let reviewButton: HTMLButtonElement | null = null;
   let overview: ThemesResponse;
   try {
     overview = await staffRequest<ThemesResponse>(token, organizationId, path);
@@ -62,14 +66,24 @@ export async function mountThemes(context: StaffPageContext): Promise<void> {
     top.append(lead, dailyChart(overview.daily, locale));
     host.append(top);
   } else {
+    reviewButton = button(
+      text(locale, "Review suggestions", "Examiner les suggestions"),
+      () => void showCandidates(),
+      "staff-button secondary",
+    );
+    const actions = node("div", "staff-actions");
+    actions.append(
+      reviewButton,
+      button(
+        text(locale, "Refresh", "Actualiser"),
+        () => void refresh(),
+        "staff-button secondary",
+      ),
+    );
     host.append(
       heading(
         text(locale, "Themes", "Thèmes"),
-        button(
-          text(locale, "Refresh", "Actualiser"),
-          () => void refresh(),
-          "staff-button secondary",
-        ),
+        actions,
       ),
     );
     host.append(
@@ -78,6 +92,7 @@ export async function mountThemes(context: StaffPageContext): Promise<void> {
         "staff-page-note",
         `${overview.themes.length} ${text(locale, "active themes · last 30 days", "thèmes actifs · 30 derniers jours")}`,
       ),
+      candidatePanel,
     );
   }
   const lower =
@@ -121,7 +136,7 @@ export async function mountThemes(context: StaffPageContext): Promise<void> {
   const asOf = node(
     "p",
     "staff-muted",
-    `${text(locale, "Updated", "Mis à jour")} ${date(overview.generatedAt, locale)} · ${text(locale, "Counts are submissions", "Les chiffres représentent les signalements")}`,
+    `${text(locale, "Updated", "Mis à jour")} ${date(overview.generatedAt, locale)} · ${text(locale, "Counts are submissions", "Les chiffres représentent les signalements")} · ${overview.analyticsAsOf ? `${text(locale, "Analytics synced", "Analytique synchronisée")} ${date(overview.analyticsAsOf, locale)}` : text(locale, "Analytics not synced yet", "Analytique non encore synchronisée")}${overview.analyticsPendingEvents ? ` · ${overview.analyticsPendingEvents} ${text(locale, "pending sync", "en attente de synchronisation")}` : ""}`,
   );
   host.append(asOf);
 
@@ -130,6 +145,210 @@ export async function mountThemes(context: StaffPageContext): Promise<void> {
       await staffRequest(token, organizationId, "/themes/refresh", "POST");
       await mountThemes(context);
     } catch (error) {
+      setError(host, errorMessage(error, locale));
+    }
+  }
+
+  async function showCandidates(): Promise<void> {
+    if (!reviewButton) return;
+    reviewButton.disabled = true;
+    candidatePanel.classList.add("is-visible");
+    candidatePanel.replaceChildren(
+      node(
+        "p",
+        "staff-muted",
+        text(locale, "Checking for suggestions…", "Recherche de suggestions…"),
+      ),
+    );
+    try {
+      const result = await staffRequest<ThemeCandidatesResponse>(
+        token,
+        organizationId,
+        "/themes/candidates",
+        "POST",
+      );
+      const knownThemes = new Map(overview.themes.map((theme) => [theme.id, theme]));
+      const missingIds = new Set(
+        result.suggestions
+          .flatMap((suggestion) => [
+            suggestion.currentThemeId,
+            suggestion.suggestedThemeId,
+          ])
+          .filter((id) => !knownThemes.has(id)),
+      );
+      await Promise.all(
+        [...missingIds].map(async (id) => {
+          try {
+            const detail = await staffRequest<ThemeDetail>(
+              token,
+              organizationId,
+              `/themes/${encodeURIComponent(id)}`,
+            );
+            knownThemes.set(id, detail.theme);
+          } catch {
+            // A missing theme cannot be reviewed safely; its action stays disabled.
+          }
+        }),
+      );
+      candidatePanel.replaceChildren(
+        node(
+          "h3",
+          "",
+          text(locale, "Suggestions for review", "Suggestions à examiner"),
+        ),
+        node(
+          "p",
+          "staff-muted",
+          text(
+            locale,
+            "Open the linked submissions before moving one. Suggestions never change a theme automatically.",
+            "Ouvrez les signalements liés avant d’en déplacer un. Les suggestions ne modifient jamais un thème automatiquement.",
+          ),
+        ),
+      );
+      if (!result.suggestions.length) {
+        candidatePanel.append(
+          empty(candidateEmptyMessage(result.groundingStatus, locale)),
+        );
+        return;
+      }
+      const list = node("div", "staff-theme-review-list");
+      for (const suggestion of result.suggestions)
+        list.append(candidateRow(suggestion, knownThemes, context));
+      candidatePanel.append(list);
+    } catch (error) {
+      candidatePanel.replaceChildren(
+        node("p", "staff-alert", errorMessage(error, locale)),
+      );
+    } finally {
+      reviewButton.disabled = false;
+    }
+  }
+}
+
+function candidateEmptyMessage(
+  status: ThemeCandidatesResponse["groundingStatus"],
+  locale: StaffPageContext["locale"],
+): string {
+  if (status === "disabled")
+    return text(
+      locale,
+      "Suggestions are unavailable for this organization.",
+      "Les suggestions ne sont pas disponibles pour cette organisation.",
+    );
+  if (status === "capacity_limit")
+    return text(
+      locale,
+      "Suggestions currently require 2–24 eligible submissions.",
+      "Les suggestions exigent actuellement de 2 à 24 signalements admissibles.",
+    );
+  if (status === "provider_unavailable")
+    return text(
+      locale,
+      "Suggestions could not be checked right now.",
+      "Impossible de vérifier les suggestions pour le moment.",
+    );
+  return text(
+    locale,
+    "No suggested moves need review.",
+    "Aucun déplacement suggéré à examiner.",
+  );
+}
+
+function candidateRow(
+  suggestion: ThemeCandidate,
+  themes: Map<string, Theme>,
+  context: StaffPageContext,
+): HTMLElement {
+  const { locale, token, organizationId, host } = context;
+  const current = themes.get(suggestion.currentThemeId);
+  const proposed = themes.get(suggestion.suggestedThemeId);
+  const valid =
+    suggestion.reviewRequired === true &&
+    current?.categoryId === suggestion.categoryId &&
+    proposed?.categoryId === suggestion.categoryId &&
+    current.id !== proposed.id &&
+    suggestion.sourceIds.includes(suggestion.submissionId);
+  const item = node("article", "staff-theme-candidate");
+  const change = node("div", "staff-theme-candidate-change");
+  change.append(
+    node("span", "", current?.title[locale] ?? text(locale, "Theme unavailable", "Thème indisponible")),
+    node("span", "staff-theme-candidate-arrow", "→"),
+    node("strong", "", proposed?.title[locale] ?? text(locale, "Theme unavailable", "Thème indisponible")),
+  );
+  item.append(change);
+  const sources = node("div", "staff-theme-candidate-sources");
+  const ids = [...new Set(suggestion.sourceIds)];
+  ids.forEach((id) => {
+    const link = button(
+      id === suggestion.submissionId
+        ? text(locale, "Review submission", "Examiner le signalement")
+        : text(locale, "Compare submission", "Comparer le signalement"),
+      () => context.onOpenFeedback?.(id),
+      "staff-source-link",
+    );
+    link.disabled = !context.onOpenFeedback;
+    link.title = id;
+    sources.append(link);
+  });
+  item.append(sources);
+  const footer = node("div", "staff-theme-candidate-footer");
+  footer.append(
+    node(
+      "span",
+      "staff-muted",
+      Number.isFinite(suggestion.similarityScore)
+        ? `${Math.round(suggestion.similarityScore * 100)}% ${text(locale, "similarity", "de similarité")}`
+        : text(locale, "Similarity unavailable", "Similarité indisponible"),
+    ),
+  );
+  const accept = button(
+    text(locale, "Move to suggested theme", "Déplacer vers le thème suggéré"),
+    () => void acceptSuggestion(),
+    "staff-button",
+  );
+  accept.disabled = !valid;
+  footer.append(accept);
+  item.append(footer);
+  if (!valid)
+    item.append(
+      node(
+        "p",
+        "staff-muted",
+        text(
+          locale,
+          "Theme details changed. Refresh suggestions before reviewing this move.",
+          "Les détails des thèmes ont changé. Actualisez les suggestions avant d’examiner ce déplacement.",
+        ),
+      ),
+    );
+  return item;
+
+  async function acceptSuggestion(): Promise<void> {
+    if (!valid) return;
+    accept.disabled = true;
+    try {
+      await staffRequest(
+        token,
+        organizationId,
+        `/themes/${encodeURIComponent(suggestion.suggestedThemeId)}/memberships`,
+        "POST",
+        { submissionId: suggestion.submissionId },
+      );
+      await mountThemes(context);
+      host.prepend(
+        node(
+          "p",
+          "staff-review-success",
+          text(
+            locale,
+            "Submission moved to the suggested theme.",
+            "Signalement déplacé vers le thème suggéré.",
+          ),
+        ),
+      );
+    } catch (error) {
+      accept.disabled = false;
       setError(host, errorMessage(error, locale));
     }
   }
@@ -191,20 +410,32 @@ function themeRow(theme: Theme, context: StaffPageContext): HTMLElement {
   card.append(top);
   const summary = theme.summary[locale];
   if (summary) card.append(node("p", "staff-muted", summary));
+  if (theme.summaryEvidenceRestricted)
+    card.append(
+      node(
+        "span",
+        "staff-theme-summary-note",
+        text(
+          locale,
+          "Summary limited for privacy",
+          "Résumé limité pour protéger la vie privée",
+        ),
+      ),
+    );
+  if (theme.summaryStale)
+    card.append(
+      node(
+        "span",
+        "staff-theme-summary-note",
+        text(locale, "Summary needs refresh", "Résumé à actualiser"),
+      ),
+    );
   const meta = node(
     "span",
     "staff-theme-delta",
     `${theme.change >= 0 ? "+" : ""}${theme.change} ${text(locale, "from prior", "depuis avant")}`,
   );
   card.append(meta);
-  if (theme.sample)
-    card.append(
-      node(
-        "span",
-        "staff-source-label",
-        text(locale, "Practice records", "Données d’essai"),
-      ),
-    );
   return card;
 
   async function showTheme(): Promise<void> {
@@ -231,6 +462,26 @@ function themeRow(theme: Theme, context: StaffPageContext): HTMLElement {
       ),
     );
     panel.append(header, node("p", "", detail.theme.summary[locale]));
+    if (detail.theme.summaryGeneratedAt)
+      panel.append(
+        node(
+          "p",
+          "staff-muted",
+          `${text(locale, "Summary updated", "Résumé mis à jour")} ${date(detail.theme.summaryGeneratedAt, locale)}`,
+        ),
+      );
+    if (detail.theme.summaryEvidenceRestricted)
+      panel.append(
+        node(
+          "p",
+          "staff-muted",
+          text(
+            locale,
+            "Summary uses category-level details to protect privacy. Authorized staff can review the linked submissions below.",
+            "Le résumé utilise des détails par catégorie pour protéger la vie privée. Le personnel autorisé peut consulter les signalements liés ci-dessous.",
+          ),
+        ),
+      );
     if (detail.theme.summaryStale)
       panel.append(
         node(
