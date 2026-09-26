@@ -4,6 +4,8 @@
 
 The guest feedback form can start a short, conversational ElevenLabs voice session. The guide asks what happened and what would improve the situation; the resident reviews the captured words before the existing feedback API submits anything.
 
+Live status (2026-09-26): a seven-day ElevenAgents Read API key with a 5,000-credit cap is installed as a production Worker secret and expires on October 3. The signed-URL request currently receives HTTP 401 from ElevenLabs, so production voice intake is unavailable until the key is corrected and a real session is accepted. Typed feedback remains available.
+
 ## How it works
 
 `POST /api/v1/voice/session` accepts `{ "locale": "en" | "fr" }` and returns a temporary private-agent `signedUrl`. The Worker gets it from ElevenLabs with a server-side API key. The browser starts `Conversation.startSession({ signedUrl, connectionType: "websocket", onMessage })` from `@elevenlabs/client`, then fills the editable feedback fields from finalized user transcript turns. The form calls `POST /api/v1/feedback` only after the resident confirms. Typed intake remains available if the microphone is denied, the session limit is reached, or ElevenLabs is unavailable.
@@ -44,7 +46,7 @@ The current agent speaks English. The route accepts `fr` so the client can retai
 - `DB`: D1 database with feedback migration `0005_feedback.sql` applied.
 - `ALLOWED_ORIGINS`: includes the public web origin for the browser request.
 
-Set production secrets with `wrangler secret put ELEVENLABS_API_KEY --env production`. Do not place the key in `wrangler.toml` or `.dev.vars` in Git. Provisioning the Worker key requires an ElevenLabs API key with suitable scope; the CLI's current OAuth token can manage the agent but does not include `service_account_write` to mint a service-account key.
+The production secret is present; rotate it with `wrangler secret put ELEVENLABS_API_KEY --env production` if ElevenLabs reports an invalid, expired, or disabled key. Do not place the key in `wrangler.toml` or `.dev.vars` in Git. The current CLI OAuth token can manage the agent but cannot mint a service-account key on this Creator workspace.
 
 ## Dependencies
 

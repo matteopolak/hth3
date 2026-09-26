@@ -63,9 +63,22 @@ export async function handleVoiceRequest(
     signal: AbortSignal.timeout(10_000),
   }).catch(() => null);
   if (!response?.ok) {
+    const errorPayload = (await response?.json().catch(() => null)) as {
+      detail?: { code?: unknown; status?: unknown; type?: unknown };
+    } | null;
+    const providerStatus = errorPayload?.detail?.status;
+    const providerCode = errorPayload?.detail?.code;
     console.warn("voice_session_unavailable", {
       stage: "upstream",
       status: response?.status ?? "network_error",
+      providerStatus:
+        typeof providerStatus === "string" && /^[a-z_]{1,80}$/.test(providerStatus)
+          ? providerStatus
+          : undefined,
+      providerCode:
+        typeof providerCode === "string" && /^[a-z_]{1,80}$/.test(providerCode)
+          ? providerCode
+          : undefined,
     });
     return featureError(
       context,
