@@ -246,14 +246,15 @@ Public web + React Native app          Government staff/employer web
                   ├─ domain commands and agent tools
                   ├─ Workers AI extraction, theme summaries, staff agent
                   ├─ Jev intent and category decisions
-                  ├─ Tiger Cloud listings, applications, feedback, events
+                  ├─ D1 transactional records and outbox
+                  ├─ Tiger Cloud feedback-event analytics
                   ├─ R2 resumes, attachments and transcripts
                   ├─ Vectorize similar-feedback candidates
                   ├─ ElevenLabs voice agent webhooks
                   └─ Presage client data only when consented
 ```
 
-The Worker owns authorization, validation, orchestration, and external secrets. Clients do not call privileged providers directly. Tiger Cloud is the authoritative database for imported records, postings, applications, feedback, category configuration, theme membership, and metrics; avoid duplicate authoritative stores. R2 stores résumés, attachments and transcript artifacts with access controlled through the Worker. Search indexes and caches are derived and rebuildable. A scheduled import job updates source-backed records without exposing provider credentials to clients.
+The Worker owns authorization, validation, orchestration, and external secrets. Clients do not call privileged providers directly. Cloudflare D1 is the transactional source of truth for imported records, postings, applications, feedback, categories, themes, and an event outbox. Tiger Cloud receives validated feedback events from that outbox and powers time-series aggregates and staff trend charts; it is not a competing write store for applications or private feedback. The outbox retries safely by event ID, exposes lag to staff, and never turns an analytics outage into a false failure of a resident submission. R2 stores résumés, attachments and transcript artifacts with access controlled through the Worker. Search indexes and caches are derived and rebuildable. A scheduled import job updates source-backed records without exposing provider credentials to clients.
 
 The product can run for a fictional municipality/employer without an external government integration. It must never imply that reports or applications are being sent to a real public agency. Within its own resident, applicant and staff accounts, posting, applying, review, feedback submission, assignment, communication, and resolution must all work.
 
@@ -324,7 +325,7 @@ Keep imported source data separate from organization-authored data and labeled s
 
 At minimum, each event stores submission ID, event type, timestamp, actor, organization, and validated payload. Persist an event for creation, classification, correction, theme membership, assignment, status change, message, outcome, reopening, taxonomy publication, and agent approval/execution.
 
-Create a Tiger `feedback_events` hypertable and continuous aggregates for intake volume over time, category/intent counts, and at least one operational metric such as acknowledgement time. Dashboard charts must query those aggregates. Historical synthetic submissions may seed the database, but new user and staff actions must produce real events visible in the same charts.
+Create a Tiger `feedback_events` hypertable and continuous aggregates for intake volume over time, category/intent counts, and at least one operational metric such as acknowledgement time. Dashboard charts must query those aggregates, and the UI must show the latest synchronized event timestamp. Historical synthetic submissions may seed the database with a sample flag, but new user and staff actions must produce real D1 outbox events that arrive in the same Tiger charts. Keep the D1 outbox until Tiger acknowledges each event; replay must be idempotent.
 
 ### Feedback state machine
 
@@ -379,7 +380,7 @@ apps/
 packages/
   contracts/    # bilingual request/response, events, tool and card schemas
   domain/       # application/feedback states, permissions, provenance rules
-  db/           # Tiger migrations and queries
+  db/           # D1 transactional migrations; Tiger analytics schema and queries
   ai/           # Workers AI, Jev, resume extraction adapters
   sources/      # approved feeds, normalizers, registry and freshness rules
   i18n/         # English/French message catalogues
@@ -405,7 +406,7 @@ Use only Luna subagents at `high` or `xhigh` reasoning. All agents may work in t
 
 ### Sequential foundation gate
 
-One core subagent first builds a working vertical slice: pnpm workspace, contracts, English/French catalogues, Worker/API, Tiger persistence, scoped organization/applicant roles, source/sample provenance, one participating-employer posting and in-app application, secure guest feedback/receipt, a seeded taxonomy, manual staff queues, status mutations, and public web/mobile shells. It runs relevant checks, commits, and pushes before feature agents begin. External credentials are required for live provider acceptance; a local fixture may support tests but must be clearly marked and never represented as the live integration.
+One core subagent first builds a working vertical slice: pnpm workspace, contracts, English/French catalogues, Worker/API, D1 persistence/outbox, scoped organization/applicant roles, source/sample provenance, one participating-employer posting and in-app application, secure guest feedback/receipt, a seeded taxonomy, manual staff queues, status mutations, and public web/mobile shells. It runs relevant checks, commits, and pushes before feature agents begin. External credentials are required for live provider acceptance; a local fixture may support tests but must be clearly marked and never represented as the live integration.
 
 The orchestrator verifies this path and CI. Only then does it delegate feature-sized units with explicit package/file ownership, dependencies, acceptance behavior, and test commands. Suggested later units: source adapters/search, résumé extraction/application UX, benefits and funding guidance, map/locations, ElevenLabs intake, Workers AI/Jev decisions, theme grouping and summaries, staff agent and rich cards, Tiger dashboard, mobile/Presage, design polish, and Remotion capture/render.
 
@@ -439,7 +440,7 @@ Keep captions readable and the recorded UI legible at normal playback size. If a
 ### Gate A — complete shared platform and civic loop
 
 - A guest submits constructive criticism on the deployed site without choosing a category or creating an account.
-- Worker persists the original text, secure receipt token hash, submission, and event in Tiger.
+- Worker persists the original text, secure receipt token hash, submission, and outbox event in D1; the event reaches Tiger asynchronously.
 - Staff signs in via Auth0, assigns and acknowledges it, then records an outcome.
 - Guest opens the private receipt link and sees the department, update, and outcome.
 - Guest can provide more information; authorized staff can reopen or close the submission.
@@ -484,7 +485,7 @@ The end-state scope includes every module listed in Section 3; gates order imple
 
 ## 10. Configuration and source references
 
-Expected configuration includes Auth0 domain/audience/client ID, Tiger connection settings, Cloudflare AI/R2/Vectorize bindings, source adapter URLs/keys and refresh schedules, ElevenLabs agent ID and webhook secret, Jev API credentials, and Presage SDK configuration. Use environment-specific secrets; never commit credentials, `.dev.vars`, real applicant résumés, or recordings containing real personal information. A deployment needs an explicitly configured application origin and permitted CORS origins for web/mobile.
+Expected configuration includes Auth0 domain/audience/client ID, D1 database binding, Tiger connection settings, Cloudflare AI/R2/Vectorize bindings, source adapter URLs/keys and refresh schedules, ElevenLabs agent ID and webhook secret, Jev API credentials, and Presage SDK configuration. Use environment-specific secrets; never commit credentials, `.dev.vars`, real applicant résumés, or recordings containing real personal information. A deployment needs an explicitly configured application origin and permitted CORS origins for web/mobile.
 
 - [Hack the Hill III competition guide](https://tracker.hackthehill.com/resources)
 - [MLH Hack the Hill prize categories](https://www.mlh.com/events/hack-the-hill-30/prizes)
