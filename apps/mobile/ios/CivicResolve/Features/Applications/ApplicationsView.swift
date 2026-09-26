@@ -30,7 +30,7 @@ struct ApplicationsView: View {
                             Text(copy("application.sampleLocation")).font(.caption).foregroundStyle(CivicTheme.warning)
                             field(copy("application.experience"), hint: copy("application.experienceHint"), text: $model.applicationExperience, minHeight: 110)
                             field(copy("application.availability"), hint: copy("application.availabilityHint"), text: $model.applicationAvailability, minHeight: 72)
-                            if model.accessToken == nil { InlineNotice(message: copy("auth.signInRequired")) }
+                            if model.accessToken == nil { InlineNotice(message: copy("auth.unavailable")) }
                             Toggle(copy("application.confirm"), isOn: $model.applicationConfirmed)
                                 .font(.subheadline)
                             Button(copy("application.submit")) { Task { await model.submitApplication() } }

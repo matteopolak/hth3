@@ -118,7 +118,7 @@ final class CivicResolveModel: ObservableObject {
 
     func submitApplication() async {
         guard applicationConfirmed else { return }
-        guard let token = accessToken else { error = copy("auth.signInRequired"); return }
+        guard let token = accessToken else { error = copy("auth.unavailable"); return }
         guard !selectedPostingId.isEmpty,
               !applicationExperience.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               !applicationAvailability.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
