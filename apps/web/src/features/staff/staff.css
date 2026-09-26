@@ -597,8 +597,8 @@
 }
 .staff-taxonomy-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  overflow-x: auto;
   border-bottom: 1px solid var(--staff-line);
   padding: 0 18px;
 }
@@ -861,7 +861,13 @@
     padding: 22px 18px 28px;
   }
   .staff-taxonomy-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
     padding: 0 12px;
+    scrollbar-width: none;
+  }
+  .staff-taxonomy-nav::-webkit-scrollbar {
+    display: none;
   }
   .staff-taxonomy-content {
     padding: 20px 17px;

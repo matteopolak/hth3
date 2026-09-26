@@ -957,7 +957,7 @@ function chatPage(mode: ChatMode): HTMLElement {
     void sendChat(mode);
   });
   composeArea.append(composer);
-  if (!hasContent) composeArea.append(chatPromptCards(mode));
+  if (!hasContent && (mode === "resident" || staffSummary)) composeArea.append(chatPromptCards(mode));
   if (chat.contextArea) composeArea.append(el("span", "chat-context-area", chat.contextArea));
   if (chat.savedResume) {
     const chip = el("div", "chat-resume-chip");
@@ -989,9 +989,19 @@ function chatPromptCards(mode: ChatMode): HTMLElement {
         { icon: "feedback", color: "orange", title: "assistant.cardIssueTitle", detail: "assistant.cardIssueDetail", prompt: "assistant.cardIssuePrompt" },
       ]
     : [
-        { icon: "inbox", color: "blue", title: "assistant.cardInboxTitle", detail: "assistant.cardInboxDetail", prompt: "assistant.cardInboxPrompt" },
-        { icon: "tags", color: "violet", title: "assistant.cardThemesTitle", detail: "assistant.cardThemesDetail", prompt: "assistant.cardThemesPrompt" },
-        { icon: "users", color: "orange", title: "assistant.cardApplicantsTitle", detail: "assistant.cardApplicantsDetail", prompt: "assistant.cardApplicantsPrompt" },
+        ...(staffSummary?.capabilities.feedbackRead ? [
+          { icon: "inbox", color: "blue", title: "assistant.cardInboxTitle", detail: "assistant.cardInboxDetail", prompt: "assistant.cardInboxPrompt" },
+          { icon: "tags", color: "violet", title: "assistant.cardThemesTitle", detail: "assistant.cardThemesDetail", prompt: "assistant.cardThemesPrompt" },
+        ] as const : []),
+        ...(staffSummary?.capabilities.applicantReview ? [
+          { icon: "users", color: "orange", title: "assistant.cardApplicantsTitle", detail: "assistant.cardApplicantsDetail", prompt: "assistant.cardApplicantsPrompt" },
+        ] as const : []),
+        ...(staffSummary?.capabilities.sourceManage ? [
+          { icon: "files", color: "blue", title: "assistant.cardSourcesTitle", detail: "assistant.cardSourcesDetail", prompt: "assistant.cardSourcesPrompt" },
+        ] as const : []),
+        ...(staffSummary?.capabilities.taxonomyManage ? [
+          { icon: "taxonomy", color: "violet", title: "assistant.cardTaxonomyTitle", detail: "assistant.cardTaxonomyDetail", prompt: "assistant.cardTaxonomyPrompt" },
+        ] as const : []),
       ];
   const section = el("section", "chat-prompt-section");
   section.append(el("h3", "", t("assistant.suggestionsHeading")));
