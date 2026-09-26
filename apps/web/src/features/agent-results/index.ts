@@ -39,14 +39,31 @@ export function agentResult(value: unknown, locale: Locale): HTMLElement {
   for (const item of items.slice(0, 6))
     list.append(resultItem(kind, item, locale));
   section.append(list);
-  if (total > 6) {
+  if (items.length > 6) {
+    const more = element("details", "agent-result-more");
+    more.append(
+      element(
+        "summary",
+        "",
+        locale === "fr"
+          ? `Afficher ${items.length - 6} autres résultats`
+          : `Show ${items.length - 6} more results`,
+      ),
+    );
+    const remaining = element("div", "agent-result-list");
+    for (const item of items.slice(6))
+      remaining.append(resultItem(kind, item, locale));
+    more.append(remaining);
+    section.append(more);
+  }
+  if (total > items.length) {
     section.append(
       element(
         "p",
-        "agent-result-more",
+        "agent-result-partial",
         locale === "fr"
-          ? `${total - 6} autres résultats`
-          : `${total - 6} more results`,
+          ? `${items.length} résultats sur ${total} affichés`
+          : `Showing ${items.length} of ${total} results`,
       ),
     );
   }
