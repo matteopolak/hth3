@@ -4,6 +4,7 @@ import SwiftUI
 struct NearbyMapView: View {
     @EnvironmentObject private var model: CivicResolveModel
     let items: [DiscoveryItem]
+    let onShowList: () -> Void
     @State private var position: MapCameraPosition = .automatic
 
     var body: some View {
@@ -12,6 +13,8 @@ struct NearbyMapView: View {
                 Text(model.copy("discovery.mapEmpty"))
                     .foregroundStyle(CivicTheme.muted)
             } else {
+                Text("\(mappable.count) \(model.copy(mappable.count == 1 ? "discovery.mapLocationOne" : "discovery.mapLocationMany"))")
+                    .font(.caption).foregroundStyle(CivicTheme.muted)
                 Map(position: $position) {
                     ForEach(mappable) { item in
                         if let coordinate = item.coordinates {
@@ -19,12 +22,12 @@ struct NearbyMapView: View {
                                 NavigationLink {
                                     DiscoveryDetailView(itemID: item.id, includeSamples: item.origin == "sample")
                                 } label: {
-                                    Image(systemName: "mappin.circle.fill")
+                                    Image(systemName: item.origin == "sample" ? "mappin.circle" : "mappin.circle.fill")
                                         .font(.title2)
                                         .foregroundStyle(CivicTheme.ink)
                                         .background(.white, in: Circle())
                                 }
-                                .accessibilityLabel(item.title)
+                                .accessibilityLabel(item.origin == "sample" ? "\(item.title), \(model.copy("discovery.practiceLabel"))" : item.title)
                             }
                         }
                     }
@@ -35,6 +38,11 @@ struct NearbyMapView: View {
                 Text(model.copy("discovery.mapNote"))
                     .font(.caption).foregroundStyle(CivicTheme.muted)
             }
+            Button(action: onShowList) {
+                Label(model.copy("discovery.showList"), systemImage: "list.bullet")
+            }
+            .font(.subheadline)
+            .buttonStyle(.plain)
         }
     }
 

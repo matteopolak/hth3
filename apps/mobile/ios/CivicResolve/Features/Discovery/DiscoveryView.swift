@@ -52,6 +52,7 @@ struct DiscoveryView: View {
     @State private var saved: [DiscoverySavedItem] = []
     @State private var total = 0
     @State private var loading = false
+    @State private var loadingNearbyPages = false
     @State private var error: String?
     @State private var mapMode = false
     private let api = WorkerAPI()
@@ -135,6 +136,9 @@ struct DiscoveryView: View {
                             Text(text("discovery.map")).tag(true)
                         }
                         .pickerStyle(.segmented)
+                        .onChange(of: mapMode) { _, showingMap in
+                            if showingMap { Task { await loadRemainingNearby() } }
+                        }
                     }
                 }
                 if loading { ProgressView(text("common.loading")) }
@@ -144,7 +148,7 @@ struct DiscoveryView: View {
                     Button(text("auth.signInButton")) { Task { await model.signIn() } }
                         .buttonStyle(.bordered)
                 } else if area == .nearby && mapMode && !items.isEmpty {
-                    NearbyMapView(items: items)
+                    NearbyMapView(items: items, onShowList: { mapMode = false })
                 }
                 let visible = area == .saved ? saved.map(\.item) : items
                 if !loading && !visible.isEmpty {
@@ -218,7 +222,16 @@ struct DiscoveryView: View {
         }
         .background(CivicTheme.canvas)
         .navigationBarTitleDisplayMode(.inline)
-        .task { await refresh() }
+        .task {
+            #if DEBUG
+            let arguments = ProcessInfo.processInfo.arguments
+            if let index = arguments.firstIndex(of: "-envoy-area"), arguments.indices.contains(index + 1) {
+                area = DiscoveryArea(rawValue: arguments[index + 1]) ?? .all
+            }
+            mapMode = arguments.contains("-envoy-map")
+            #endif
+            await refresh()
+        }
         .onChange(of: model.accessToken) { _, _ in Task { await refresh() } }
     }
 
@@ -238,6 +251,7 @@ struct DiscoveryView: View {
                 let response = try await api.discovery(area: area.apiValue, query: query, jurisdiction: jurisdiction, currentOnly: currentOnly, includeSamples: includeSamples)
                 items = response.items
                 total = response.total
+                if area == .nearby && mapMode { await loadRemainingNearby() }
             }
         } catch { self.error = error.localizedDescription }
     }
@@ -250,6 +264,19 @@ struct DiscoveryView: View {
             let response = try await api.discovery(area: area.apiValue, query: query, jurisdiction: jurisdiction, currentOnly: currentOnly, includeSamples: includeSamples, offset: items.count)
             items += response.items
             total = response.total
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func loadRemainingNearby() async {
+        guard area == .nearby, !loadingNearbyPages else { return }
+        loadingNearbyPages = true
+        defer { loadingNearbyPages = false }
+        do {
+            while items.count < total {
+                let response = try await api.discovery(area: area.apiValue, query: query, jurisdiction: jurisdiction, currentOnly: currentOnly, includeSamples: includeSamples, offset: items.count)
+                guard !response.items.isEmpty else { break }
+                items += response.items
+            }
         } catch { self.error = error.localizedDescription }
     }
 
@@ -299,7 +326,9 @@ struct DiscoveryDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         detail(text("discovery.publisher"), item.publisher)
                         detail(text("discovery.jurisdiction"), item.jurisdiction.name)
-                        detail(text("discovery.freshness"), item.freshness)
+                        detail(text("discovery.status"), sourceStatus(item))
+                        detail(text("discovery.freshness"), text("discovery.freshness.\(item.freshness)"))
+                        detail(text("discovery.language"), text("discovery.language.\(item.language)"))
                         if let verifiedAt = item.verifiedAt { detail(text("discovery.verified"), String(verifiedAt.prefix(10))) }
                         if let url = URL(string: item.evidenceUrl ?? "") {
                             Link(destination: url) { Label(text("discovery.evidence"), systemImage: "doc.text") }
@@ -444,4 +473,12 @@ struct DiscoveryDetailView: View {
     }
 
     private func text(_ key: String) -> String { model.copy(key) }
+
+    private func sourceStatus(_ item: DiscoveryItem) -> String {
+        switch item.origin {
+        case "sample": text("discovery.practiceLabel")
+        case "official_external": text("discovery.officialSource")
+        default: text("discovery.participatingSource")
+        }
+    }
 }
