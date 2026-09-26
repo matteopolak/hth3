@@ -506,10 +506,16 @@
     overflow-x: auto;
     max-height: none;
     padding: 9px 0 12px;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .ja-result-list::-webkit-scrollbar {
+    display: none;
   }
   .ja-result {
     flex: 0 0 230px;
     border-color: var(--ja-line);
+    scroll-snap-align: start;
   }
   .ja-result:only-child {
     flex-basis: 100%;
@@ -535,7 +541,7 @@
     grid-column: auto;
   }
   .ja-result {
-    flex-basis: 100%;
+    flex-basis: calc(100% - 44px);
   }
   .ja-answer {
     grid-template-columns: 1fr;
