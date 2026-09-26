@@ -1047,8 +1047,12 @@ function proposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
     const action = proposal.preview.name.replace(/^staff_/, "").replaceAll("_", " ");
     card.append(el("p", "proposal-action", action.charAt(0).toUpperCase() + action.slice(1)));
   }
-  const fields = proposalFields(proposal.preview.body);
-  if (fields) card.append(fields);
+  const changes = proposalChanges(proposal.preview.changes);
+  if (changes) card.append(changes);
+  else {
+    const fields = proposalFields(proposal.preview.body);
+    if (fields) card.append(fields);
+  }
   if (proposal.preview.destinationNotice) {
     card.append(el("p", "proposal-notice", proposal.preview.destinationNotice));
   }
@@ -1082,6 +1086,50 @@ function proposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
   actions.append(decline, approve);
   card.append(actions);
   return card;
+}
+
+function proposalChanges(value: unknown): HTMLElement | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  const rows = value.filter((item): item is Record<string, unknown> =>
+    item !== null && typeof item === "object" && !Array.isArray(item) &&
+    typeof item.field === "string" && item.field.trim().length > 0);
+  if (rows.length === 0) return null;
+
+  const section = el("div", "proposal-changes");
+  section.append(el("p", "proposal-changes-title", t("assistant.proposedChanges")));
+  const table = el("table", "proposal-changes-table");
+  const head = el("thead");
+  head.append(el("tr", "",
+    el("th", "", t("assistant.changeField")),
+    el("th", "", t("assistant.changeBefore")),
+    el("th", "", t("assistant.changeAfter")),
+  ));
+  const body = el("tbody");
+  for (const change of rows) {
+    const row = el("tr");
+    const field = el("th", "proposal-change-field", change.field as string);
+    field.scope = "row";
+    const before = el("td", "proposal-change-value", proposalChangeValue(change.before));
+    before.dataset.label = t("assistant.changeBefore");
+    const after = el("td", "proposal-change-value", proposalChangeValue(change.after));
+    after.dataset.label = t("assistant.changeAfter");
+    row.append(field, before, after);
+    body.append(row);
+  }
+  table.append(head, body);
+  section.append(table);
+  return section;
+}
+
+function proposalChangeValue(value: unknown): string {
+  if (value === null || value === undefined) return t("assistant.changeNoValue");
+  if (typeof value === "string") return value.length > 0 ? value : t("assistant.changeEmptyText");
+  if (typeof value === "boolean") return t(value ? "assistant.changeYes" : "assistant.changeNo");
+  if (typeof value === "number") return String(value);
+  if (Array.isArray(value) && value.length === 0) return t("assistant.changeEmptyList");
+  if (typeof value === "object" && Object.keys(value).length === 0) return t("assistant.changeEmptyObject");
+  try { return JSON.stringify(value, null, 2) ?? t("assistant.changeNoValue"); }
+  catch { return t("assistant.changeNoValue"); }
 }
 
 function proposalFields(value: unknown): HTMLElement | null {
