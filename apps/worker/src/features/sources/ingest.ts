@@ -44,11 +44,12 @@ export async function ingestOfficialSources(
           'permitted', ?, ?, ?, ?, ?, ?, 'current', ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           external_id=excluded.external_id, title=excluded.title,
-          summary=excluded.summary,
+          summary=excluded.summary, source_url=excluded.source_url,
           publisher=excluded.publisher, licence_name=excluded.licence_name,
           licence_url=excluded.licence_url, terms_url=excluded.terms_url,
           fetched_at=excluded.fetched_at, verified_at=excluded.verified_at,
           expires_at=excluded.expires_at, payload_hash=excluded.payload_hash,
+          evidence_url=excluded.evidence_url,
           freshness_state='current',
           last_error_code=NULL, updated_at=excluded.updated_at
       `,
@@ -99,6 +100,14 @@ export async function ingestOfficialSources(
             `Could not persist official source details ${record.id}`,
           );
       }
+      const area = areaForRecord(record);
+      await database
+        .prepare(
+          `INSERT INTO discovery_record_areas (record_id, area) VALUES (?, ?)
+           ON CONFLICT(record_id) DO UPDATE SET area=excluded.area`,
+        )
+        .bind(record.id, area)
+        .run();
     }
 
     const latestExpiry = records.reduce(
@@ -149,4 +158,19 @@ export async function ingestOfficialSources(
   }
 
   return { imported: result.records.length, failures: result.failedSources };
+}
+
+function areaForRecord(
+  record: OfficialIngestRecord,
+): "jobs" | "support" | "funding" | "nearby" | "participation" {
+  if (record.kind === "jobs_finder") return "jobs";
+  if (record.kind === "benefits_finder") return "support";
+  if (record.kind === "funding_finder") return "funding";
+  if (record.kind === "service_location") return "nearby";
+  if (
+    record.sourceId === "federal-service-canada-offices" ||
+    record.sourceId === "serviceontario-location-finder"
+  )
+    return "nearby";
+  return "participation";
 }

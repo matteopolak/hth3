@@ -32,6 +32,8 @@ import { ingestOfficialSources } from "../features/sources/ingest.js";
 import { handleEmployerRequest } from "../features/employer/index.js";
 import { handleThemesRequest } from "../features/themes/index.js";
 import { handleDiscoveryRequest } from "../features/discovery/index.js";
+import { handleNearbyRequest } from "../features/nearby/index.js";
+import { handleConsultationRequest } from "../features/consultations/index.js";
 import { handleProgramIntakeRequest } from "../features/program-intake/index.js";
 import { handleExternalPreparationRequest } from "../features/external-preparation/index.js";
 import type { FeatureContext } from "../features/shared.js";
@@ -125,6 +127,18 @@ const worker = {
         featureContext,
       );
       if (discoveryResponse) return discoveryResponse;
+      const nearbyResponse = await handleNearbyRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (nearbyResponse) return nearbyResponse;
+      const consultationResponse = await handleConsultationRequest(
+        request,
+        url,
+        featureContext,
+      );
+      if (consultationResponse) return consultationResponse;
       const programIntakeResponse = await handleProgramIntakeRequest(
         request,
         url,

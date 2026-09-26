@@ -9,7 +9,8 @@
     "./feedback": "./src/feedback/index.ts",
     "./taxonomy": "./src/taxonomy/index.ts",
     "./program-intake": "./src/program-intake/index.ts",
-    "./external-preparation": "./src/external-preparation/index.ts"
+    "./external-preparation": "./src/external-preparation/index.ts",
+    "./themes": "./src/themes/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
