@@ -10,7 +10,7 @@ This is the release and evidence checklist for the Civic Technology submission. 
 
 - [ ] Open `https://envoy.matteopolak.workers.dev/` on a clean browser and confirm the deployed commit/build. The combined Worker serves the web app and `/api/*`.
 - [ ] Confirm guest chat, source search, feedback, and receipt paths work end to end from that one origin.
-- [ ] Recheck source freshness. The 2026-09-26 unified production view showed six job finders, four open consultations plus three official directories, and 78 Nearby results. A previous source snapshot had 65 Service BC office records. Do not call a finder an individual vacancy, award, or eligibility result.
+- [ ] Recheck source freshness. A read-only production API check at 02:44 UTC on 2026-09-27 returned **25 individual `job_posting` records** in Jobs. The earlier unified production view showed six job finders, four open consultations plus three official directories, and 78 Nearby results. A previous source snapshot had 65 Service BC office records. Keep finders distinct from individual vacancies, awards, or eligibility results.
 - [ ] Submit one new non-emergency report to the Envoy review team, confirm its private receipt, and verify persistence after refresh. Keep the token private and make the destination clear.
 - [ ] Verify a new outbox event reaches Tiger; note synchronization time. The 2026-09-26 19:41 UTC read-only check showed four delivered and four aggregate events, including submitted and classified events from an earlier Envoy report. Recheck before presenting.
 - [ ] Retain the new production Workers AI bench proposal capture, with its Envoy-only destination and disabled Confirm button visible. The 2026-09-26 combined Worker version `837bf16a` returned this pending card; recheck the final deployed build before judging.
@@ -57,11 +57,11 @@ The field copy below is proposed for an editable revision. It may differ from th
 
 **Project story:**
 
-> Finding a job, service, benefit, or way to participate in a public decision often means jumping between websites and interpreting unfamiliar language. Envoy gives people one place to explore source-linked information and see where each record came from.
+> Finding the right public service can mean jumping between websites, interpreting unfamiliar language, and deciding which office can help. When something goes wrong, residents also need to know who will receive their report before they send it.
 >
-> A guest can ask the assistant for help with a civic issue. Workers AI can prepare an editable feedback proposal, show the destination, and wait for explicit approval. Residents can send non-emergency feedback to the Envoy review team and keep a private receipt.
+> envoy turns scattered public information into clear next steps. The live Jobs board has 25 individual postings; residents can also explore support and funding, find nearby services on a source-backed map, and follow official participation opportunities. A guest assistant streams responses and can turn a civic issue into an editable feedback proposal. The resident sees its destination and approves before anything is sent. People can submit non-emergency feedback to the Envoy review team and follow it with a private receipt. No municipality or employer participates today, and reports do not go to a government office. Official application and consultation links lead to their publishers; opening a link is never recorded as a submission.
 >
-> No municipality or employer participates today, and Envoy does not forward feedback to a government office. External opportunities lead to their official publishers; opening a link does not count as an application. The web app and API run on Cloudflare Workers with D1, R2, and Workers AI. Privacy-safe feedback events reach Tiger Data while report text stays out of analytics. We also built a bilingual web experience and native SwiftUI companion. Our next step is a verified organization pilot.
+> One Cloudflare Worker serves the web app and API. D1 stores sourced records, feedback, receipts, and reviewed assistant actions; R2 holds private files. Cloudflare Workers AI powers the assistants and feedback classification, with streaming responses and explicit approval cards for writes. A D1 outbox sends privacy-safe feedback events to Tiger Data for trends while report text stays out of analytics. We also built a native SwiftUI iOS companion on the same API.
 
 **What was challenging:** Keeping source provenance and freshness visible, making AI suggestions reviewable, and showing the report's actual destination before submission.
 
