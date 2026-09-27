@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./geo": "./src/geo/index.ts",
+    "./adapters/city-jobs": "./src/adapters/city-jobs/index.ts",
     "./adapters/consultations": "./src/adapters/consultations/index.ts"
   },
   "scripts": {
