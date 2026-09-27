@@ -405,6 +405,18 @@ export function confirmedFeedbackMessage(
     !/submit|envoyer/i.test(disclosure.message)
   )
     return null;
+  const disclosureStart = disclosure.message.search(
+    /This will go only to|Cela sera envoyé uniquement/i,
+  );
+  const inlineSummary =
+    disclosureStart > 0
+      ? disclosure.message.slice(0, disclosureStart).trim()
+      : "";
+  const precedingTurn = turns.at(-3);
+  const summary =
+    inlineSummary ||
+    (precedingTurn?.role === "agent" ? precedingTurn.message.trim() : "");
+  if (summary.length < 20) return null;
   const message = turns
     .slice(0, -2)
     .filter((turn) => turn.role === "user")

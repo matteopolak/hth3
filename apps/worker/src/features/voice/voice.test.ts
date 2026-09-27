@@ -8,7 +8,7 @@ const issue = {
 const englishDisclosure = {
   role: "agent" as const,
   message:
-    "This will go only to Envoy's review team, not a government office. Is this summary accurate, and should I submit it now? Say yes, submit it to confirm.",
+    "A streetlight near your home has been dark for two nights. This will go only to Envoy's review team, not a government office. Is this summary accurate, and should I submit it now? Say yes, submit it to confirm.",
 };
 
 describe("spoken voice submission", () => {
@@ -32,6 +32,38 @@ describe("spoken voice submission", () => {
     ).toBeNull();
   });
 
+  it("does not submit when the agent skips the summary", () => {
+    expect(
+      confirmedFeedbackMessage([
+        issue,
+        {
+          role: "agent",
+          message:
+            "This will go only to Envoy's review team, not a government office. Is this summary accurate, and should I submit it now? Say yes, submit it to confirm.",
+        },
+        { role: "user", message: "Yes, submit it." },
+      ]),
+    ).toBeNull();
+  });
+
+  it("accepts a separate summary immediately before the disclosure", () => {
+    expect(
+      confirmedFeedbackMessage([
+        issue,
+        {
+          role: "agent",
+          message: "A streetlight near your home has been dark for two nights.",
+        },
+        {
+          role: "agent",
+          message:
+            "This will go only to Envoy's review team, not a government office. Is this summary accurate, and should I submit it now? Say yes, submit it to confirm.",
+        },
+        { role: "user", message: "Yes, submit it." },
+      ]),
+    ).toBe(issue.message);
+  });
+
   it("does not infer submission from the agent's words", () => {
     expect(
       confirmedFeedbackMessage([
@@ -49,7 +81,7 @@ describe("spoken voice submission", () => {
         {
           role: "agent",
           message:
-            "Cela sera envoyé uniquement à l'équipe de révision d'Envoy, pas à un bureau gouvernemental. Ce résumé est-il exact et dois-je l'envoyer maintenant? Dites oui, envoyez-le pour confirmer.",
+            "Un lampadaire près de chez vous est éteint depuis deux nuits. Cela sera envoyé uniquement à l'équipe de révision d'Envoy, pas à un bureau gouvernemental. Ce résumé est-il exact et dois-je l'envoyer maintenant? Dites oui, envoyez-le pour confirmer.",
         },
         { role: "user", message: "Oui, envoyez-le." },
       ]),
