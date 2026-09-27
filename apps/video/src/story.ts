@@ -16,7 +16,8 @@ export const scenes = [
     title: "Follow the official source",
     caption:
       "Official job and participation links lead to publishers. Nearby services show source and freshness.",
-    capture: "Job finder, public consultations, nearby service detail, and official handoff",
+    capture:
+      "Job finder, public consultations, nearby service detail, and official handoff",
     required: true,
   },
   {
@@ -25,7 +26,8 @@ export const scenes = [
     title: "Talk through a service issue",
     caption:
       "A resident describes a problem in plain language. Workers AI prepares an editable proposal that waits for approval.",
-    capture: "Production guest chat with pending, unsubmitted feedback approval",
+    capture:
+      "Production guest chat with pending, unsubmitted feedback approval",
     required: true,
   },
   {
@@ -33,14 +35,14 @@ export const scenes = [
     seconds: 50,
     title: "Review before sending",
     caption:
-      "A practice draft is reviewed here. A separately submitted practice report has a private receipt. No government office receives it.",
-    capture: "Practice notice, report submission, and redacted receipt",
+      "See the destination before sending. Reports stay with Envoy and receive a private receipt.",
+    capture: "Destination notice, report submission, and redacted receipt",
     required: true,
   },
   {
     id: "tiger",
     seconds: 45,
-    title: "A report leaves an auditable trace",
+    title: "See how feedback moves",
     caption:
       "D1 keeps the report. Its outbox sends privacy-safe events to Tiger for time-series analysis.",
     capture:
@@ -52,9 +54,9 @@ export const scenes = [
     seconds: 45,
     title: "Staff access has a boundary",
     caption:
-      "The practice staff workspace is configured for Auth0 roles. Live token and role acceptance is still pending.",
+      "Roles and organization membership scope staff actions. Live staff access is still being verified.",
     capturedCaption:
-      "An authenticated staff role can respond within its own practice workspace; the resident sees the update.",
+      "An authenticated staff role can respond within its own Envoy workspace; the resident sees the update.",
     capture: "Optional: accepted staff reply and resident update",
     required: false,
   },
@@ -63,7 +65,7 @@ export const scenes = [
     seconds: 25,
     title: "A clearer civic journey",
     caption:
-      "Official links remain official links. Practice feedback remains in envoy until a real organization participates.",
+      "Official links remain official links. Reports stay with envoy until a real organization participates.",
     capture: "Final deployed source and receipt view",
     required: true,
   },

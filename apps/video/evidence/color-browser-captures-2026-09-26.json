@@ -1,0 +1,64 @@
+{
+  "captureDateLocal": "2026-09-26 America/Toronto",
+  "capturedAtUtcRange": "2026-09-27T00:19:56Z/2026-09-27T00:44:34Z",
+  "method": "An isolated headless Chrome profile captured actual browser frames through Chrome DevTools Protocol at 1600 by 900. Frames were encoded as silent MP4 clips. The user's active browser was not used.",
+  "scope": "The local Vite clips show the current color and filled-icon UI, including route motion. They do not prove production deployment or provider acceptance. The assistant clip was captured separately from the unified production Worker. Neither the assistant proposal nor the feedback review was submitted.",
+  "clips": [
+    {
+      "file": "captures/color-home-interaction-2026-09-26.mp4",
+      "origin": "http://localhost:5173/",
+      "seconds": 16,
+      "sha256": "7b697e7bfd41efd43fcccb1c67e6e6c06508623d2c0c144c0d5ffb10b6eb51f6",
+      "observed": "Guest assistant home showed the updated filled navigation icons, broad prompt, and three task suggestions."
+    },
+    {
+      "file": "captures/color-sources-interaction-2026-09-26.mp4",
+      "origin": "http://localhost:5173/",
+      "seconds": 48,
+      "sha256": "2bfae41b37873a456e2e1e58bd8484801adb46e8647c902aa8b9e17c8aff3221",
+      "localRouteCommit": "9a90756",
+      "observed": "Jobs, Participation, and Nearby navigation showed five local job finder results, four open consultations, and thirteen local Nearby results. The Jobs to Participation and Participation to Nearby transitions visibly animated. Map and List controls both responded."
+    },
+    {
+      "file": "captures/color-agent-interaction-2026-09-26.mp4",
+      "origin": "https://civicresolve-api-production.matteopolak.workers.dev/",
+      "seconds": 50,
+      "sha256": "909f9bcb041f33af6b15e3e9d84d1045b3f95814c6aace8c1c927ee96c84227b",
+      "workerVersion": "302031ab",
+      "observed": "Guest asked how to report a damaged bench at Nathan Phillips Square and explicitly asked not to submit. Workers AI returned a pending, editable Submit feedback proposal. The card named Envoy's review team, stated Toronto would not receive it, and kept Confirm disabled with the acknowledgment unchecked."
+    },
+    {
+      "file": "captures/color-feedback-interaction-2026-09-26.mp4",
+      "origin": "http://localhost:5173/",
+      "seconds": 28,
+      "sha256": "4f5d4e0480fc1ca4795464b6c5d11c34a305cae3d834fb082da3f8085e3bfb5b",
+      "observed": "Guest entered a fictional pedestrian-signal concern in the updated feedback form and opened the review step. The current copy says the report goes to Envoy rather than a government office. The acknowledgment remained unchecked and Submit feedback stayed disabled; no report was submitted."
+    }
+  ],
+  "stills": [
+    {
+      "file": "captures/color-home-2026-09-26.png",
+      "sha256": "32855bf7a92f509fcd5921fa63c6b3dd3f3d8aef007716dac46cfb6046a9f16a"
+    },
+    {
+      "file": "captures/color-jobs-2026-09-26.png",
+      "sha256": "c3cb21cf1edad40f41b63f2c26de30eed3b86c16a946c234837e00f6c0711a96"
+    },
+    {
+      "file": "captures/color-participation-2026-09-26.png",
+      "sha256": "e131cecd7eb0d823d3a2359e42b9c095a21ca388dff0b2a5fd7209fc1b0719d3"
+    },
+    {
+      "file": "captures/color-nearby-2026-09-26.png",
+      "sha256": "2d7c84e1dca1e500b94274c6bdc05d07da77b98c889279cc12fd206b1b51845d"
+    },
+    {
+      "file": "captures/color-agent-pending-2026-09-26.png",
+      "sha256": "9d2993e6565d1a1fcd0e1f17b549d8575e7bd3d22bdc2ec7f37afb28320d3e28"
+    },
+    {
+      "file": "captures/color-feedback-review-2026-09-26.png",
+      "sha256": "43f3effffeea6538929025c7ff2c69d458f4078350eb69e3a998068f956b5602"
+    }
+  ]
+}

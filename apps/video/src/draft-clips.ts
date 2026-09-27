@@ -6,27 +6,28 @@ type DraftClip = {
   description: string;
 };
 
-// These short recordings show the unified deployed site on 2026-09-26. They
-// establish only the interaction visible in each clip, not final-scene coverage.
+// These short recordings show the local color build or unified deployed site on
+// 2026-09-26. They establish only the visible interaction, not final coverage.
 export const draftClips: Partial<Record<SceneId, DraftClip>> = {
   home: {
-    file: "captures/unified-home-interaction-2026-09-26.mp4",
+    file: "captures/color-home-interaction-2026-09-26.mp4",
     seconds: 16,
-    description: "Unified production guest entry, 2026-09-26",
+    description: "Local color build guest entry, 2026-09-26",
   },
   sources: {
-    file: "captures/unified-sources-interaction-2026-09-26.mp4",
+    file: "captures/color-sources-interaction-2026-09-26.mp4",
     seconds: 48,
-    description: "Live Jobs, Participation and Nearby navigation, 2026-09-26",
+    description:
+      "Local color build Jobs, Participation and Nearby navigation, 2026-09-26",
   },
   agent: {
-    file: "captures/unified-proposal-agent-interaction-2026-09-26.mp4",
+    file: "captures/color-agent-interaction-2026-09-26.mp4",
     seconds: 50,
-    description: "Production pending feedback approval, 2026-09-26",
+    description: "Unified production pending feedback approval, 2026-09-26",
   },
   feedback: {
-    file: "captures/unified-feedback-interaction-2026-09-26.mp4",
+    file: "captures/color-feedback-interaction-2026-09-26.mp4",
     seconds: 28,
-    description: "Unified production practice draft and review, 2026-09-26",
+    description: "Local color build feedback entry and review, 2026-09-26",
   },
 };

@@ -5,49 +5,50 @@
   "scenes": {
     "home": [
       "This is envoy. It helps residents find public services and take the next step when something is wrong.",
-      "The workspace you are seeing is a practice environment. No municipality or employer is participating.",
+      "Envoy connects residents to public sources, services, and a report inbox in one place.",
       "Anyone can begin as a guest. The assistant, service finder, and feedback entry point are visible without an account."
     ],
     "sources": [
       "A useful civic journey starts with a source people can trust.",
       "Here, envoy opens official job finders, current public consultations, and nearby service locations.",
-      "The Service BC office record shows its publisher, address, review date, and a link to the official site. Participation links also lead to the government publisher.",
+      "A nearby service record shows its publisher, address, and a link to the official site. Participation links also lead to the government publisher.",
       "A finder link is a route to the publisher. It is not a claim that an individual vacancy is open or that someone qualifies for a program.",
       "Before visiting, residents should confirm current hours and services with the source agency.",
-      "The native SwiftUI Nearby map appears next in an iPhone simulator.",
-      "This simulator image does not establish physical-device or production API acceptance."
+      "The SwiftUI companion also shows nearby services on an iPhone simulator.",
+      "Physical-device and production API checks remain ahead for the native app."
     ],
     "agent": [
       "A resident can describe a civic issue in ordinary language, without choosing a form first.",
-      "This production guest chat uses a clearly labeled practice scenario: a damaged bench at Nathan Phillips Square in Toronto.",
+      "A resident asks how to report a damaged bench at Nathan Phillips Square in Toronto.",
       "Workers AI replies with a feedback preview, and envoy shows a pending approval card with editable words.",
       "The card names envoy's review team as the destination and says the City of Toronto does not receive the report.",
-      "The acknowledgement is unchecked, Confirm is disabled, and we leave this practice proposal unsubmitted."
+      "The resident can edit or decline. This report remains unsubmitted."
     ],
     "feedback": [
-      "This feedback form works for guests too. The words here are explicitly marked as a practice report.",
-      "The form moves to a review screen and states that the City of Toronto does not receive it.",
-      "The acknowledgement is still unchecked in this recording, so this draft is not submitted here.",
-      "A separate captured practice report was submitted through envoy and received a private receipt. That receipt appears next, with its access token hidden.",
+      "Guests can share a concern in their own words and see where their report will go.",
+      "The form moves to a review screen and states that no government office receives it.",
+      "Before sending, envoy shows the destination and asks for an explicit acknowledgement.",
+      "Envoy issues a private receipt after submission. The review screen shown here remains unsubmitted.",
       "For an emergency, residents must use emergency services. This inbox is not monitored for urgent response."
     ],
     "tiger": [
-      "After an approved practice submission, D1 stores the case as the source of truth.",
+      "After a resident confirms submission to Envoy, D1 stores the case as the source of truth.",
       "An outbox sends privacy-safe event metadata to Tiger for time-series analysis. It does not send the resident's message body.",
-      "This read-only query was taken on September twenty-sixth at nineteen forty-one UTC.",
-      "It showed four delivered feedback events and four events in the daily aggregate. Two were submitted and classified events for the practice report shown earlier.",
-      "These are dated query results. A fresh event or dashboard view must be checked before claiming a current count."
+      "The September twenty-sixth Tiger snapshot shows how feedback events were delivered.",
+      "It showed four delivered feedback events and four events in the daily aggregate. Two were submitted and classified events for an earlier Envoy report.",
+      "Counts can change as new reports arrive. The displayed timestamp keeps this result in context."
     ],
     "staff": [
       "A staff workspace needs stronger evidence than a sign-in screen.",
-      "Auth0 hosted sign-in and the practice organization are configured, but a live staff role token and scoped case action have not yet passed acceptance.",
-      "The intended boundary is an Auth0 grant plus matching organization membership checked by the Worker.",
-      "Until that is verified, this scene shows the boundary honestly and does not imitate a staff reply."
+      "Auth0 hosted sign-in and an Envoy organization are configured, but a live staff role token and scoped case action have not yet passed acceptance.",
+      "The Worker checks Auth0 grants and matching organization membership before a staff action.",
+      "A staff reply becomes available only after those checks pass with a real token.",
+      "The team is verifying a permitted case action and a denied unauthorized action before showing staff work live."
     ],
     "closing": [
-      "envoy combines official source handoffs, a guest assistant, and reviewable practice feedback.",
-      "Real places and source links appear alongside clearly labeled fictional intake. No government office receives these practice reports.",
-      "Next, we need a participating organization and verified staff access."
+      "envoy combines official source handoffs, a guest assistant, and reviewable resident feedback.",
+      "Real places and source links appear alongside Envoy's own report inbox. No government office receives these reports.",
+      "The next milestone is a participating organization and verified staff access."
     ]
   }
 }
