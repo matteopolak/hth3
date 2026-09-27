@@ -6,7 +6,7 @@ The repository uses a pnpm workspace for the Worker, public clients, and shared 
 
 ## How it works
 
-`pnpm-workspace.yaml` lists `apps/*` and `packages/*`. The root manifest pins pnpm 11.10.0 and defines local development, lint, typecheck, test, build, and aggregate check commands. This Node-based CLI avoids the macOS `ENOEXEC` failure seen when older pnpm launchers try to spawn pnpm 12's shebang-less native placeholder. It reads and enforces the strict 14-day release window and rejects missing registry timestamps. `.github/workflows/check.yml` applies the frozen lockfile install and check suite on pushes to `main`, pull requests, and manual runs.
+`pnpm-workspace.yaml` lists `apps/*` and `packages/*`. The root manifest and `.github/workflows/check.yml` both pin pnpm 11.10.0; keeping them equal avoids the setup action's multiple-version failure. The root scripts define local development, lint, typecheck, test, build, and aggregate checks. This Node-based CLI avoids the macOS `ENOEXEC` failure seen when older pnpm launchers try to spawn pnpm 12's shebang-less native placeholder. It reads and enforces the strict 14-day release window and rejects missing registry timestamps. CI applies the frozen lockfile install and check suite on pushes to `main`, pull requests, and manual runs.
 
 Dependency lifecycle scripts stay disabled unless explicitly addressed under `allowBuilds` in `pnpm-workspace.yaml`. Exact esbuild and workerd versions required by Vitest/Wrangler are allowed to install their runtimes; the unused sharp build is explicitly denied.
 
