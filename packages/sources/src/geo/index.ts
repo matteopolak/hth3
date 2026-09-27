@@ -104,13 +104,11 @@ export function serviceLocationView(
       : validDate(record.expiresAt) &&
         now.getTime() < Date.parse(record.expiresAt!));
   const field = (summary: string | null | undefined): ServiceFact => ({
-    status: !summary?.trim()
-      ? "unknown"
-      : reviewCurrent
-        ? "verified"
-        : "stale",
+    status: !summary?.trim() ? "unknown" : reviewCurrent ? "verified" : "stale",
     summary: summary?.trim() || "Check the official source before visiting",
-    verifiedAt: summary?.trim() ? metadata?.details_verified_at ?? null : null,
+    verifiedAt: summary?.trim()
+      ? (metadata?.details_verified_at ?? null)
+      : null,
     sourceUrl: safeSource,
   });
   const publicAccess = field(metadata?.public_access_summary);

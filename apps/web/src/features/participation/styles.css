@@ -339,25 +339,73 @@
 }
 
 @media (max-width: 800px) {
-  .participation-directory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .participation-opportunity { grid-template-columns: 68px minmax(0, 1fr); gap: 15px; }
-  .participation-action { grid-column: 2; justify-self: start; }
+  .participation-directory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .participation-opportunity {
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 15px;
+  }
+  .participation-action {
+    grid-column: 2;
+    justify-self: start;
+  }
 }
 
 @media (max-width: 520px) {
-  .participation-heading { align-items: flex-start; margin-bottom: 19px; }
-  .participation-intro { font-size: 12px; }
-  .participation-count { display: none; }
-  .participation-filters { gap: 2px; margin-bottom: 22px; }
-  .participation-filter { font-size: 11px; padding: 6px 9px; }
-  .participation-opportunity { grid-template-columns: 50px minmax(0, 1fr); padding: 17px 13px; gap: 13px; }
-  .participation-date { min-height: 82px; padding-right: 10px; }
-  .participation-date-day { font-size: 28px; }
-  .participation-date-month { font-size: 10px; }
-  .participation-date-caption { font-size: 9px; }
-  .participation-opportunity-title { font-size: 14px; }
-  .participation-summary { font-size: 11px; }
-  .participation-action { grid-column: 2; font-size: 11px; min-height: 32px; }
-  .participation-directory-grid { grid-template-columns: 1fr; gap: 8px; }
-  .participation-directory-card { min-height: 150px; padding: 16px; }
+  .participation-heading {
+    align-items: flex-start;
+    margin-bottom: 19px;
+  }
+  .participation-intro {
+    font-size: 12px;
+  }
+  .participation-count {
+    display: none;
+  }
+  .participation-filters {
+    gap: 2px;
+    margin-bottom: 22px;
+  }
+  .participation-filter {
+    font-size: 11px;
+    padding: 6px 9px;
+  }
+  .participation-opportunity {
+    grid-template-columns: 50px minmax(0, 1fr);
+    padding: 17px 13px;
+    gap: 13px;
+  }
+  .participation-date {
+    min-height: 82px;
+    padding-right: 10px;
+  }
+  .participation-date-day {
+    font-size: 28px;
+  }
+  .participation-date-month {
+    font-size: 10px;
+  }
+  .participation-date-caption {
+    font-size: 9px;
+  }
+  .participation-opportunity-title {
+    font-size: 14px;
+  }
+  .participation-summary {
+    font-size: 11px;
+  }
+  .participation-action {
+    grid-column: 2;
+    font-size: 11px;
+    min-height: 32px;
+  }
+  .participation-directory-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .participation-directory-card {
+    min-height: 150px;
+    padding: 16px;
+  }
 }

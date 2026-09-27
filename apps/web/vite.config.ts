@@ -26,9 +26,7 @@ function localOrigins(): string[] {
 export default defineConfig(({ command, mode }) => {
   const environment = loadEnv(mode, webDir, "VITE_");
   const apiBaseUrl =
-    process.env.VITE_API_BASE_URL ??
-    environment.VITE_API_BASE_URL ??
-    "/api/v1";
+    process.env.VITE_API_BASE_URL ?? environment.VITE_API_BASE_URL ?? "/api/v1";
 
   return {
     plugins:

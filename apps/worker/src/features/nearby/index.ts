@@ -36,11 +36,21 @@ export async function handleNearbyRequest(
 ): Promise<Response | null> {
   if (url.pathname !== ROOT) return null;
   if (request.method !== "GET")
-    return featureError(context, "METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+    return featureError(
+      context,
+      "METHOD_NOT_ALLOWED",
+      "Method not allowed.",
+      405,
+    );
 
   const category = url.searchParams.get("category");
   if (category && !isCategory(category))
-    return featureError(context, "INVALID_FILTER", "Unknown service category.", 400);
+    return featureError(
+      context,
+      "INVALID_FILTER",
+      "Unknown service category.",
+      400,
+    );
   const limit = boundedInteger(url.searchParams.get("limit"), 30, 1, 100);
   const offset = boundedInteger(url.searchParams.get("offset"), 0, 0, 10000);
   if (limit === null || offset === null)
@@ -57,7 +67,11 @@ export async function handleNearbyRequest(
   let samplesIncluded = false;
   do {
     discoveryUrl.searchParams.set("offset", String(items.length));
-    const response = await handleDiscoveryRequest(request, discoveryUrl, context);
+    const response = await handleDiscoveryRequest(
+      request,
+      discoveryUrl,
+      context,
+    );
     if (!response || !response.ok) return response;
     const page = (await response.json()) as DiscoveryPage;
     total = page.total;

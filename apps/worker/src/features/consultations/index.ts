@@ -13,14 +13,20 @@ export async function handleConsultationRequest(
   url: URL,
   context: FeatureContext,
 ): Promise<Response | null> {
-  if (url.pathname !== ROOT && !url.pathname.startsWith(`${ROOT}/`)) return null;
+  if (url.pathname !== ROOT && !url.pathname.startsWith(`${ROOT}/`))
+    return null;
   if (request.method !== "GET")
     return featureError(context, "METHOD_NOT_ALLOWED", "Use GET.", 405);
 
   if (url.pathname === ROOT) {
     const jurisdiction = url.searchParams.get("jurisdiction");
     if (jurisdiction && !["CA", "CA-BC", "CA-ON"].includes(jurisdiction))
-      return featureError(context, "INVALID_FILTER", "Unknown jurisdiction.", 400);
+      return featureError(
+        context,
+        "INVALID_FILTER",
+        "Unknown jurisdiction.",
+        400,
+      );
     const query = jurisdiction
       ? context.env.DB.prepare(
           `SELECT * FROM consultations WHERE jurisdiction_code = ?
@@ -44,7 +50,9 @@ export async function handleConsultationRequest(
   const match = url.pathname.match(ITEM);
   if (!match)
     return featureError(context, "NOT_FOUND", "Consultation not found.", 404);
-  const row = await context.env.DB.prepare("SELECT * FROM consultations WHERE id = ?")
+  const row = await context.env.DB.prepare(
+    "SELECT * FROM consultations WHERE id = ?",
+  )
     .bind(match[1]!)
     .first<ConsultationRow>();
   if (!row)
@@ -58,7 +66,8 @@ export async function handleConsultationRequest(
       sourceState: consultation.sourceState,
       deadlineDate: consultation.deadlineDate,
       participationStatus: consultation.participationStatus,
-      instruction: "Continue on the official site. Envoy has not recorded a contribution.",
+      instruction:
+        "Continue on the official site. Envoy has not recorded a contribution.",
       externalOnly: true,
       inAppSubmission: false,
       requestId: context.requestId,

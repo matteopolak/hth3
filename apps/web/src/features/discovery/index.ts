@@ -1,5 +1,11 @@
 import type { Locale } from "@civicresolve/contracts/v1";
-import { Building2, BusFront, HandHeart, LibraryBig, MapPin } from "lucide-static";
+import {
+  Building2,
+  BusFront,
+  HandHeart,
+  LibraryBig,
+  MapPin,
+} from "lucide-static";
 import { createDiscoveryAreaStructure } from "./area-structures.js";
 import "./styles.css";
 
@@ -12,7 +18,12 @@ export type DiscoveryArea =
   | "participation"
   | "saved";
 
-type ServiceCategory = "government" | "library" | "community" | "transit" | "other";
+type ServiceCategory =
+  | "government"
+  | "library"
+  | "community"
+  | "transit"
+  | "other";
 
 interface ServiceFact {
   status: "verified" | "stale" | "unknown";
@@ -124,7 +135,8 @@ const copy = {
     serviceSource: "Source",
     serviceNoAddress: "Address not verified",
     serviceNoSummary: "No verified details available.",
-    serviceStationPin: "Approximate station location; check the source for the counter entrance.",
+    serviceStationPin:
+      "Approximate station location; check the source for the counter entrance.",
     consultationFinder: "Consultation finder",
     sourceRecord: "Official source",
     chooseResult: "Choose a result to view details.",
@@ -132,7 +144,8 @@ const copy = {
     map: "Map",
     mapNote:
       "Pins use source-backed coordinates. Nearby pins may be spaced for readability; this is not a street map.",
-    mapUnavailable: "These services have no source-backed map pins. See the full list.",
+    mapUnavailable:
+      "These services have no source-backed map pins. See the full list.",
     mappedLocations: "Mapped locations",
     listOnly: "Other services remain available in the list.",
     jurisdiction: "Jurisdiction",
@@ -231,7 +244,8 @@ const copy = {
     serviceSource: "Source",
     serviceNoAddress: "Adresse non vérifiée",
     serviceNoSummary: "Aucun détail vérifié disponible.",
-    serviceStationPin: "Emplacement approximatif de la station; vérifiez l’entrée du comptoir à la source.",
+    serviceStationPin:
+      "Emplacement approximatif de la station; vérifiez l’entrée du comptoir à la source.",
     consultationFinder: "Recherche de consultations",
     sourceRecord: "Source officielle",
     chooseResult: "Choisissez un résultat pour voir les détails.",
@@ -365,7 +379,8 @@ export function createDiscoveryPage({
           offset: String(offset),
         });
         if (area !== "all" && area !== "nearby") params.set("area", area);
-        if (area === "nearby" && serviceCategory !== "all") params.set("category", serviceCategory);
+        if (area === "nearby" && serviceCategory !== "all")
+          params.set("category", serviceCategory);
         if (query) params.set("q", query);
         if (location) params.set("location", location);
         if (currentOnly) params.set("freshness", "current");
@@ -538,7 +553,9 @@ export function createDiscoveryPage({
       section.append(node("p", "", text.emptySaved));
       return section;
     }
-    const hasFilters = Boolean(query || location || currentOnly || serviceCategory !== "all");
+    const hasFilters = Boolean(
+      query || location || currentOnly || serviceCategory !== "all",
+    );
     section.append(
       node("p", "", hasFilters ? text.emptyFiltered : text.emptyUnfiltered),
     );
@@ -580,27 +597,33 @@ export function createDiscoveryPage({
   function filters(): HTMLElement {
     const form = node("form", "discovery-search");
     if (area === "jobs" || area === "support" || area === "funding") {
-      form.append(createDiscoveryAreaStructure({
-        area,
-        locale,
-        selectedLocation: location,
-        onBrowse: () => {
-          const search = root.querySelector<HTMLInputElement>(".discovery-input");
-          search?.scrollIntoView({
-            block: "center",
-            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-          });
-          search?.focus();
-        },
-        onSearchLocation: (nextLocation) => {
-          location = nextLocation;
-          locationDraft = nextLocation;
-          query = queryDraft.trim();
-          offset = 0;
-          mobileDetail = false;
-          void refresh();
-        },
-      }));
+      form.append(
+        createDiscoveryAreaStructure({
+          area,
+          locale,
+          selectedLocation: location,
+          onBrowse: () => {
+            const search =
+              root.querySelector<HTMLInputElement>(".discovery-input");
+            search?.scrollIntoView({
+              block: "center",
+              behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+                .matches
+                ? "auto"
+                : "smooth",
+            });
+            search?.focus();
+          },
+          onSearchLocation: (nextLocation) => {
+            location = nextLocation;
+            locationDraft = nextLocation;
+            query = queryDraft.trim();
+            offset = 0;
+            mobileDetail = false;
+            void refresh();
+          },
+        }),
+      );
     }
     const fields = node("div", "discovery-search-fields");
     const keywordField = node("label", "discovery-search-field");
@@ -660,17 +683,32 @@ export function createDiscoveryPage({
       const categories = node("div", "discovery-service-filters");
       categories.setAttribute("role", "group");
       categories.setAttribute("aria-label", text.serviceCategory);
-      for (const category of ["all", "government", "library", "community", "transit", "other"] as const) {
-        const label = category === "all" ? text.allServices : serviceCategoryName(category);
-        const filter = action(label, `discovery-service-filter ${serviceCategory === category ? "is-active" : ""}`, () => {
-          serviceCategory = category;
-          query = queryDraft.trim();
-          location = locationDraft.trim();
-          offset = 0;
-          mobileDetail = false;
-          void refresh();
-        });
-        filter.setAttribute("aria-pressed", String(serviceCategory === category));
+      for (const category of [
+        "all",
+        "government",
+        "library",
+        "community",
+        "transit",
+        "other",
+      ] as const) {
+        const label =
+          category === "all" ? text.allServices : serviceCategoryName(category);
+        const filter = action(
+          label,
+          `discovery-service-filter ${serviceCategory === category ? "is-active" : ""}`,
+          () => {
+            serviceCategory = category;
+            query = queryDraft.trim();
+            location = locationDraft.trim();
+            offset = 0;
+            mobileDetail = false;
+            void refresh();
+          },
+        );
+        filter.setAttribute(
+          "aria-pressed",
+          String(serviceCategory === category),
+        );
         categories.append(filter);
       }
       form.append(categories);
@@ -749,22 +787,48 @@ export function createDiscoveryPage({
     const view = node("div", "discovery-map");
     view.append(node("span", "discovery-map-north", "N"));
     const key = node("div", "discovery-map-key");
-    key.append(node("strong", "discovery-map-key-heading", `${points.length} ${text.mappedLocations}`));
+    key.append(
+      node(
+        "strong",
+        "discovery-map-key-heading",
+        `${points.length} ${text.mappedLocations}`,
+      ),
+    );
     const placed: Array<{ x: number; y: number }> = [];
     for (const [index, item] of points.entries()) {
-      const rawX = 7 + ((item.coordinates.longitude - minLon) / (maxLon - minLon)) * 86;
-      const rawY = 7 + (1 - (item.coordinates.latitude - minLat) / (maxLat - minLat)) * 86;
-      const offsets: Array<[number, number]> = [[0, 0], [0, 9], [9, 0], [-9, 0], [0, -9], [9, 9], [-9, 9], [9, -9], [-9, -9]];
-      const place = offsets.map(([dx, dy]) => ({
-        x: Math.max(7, Math.min(93, rawX + dx)),
-        y: Math.max(7, Math.min(93, rawY + dy)),
-      })).find(({ x, y }) => placed.every((point) => Math.hypot(point.x - x, point.y - y) >= 8)) ?? { x: rawX, y: rawY };
+      const rawX =
+        7 + ((item.coordinates.longitude - minLon) / (maxLon - minLon)) * 86;
+      const rawY =
+        7 + (1 - (item.coordinates.latitude - minLat) / (maxLat - minLat)) * 86;
+      const offsets: Array<[number, number]> = [
+        [0, 0],
+        [0, 9],
+        [9, 0],
+        [-9, 0],
+        [0, -9],
+        [9, 9],
+        [-9, 9],
+        [9, -9],
+        [-9, -9],
+      ];
+      const place = offsets
+        .map(([dx, dy]) => ({
+          x: Math.max(7, Math.min(93, rawX + dx)),
+          y: Math.max(7, Math.min(93, rawY + dy)),
+        }))
+        .find(({ x, y }) =>
+          placed.every((point) => Math.hypot(point.x - x, point.y - y) >= 8),
+        ) ?? { x: rawX, y: rawY };
       placed.push(place);
-      const marker = action(item.title, `discovery-map-pin category-${item.service?.category ?? "other"} ${item.service?.pinKind === "sample" ? "is-sample" : ""}`, () => {
-        selected = item;
-        mobileDetail = true;
-        render();
-      });
+      const marker = action(
+        item.title,
+        `discovery-map-pin category-${item.service?.category ?? "other"} ${item.service?.pinKind === "sample" ? "is-sample" : ""}`,
+        () => {
+          selected = item;
+          mobileDetail = true;
+          render();
+        },
+      );
       marker.textContent = String(index + 1);
       const label = `${item.title} · ${item.service ? serviceCategoryName(item.service.category) : text.locationRecord}${item.service?.locationPrecision === "station" ? ` · ${text.serviceStationPin}` : ""}${item.origin === "sample" ? ` · ${text.practiceLabel}` : ""}`;
       marker.setAttribute("aria-label", label);
@@ -779,24 +843,36 @@ export function createDiscoveryPage({
         render();
       });
       keyRow.replaceChildren(
-        node("span", `discovery-map-key-number category-${item.service?.category ?? "other"}`, String(index + 1)),
-        node("span", "discovery-map-key-copy",
-          item.title,
+        node(
+          "span",
+          `discovery-map-key-number category-${item.service?.category ?? "other"}`,
+          String(index + 1),
+        ),
+        node("span", "discovery-map-key-copy", item.title),
+      );
+      keyRow.append(
+        node(
+          "small",
+          "",
+          item.service
+            ? serviceCategoryName(item.service.category)
+            : text.locationRecord,
         ),
       );
-      keyRow.append(node("small", "", item.service ? serviceCategoryName(item.service.category) : text.locationRecord));
       if (selected?.id === item.id) keyRow.classList.add("is-selected");
       key.append(keyRow);
     }
     const container = node("div", "discovery-map-wrap");
     container.append(view, key, node("p", "discovery-muted", text.mapNote));
-    if (points.length < items.length) container.append(node("p", "discovery-muted", text.listOnly));
+    if (points.length < items.length)
+      container.append(node("p", "discovery-muted", text.listOnly));
     return container;
   }
 
   function itemType(item: DiscoveryItem): string {
     if (item.origin === "sample") return text.practiceLabel;
-    if (area === "nearby" && item.service) return serviceCategoryName(item.service.category);
+    if (area === "nearby" && item.service)
+      return serviceCategoryName(item.service.category);
     if (item.origin === "participating_org") return text.verifiedListing;
     if (item.type === "service_location") return text.locationRecord;
     if (item.type === "consultation_finder") return text.consultationFinder;
@@ -867,7 +943,8 @@ export function createDiscoveryPage({
     else view.append(node("p", "discovery-muted", text.noHandoff));
     if (!token) view.append(node("p", "discovery-muted", text.signIn));
     if (notice) view.append(node("p", "discovery-notice", notice));
-    if (area === "nearby" && item.service) view.append(serviceDetails(item.service));
+    if (area === "nearby" && item.service)
+      view.append(serviceDetails(item.service));
     const facts = node("dl", "discovery-facts");
     for (const [label, value] of [
       [text.freshness, item.freshness],
@@ -887,7 +964,8 @@ export function createDiscoveryPage({
       [text.terms, item.termsUrl],
       [item.licence.name ?? text.licence, item.licence.url],
       ...(area === "nearby" && item.service?.coordinatesSourceUrl
-        ? [[text.map, item.service.coordinatesSourceUrl] as [string, string]] : []),
+        ? [[text.map, item.service.coordinatesSourceUrl] as [string, string]]
+        : []),
     ] as Array<[string, string | null]>) {
       if (!url || !isHttps(url)) continue;
       const link = node("a", "discovery-link", label);
@@ -912,7 +990,9 @@ export function createDiscoveryPage({
     );
     section.append(address);
     if (service.locationPrecision === "station")
-      section.append(node("p", "discovery-service-precision", text.serviceStationPin));
+      section.append(
+        node("p", "discovery-service-precision", text.serviceStationPin),
+      );
     const facts = node("div", "discovery-service-facts");
     for (const [label, fact] of [
       [text.servicePublicAccess, service.publicAccess],
@@ -924,12 +1004,20 @@ export function createDiscoveryPage({
       entry.append(node("strong", "", label));
       entry.append(node("p", "", fact.summary || text.serviceNoSummary));
       const meta = node("div", "discovery-service-fact-meta");
-      const status = fact.status === "verified" ? text.serviceVerified
-        : fact.status === "stale" ? text.serviceStale : text.serviceUnknown;
+      const status =
+        fact.status === "verified"
+          ? text.serviceVerified
+          : fact.status === "stale"
+            ? text.serviceStale
+            : text.serviceUnknown;
       const date = fact.verifiedAt ? new Date(fact.verifiedAt) : null;
-      const validDate = date && !Number.isNaN(date.getTime())
-        ? date.toLocaleDateString(locale) : null;
-      meta.append(node("span", "", validDate ? `${status} · ${validDate}` : status));
+      const validDate =
+        date && !Number.isNaN(date.getTime())
+          ? date.toLocaleDateString(locale)
+          : null;
+      meta.append(
+        node("span", "", validDate ? `${status} · ${validDate}` : status),
+      );
       if (isHttps(fact.sourceUrl)) {
         const link = node("a", "discovery-link", text.serviceSource);
         link.href = fact.sourceUrl;

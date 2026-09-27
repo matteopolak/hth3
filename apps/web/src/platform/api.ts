@@ -143,7 +143,12 @@ export const api = {
     const formData = new FormData();
     formData.append("file", file);
     return request<{
-      asset: { id: string; fileName: string; contentType: string; byteSize: number };
+      asset: {
+        id: string;
+        fileName: string;
+        contentType: string;
+        byteSize: number;
+      };
     }>(`/agent/conversations/${encodeURIComponent(id)}/feedback-evidence`, {
       method: "POST",
       headers: conversationHeaders(credentials),
@@ -194,10 +199,13 @@ export const api = {
       { method: "POST", headers: { Authorization: `Bearer ${token}` } },
     ),
   deleteResume: (token: string, resumeId: string) =>
-    request<{ deleted: true }>(`/profile/resumes/${encodeURIComponent(resumeId)}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    request<{ deleted: true }>(
+      `/profile/resumes/${encodeURIComponent(resumeId)}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
   shareResume: (token: string, applicationId: string, resumeId: string) =>
     request<{ resumeId: string }>(
       `/applications/${encodeURIComponent(applicationId)}/resume`,
@@ -208,10 +216,12 @@ export const api = {
       },
     ),
   createVoiceSession: (locale: Locale) =>
-    request<{ signedUrl: string; expiresInSeconds: number; locale: Locale; voiceSessionToken: string }>(
-      "/voice/session",
-      { method: "POST", body: { locale } },
-    ),
+    request<{
+      signedUrl: string;
+      expiresInSeconds: number;
+      locale: Locale;
+      voiceSessionToken: string;
+    }>("/voice/session", { method: "POST", body: { locale } }),
   getVoiceSessionStatus: (voiceSessionToken: string) =>
     request<{
       status: "pending" | "not_submitted" | "duplicate" | "submitted";
@@ -307,10 +317,13 @@ export const api = {
     municipalityId: string,
     category?: string,
   ) =>
-    request<{ duplicate: FeedbackDuplicate | null }>("/feedback/duplicate-check", {
-      method: "POST",
-      body: { message, municipalityId, ...(category ? { category } : {}) },
-    }),
+    request<{ duplicate: FeedbackDuplicate | null }>(
+      "/feedback/duplicate-check",
+      {
+        method: "POST",
+        body: { message, municipalityId, ...(category ? { category } : {}) },
+      },
+    ),
   submitFeedback: (
     message: string,
     whatWouldImprove: string,
@@ -318,24 +331,21 @@ export const api = {
     locale: Locale,
     duplicateOverride = false,
   ) =>
-    request<FeedbackSubmitResponse>(
-      "/feedback",
-      {
-        method: "POST",
-        headers: {
-          "Idempotency-Key": crypto.randomUUID(),
-          "X-Receipt-Token": credentials.receiptToken,
-        },
-        body: {
-          message,
-          whatWouldImprove,
-          municipalityId: "3520005",
-          sandboxAcknowledged: true,
-          duplicateOverride,
-          locale,
-        },
+    request<FeedbackSubmitResponse>("/feedback", {
+      method: "POST",
+      headers: {
+        "Idempotency-Key": crypto.randomUUID(),
+        "X-Receipt-Token": credentials.receiptToken,
       },
-    ),
+      body: {
+        message,
+        whatWouldImprove,
+        municipalityId: "3520005",
+        sandboxAcknowledged: true,
+        duplicateOverride,
+        locale,
+      },
+    }),
   getReceipt: (credentials: ReceiptCredentials) =>
     request<{ submission: FeedbackClientReceipt }>(
       `/feedback/receipts/${encodeURIComponent(credentials.submissionId)}`,
