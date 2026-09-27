@@ -24,6 +24,32 @@ interface ProgramItem {
   status?: unknown;
 }
 
+/** Keep sandbox intake records out of public resident agent responses. */
+export function publicProgramResult(
+  name: string,
+  result: { status: number; data: unknown },
+): { status: number; data: unknown } {
+  if (result.status >= 400) return result;
+  const data = result.data as {
+    programs?: ProgramItem[];
+    program?: ProgramItem;
+  } | null;
+  if (name === "list_programs" && Array.isArray(data?.programs))
+    return {
+      ...result,
+      data: {
+        ...data,
+        programs: data.programs.filter((program) => program.sample !== true),
+      },
+    };
+  if (name === "read_program" && data?.program?.sample === true)
+    return {
+      status: 404,
+      data: { error: { code: "PROGRAM_NOT_FOUND" } },
+    };
+  return result;
+}
+
 function markdownText(value: string): string {
   return value
     .replace(/\s+/gu, " ")
@@ -95,22 +121,24 @@ export function publicOpportunityAnswer(
 ): string {
   if (tool.name === "list_programs") {
     const programs = (data as { programs?: ProgramItem[] } | null)?.programs;
-    if (!Array.isArray(programs) || programs.length === 0)
+    const visiblePrograms = Array.isArray(programs)
+      ? programs.filter((program) => program.sample !== true)
+      : [];
+    if (visiblePrograms.length === 0)
       return locale === "fr"
-        ? "Aucun programme d'admission directe n'est actuellement publié dans Envoy. Les programmes officiels sont accessibles depuis les pages de leurs éditeurs."
-        : "No direct-intake programs are currently published in Envoy. Official programs continue on their publishers' sites.";
-    const lines = programs.slice(0, 12).map((item) => {
+        ? "Aucun programme d'admission directe n'est actuellement publié dans Envoy. Explorez les rubriques Aide et Financement pour trouver des programmes officiels et poursuivre sur le site de leur éditeur."
+        : "No direct-intake programs are currently published in Envoy. Explore Support and Funding for official programs, then continue on each publisher's site.";
+    const lines = visiblePrograms.slice(0, 12).map((item) => {
       const title = markdownText(String(item.title ?? "Program"));
       const sponsor = markdownText(String(item.sponsor ?? "Envoy"));
-      const practice = item.sample === true;
       return locale === "fr"
-        ? `- ${title} — ${practice ? "admission d'exercice" : "admission publiée"} (${sponsor})`
-        : `- ${title} — ${practice ? "practice intake" : "published intake"} (${sponsor})`;
+        ? `- ${title} — admission publiée (${sponsor})`
+        : `- ${title} — published intake (${sponsor})`;
     });
     const intro =
       locale === "fr"
-        ? "Voici les programmes d'admission publiés dans Envoy. Les programmes d'exercice ne sont pas des demandes gouvernementales."
-        : "These are Envoy's published intake programs. Practice intakes are not government applications.";
+        ? "Voici les programmes d'admission directe publiés dans Envoy."
+        : "These are Envoy's published direct-intake programs.";
     return `${intro}\n\n${lines.join("\n")}`;
   }
   const result = data as { items?: DiscoveryItem[]; total?: number } | null;
@@ -120,14 +148,23 @@ export function publicOpportunityAnswer(
     return locale === "fr"
       ? `Je n'ai trouvé aucune offre ${area === "funding" ? "de financement" : "d'aide"} correspondante parmi les sources publiées.`
       : `I found no matching ${area} programs among the published sources.`;
+  const singular = items.length === 1;
   const noun =
     area === "funding"
       ? locale === "fr"
-        ? "aides financières"
-        : "funding opportunities"
+        ? singular
+          ? "aide financière"
+          : "aides financières"
+        : singular
+          ? "funding opportunity"
+          : "funding opportunities"
       : locale === "fr"
-        ? "programmes d'aide"
-        : "support programs";
+        ? singular
+          ? "programme d'aide"
+          : "programmes d'aide"
+        : singular
+          ? "support program"
+          : "support programs";
   const intro =
     locale === "fr"
       ? `J'ai trouvé ${items.length} ${noun} provenant de sources officielles. Vérifiez l'admissibilité et poursuivez sur le site de l'éditeur.`

@@ -6,6 +6,7 @@ import {
   isCapabilityQuestion,
   publicOpportunityAnswer,
   publicOpportunityTool,
+  publicProgramResult,
   relevantToolForMessage,
 } from "./guidance.js";
 import { prepareTool } from "./tools.js";
@@ -64,6 +65,7 @@ it("grounds support, funding, and Envoy program questions in read-only APIs", ()
   expect(answer).toContain(
     "[Better Jobs Ontario](https://www.ontario.ca/page/better-jobs-ontario)",
   );
+  expect(answer).toContain("I found 1 support program from official sources.");
   expect(answer).toContain("continue on the publisher's site");
   const programs = publicOpportunityTool(
     "Which programs can I apply to through Envoy? Please distinguish practice programs from official programs.",
@@ -71,13 +73,37 @@ it("grounds support, funding, and Envoy program questions in read-only APIs", ()
   expect(
     prepareTool(programs!.name, programs!.args, "resident", null).path,
   ).toBe("/api/v1/programs");
+  const filtered = publicProgramResult("list_programs", {
+    status: 200,
+    data: {
+      programs: [
+        {
+          id: "sample-intake",
+          title: "Community support intake",
+          sample: true,
+        },
+        { id: "official-intake", title: "Official intake", sample: false },
+      ],
+    },
+  });
+  expect(filtered.data).toEqual({
+    programs: [
+      { id: "official-intake", title: "Official intake", sample: false },
+    ],
+  });
   expect(
-    publicOpportunityAnswer(
-      { programs: [{ title: "Community support intake", sample: true }] },
-      "en",
-      programs!,
-    ),
-  ).toContain("Community support intake — practice intake");
+    publicProgramResult("read_program", {
+      status: 200,
+      data: { program: { title: "Community support intake", sample: true } },
+    }),
+  ).toEqual({ status: 404, data: { error: { code: "PROGRAM_NOT_FOUND" } } });
+  const guestAnswer = publicOpportunityAnswer(
+    { programs: [{ title: "Community support intake", sample: true }] },
+    "en",
+    programs!,
+  );
+  expect(guestAnswer).toContain("No direct-intake programs");
+  expect(guestAnswer).not.toContain("Community support intake");
 });
 
 it("finds current City of Ottawa roles and their closing dates without a model-selected tool", () => {

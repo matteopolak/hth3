@@ -19,6 +19,7 @@ import {
   isCapabilityQuestion,
   publicOpportunityAnswer,
   publicOpportunityTool,
+  publicProgramResult,
   relevantToolForMessage,
 } from "./guidance.js";
 import {
@@ -879,12 +880,17 @@ async function callTool(
       );
   }
   if (prepared.tool.access === "read") {
-    const result = await executeTool(
+    const rawResult = await executeTool(
       request,
       context,
       prepared,
       request.headers.get("X-Receipt-Token") ?? undefined,
     );
+    const result =
+      conversation.mode === "resident" &&
+      (name === "list_programs" || name === "read_program")
+        ? publicProgramResult(name, rawResult)
+        : rawResult;
     if (name === "prepare_resume_upload" && result.status < 400)
       return {
         result: {
