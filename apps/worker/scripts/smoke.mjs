@@ -104,12 +104,17 @@ try {
       403,
     );
 
-    const publicPostings = await fetch(`${baseUrl}/api/v1/postings`);
+    const publicPostings = await fetch(
+      `${baseUrl}/api/v1/postings?includeSamples=true`,
+    );
     const postingBody = await publicPostings.json();
-    assert(publicPostings.status === 200, "sample posting list is public");
+    assert(
+      publicPostings.status === 200,
+      "sample posting list is available by opt-in",
+    );
     assert(
       postingBody.postings.some((posting) => posting.sample === true),
-      "public posting is explicitly labeled as sample",
+      "opted-in posting is explicitly labeled as sample",
     );
 
     const guestFeedback = await requestApi("/api/v1/feedback", {
