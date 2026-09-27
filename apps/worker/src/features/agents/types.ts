@@ -23,6 +23,18 @@ export interface AiBinding {
       }>;
       max_tokens?: number;
       temperature?: number;
+      stream: true;
+    },
+  ): Promise<ReadableStream<Uint8Array>>;
+  run(
+    model: string,
+    input: {
+      messages: Array<{
+        role: "system" | "user" | "assistant";
+        content: string;
+      }>;
+      max_tokens?: number;
+      temperature?: number;
     },
   ): Promise<AiGeneration>;
 }

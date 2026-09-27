@@ -18,6 +18,7 @@ import {
   relevantToolForMessage,
 } from "./guidance.js";
 import { proposalChanges, type ProposalChange } from "./proposal-changes.js";
+import { modelDeltas } from "./stream.js";
 import {
   executeTool,
   prepareTool,
@@ -48,6 +49,7 @@ interface AgentRequestBody {
   locale?: unknown;
   organizationId?: unknown;
   message?: unknown;
+  toolMentions?: unknown;
   tool?: unknown;
   args?: unknown;
   approved?: unknown;
@@ -88,6 +90,13 @@ export async function handleAgentRequest(
     return conversationView(conversation, context);
   if (path.length === 2 && path[1] === "messages" && request.method === "POST")
     return sendMessage(request, conversation, context);
+  if (
+    path.length === 3 &&
+    path[1] === "messages" &&
+    path[2] === "stream" &&
+    request.method === "POST"
+  )
+    return streamMessage(request, conversation, context);
   if (path.length === 2 && path[1] === "tools" && request.method === "POST")
     return invokeTool(request, conversation, context);
   if (
@@ -282,8 +291,17 @@ async function sendMessage(
   request: Request,
   conversation: ConversationRow,
   context: AgentContext,
+  deferAssistant = false,
 ): Promise<Response> {
   const body = await jsonBody(request);
+  const mentionedTools = allowedToolMentions(body?.toolMentions, conversation);
+  if (!mentionedTools)
+    return featureError(
+      context,
+      "INVALID_TOOL_MENTIONS",
+      "Choose at most three available tools.",
+      400,
+    );
   const message = body?.message;
   if (
     typeof message !== "string" ||
@@ -297,14 +315,15 @@ async function sendMessage(
       400,
     );
   const safeMessage = redactSecrets(message.trim());
-  if (isCapabilityQuestion(safeMessage)) {
+  if (isCapabilityQuestion(safeMessage) && mentionedTools.length === 0) {
     const answer = capabilityAnswer(
       conversation.mode,
       conversation.locale,
       conversation.organization_id,
     );
     await storeMessage(conversation.id, "user", safeMessage, context);
-    await storeMessage(conversation.id, "assistant", answer, context);
+    if (!deferAssistant)
+      await storeMessage(conversation.id, "assistant", answer, context);
     return featureJson(context, { apiVersion: API_VERSION, message: answer });
   }
   if (!context.env.AI)
@@ -333,7 +352,14 @@ async function sendMessage(
   try {
     response = await context.env.AI.run(MODEL, {
       messages: [
-        { role: "system", content: systemPrompt(conversation) },
+        {
+          role: "system",
+          content:
+            systemPrompt(conversation) +
+            (mentionedTools.length
+              ? `\nThe person explicitly selected these available tools: ${mentionedTools.join(", ")}. Choose at most one selected tool when relevant. Use only arguments supported by that tool.`
+              : ""),
+        },
         ...recent.map((item) => ({
           role: item.role as "user" | "assistant",
           content: item.content,
@@ -351,6 +377,17 @@ async function sendMessage(
     );
   }
   const instruction = parseInstruction(modelText(response));
+  if (
+    mentionedTools.length === 1 &&
+    instruction.tool?.name !== mentionedTools[0]
+  )
+    instruction.tool = { name: mentionedTools[0]!, args: {} };
+  if (
+    mentionedTools.length > 1 &&
+    instruction.tool &&
+    !mentionedTools.includes(instruction.tool.name)
+  )
+    delete instruction.tool;
   let assistantText = instruction.message;
   let toolResult: unknown;
   let proposal: unknown;
@@ -389,7 +426,8 @@ async function sendMessage(
       ? clarifiesToronto || confirmsSeparateIssue || resumesFeedbackPreparation
         ? previousIssue
         : suggestsServiceIssue(safeMessage) ||
-            requestsFeedbackPreparation(safeMessage)
+            requestsFeedbackPreparation(safeMessage) ||
+            mentionedTools.includes("create_feedback")
           ? safeMessage
           : null
       : null;
@@ -568,16 +606,96 @@ async function sendMessage(
       conversation.locale === "fr"
         ? "Je n'ai pas préparé d'aperçu pour le moment. Décrivez le problème et sa municipalité pour que je puisse le préparer."
         : "I haven't prepared a preview yet. Describe the issue and municipality so I can prepare one.";
-  assistantText = assistantText
+  assistantText = redactSecrets(assistantText)
     .replace(/\p{Extended_Pictographic}/gu, "")
     .trim();
-  await storeMessage(conversation.id, "assistant", assistantText, context);
+  if (!deferAssistant)
+    await storeMessage(conversation.id, "assistant", assistantText, context);
   return featureJson(context, {
     apiVersion: API_VERSION,
     message: assistantText,
     ...(toolResult ? { toolResult } : {}),
     ...(proposal ? { proposal } : {}),
   });
+}
+
+async function streamMessage(
+  request: Request,
+  conversation: ConversationRow,
+  context: AgentContext,
+): Promise<Response> {
+  const planned = await sendMessage(request, conversation, context, true);
+  if (!planned.ok) return planned;
+  const envelope = (await planned.json()) as {
+    apiVersion: string;
+    message: string;
+    toolResult?: unknown;
+    proposal?: unknown;
+  };
+  const draft = envelope.message;
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let disconnected = false;
+      const send = (event: string, value: unknown) => {
+        if (disconnected) return;
+        try {
+          controller.enqueue(
+            encoder.encode(
+              `event: ${event}\ndata: ${JSON.stringify(value)}\n\n`,
+            ),
+          );
+        } catch {
+          disconnected = true;
+        }
+      };
+      let answer = "";
+      try {
+        if (context.env.AI && (await reserveAiCall(context))) {
+          const generated = await context.env.AI.run(MODEL, {
+            messages: [
+              {
+                role: "system",
+                content: `You are Envoy's ${conversation.mode} assistant. Rewrite the supplied draft as one or two short natural sentences in ${conversation.locale === "fr" ? "French" : "English"}. Output plain text only. Preserve every fact and condition. Add no facts, URLs, actions, results, or emoji. If the draft says a preview is ready, say only that it is ready for review; never say it was submitted. Never reveal tokens.`,
+              },
+              { role: "user", content: draft },
+            ],
+            max_tokens: 180,
+            temperature: 0,
+            stream: true,
+          });
+          for await (const delta of modelDeltas(generated)) {
+            if (answer.length + delta.length > MAX_MESSAGE) break;
+            answer += delta;
+            send("text", { delta });
+          }
+        }
+      } catch {
+        // The planner result remains valid when a streaming inference fails.
+      }
+      answer = redactSecrets(answer)
+        .replace(/\p{Extended_Pictographic}/gu, "")
+        .trim();
+      if (!answer || (!envelope.proposal && claimsUnverifiedAction(answer)))
+        answer = draft;
+      try {
+        await storeMessage(conversation.id, "assistant", answer, context);
+        send("final", { ...envelope, message: answer });
+      } catch {
+        send("error", {
+          code: "CONVERSATION_UNAVAILABLE",
+          message: "Conversation is temporarily unavailable.",
+        });
+      }
+      send("done", {});
+      if (!disconnected) controller.close();
+    },
+  });
+  const headers = new Headers(context.cors);
+  headers.set("Content-Type", "text/event-stream; charset=utf-8");
+  headers.set("Cache-Control", "no-store, no-transform");
+  headers.set("X-Accel-Buffering", "no");
+  return new Response(stream, { headers });
 }
 
 async function invokeTool(
@@ -1553,6 +1671,22 @@ function redactSecrets(message: string): string {
 
 function isArguments(value: unknown): value is ToolArguments {
   return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function allowedToolMentions(
+  value: unknown,
+  conversation: ConversationRow,
+): string[] | null {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 3) return null;
+  const allowed = new Set(
+    visibleTools(conversation.mode, conversation.organization_id).map(
+      (tool) => tool.name,
+    ),
+  );
+  if (value.some((name) => typeof name !== "string" || !allowed.has(name)))
+    return null;
+  return [...new Set(value as string[])];
 }
 
 function proposalArguments(name: string, args: ToolArguments): ToolArguments {
