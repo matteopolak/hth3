@@ -381,7 +381,7 @@ function parseTranscript(
   });
 }
 
-function confirmedFeedbackMessage(
+export function confirmedFeedbackMessage(
   turns: Array<{ role: "user" | "agent"; message: string }>,
 ): string | null {
   const last = turns.at(-1);
@@ -397,9 +397,12 @@ function confirmedFeedbackMessage(
   if (
     !disclosure ||
     disclosure.role !== "agent" ||
-    !/toronto/i.test(disclosure.message) ||
-    !/practice queue|file d'essai/i.test(disclosure.message) ||
-    !/submit|send|envoyer/i.test(disclosure.message)
+    !/envoy/i.test(disclosure.message) ||
+    !/review team|équipe de révision/i.test(disclosure.message) ||
+    !/not a government office|pas à un bureau gouvernemental/i.test(
+      disclosure.message,
+    ) ||
+    !/submit|envoyer/i.test(disclosure.message)
   )
     return null;
   const message = turns
