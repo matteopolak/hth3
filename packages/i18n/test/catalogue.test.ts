@@ -22,11 +22,17 @@ describe("English and French catalogues", () => {
     }
   });
 
-  it("preserves long French privacy guidance and substitutes receipt IDs", () => {
-    expect(fr["feedback.privacyNotice"].length).toBeGreaterThan(400);
-    expect(fr["feedback.privacyNotice"]).toContain("renseignements");
+  it("preserves French privacy guidance and substitutes message values", () => {
+    const privacyNotice = fr["feedback.privacyNotice"];
+    expect(privacyNotice).toContain("mot de passe");
+    expect(privacyNotice).toContain("renseignement bancaire");
+    expect(privacyNotice).toContain("numéro d’assurance sociale");
+    expect(privacyNotice).toContain("équipe d’Envoy");
+    expect(privacyNotice).toMatch(
+      /(?:pas à un organisme gouvernemental|aucun organisme gouvernemental ne reçoit)/,
+    );
     expect(
-      translate("fr", "feedback.submitted", { receiptId: "R-123" }),
-    ).toContain("R-123");
+      translate("fr", "assistant.resumeSaved", { filename: "cv-test.pdf" }),
+    ).toContain("cv-test.pdf");
   });
 });

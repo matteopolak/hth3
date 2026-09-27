@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { D1Database, D1Result, D1Value } from "@civicresolve/db/d1";
 import {
+  canPerformOrganizationAction,
+  canPerformOwnerAction,
+} from "@civicresolve/domain/permissions";
+import {
   authenticateRequest,
   type AuthEnvironment,
 } from "../src/auth/identity.js";
@@ -51,12 +55,34 @@ describe("request identity resolution", () => {
       subject: "local:applicant",
       roles: ["applicant"],
       organizationId: null,
-      permissions: [
-        "write:applications",
-        "read:applications",
-        "submit:applications",
-      ],
     });
+    expect(actor?.permissions).toEqual([
+      "write:applications",
+      "read:applications",
+      "submit:applications",
+      "read:profile",
+      "write:profile",
+    ]);
+    expect(
+      canPerformOwnerAction(actor!, "profile:read_own", "local:applicant"),
+    ).toBe(true);
+    expect(
+      canPerformOwnerAction(actor!, "profile:write_own", "local:applicant"),
+    ).toBe(true);
+    expect(
+      canPerformOrganizationAction(
+        actor!,
+        "application:review_organization",
+        "org_43G1B1RhPwac7EjS",
+      ),
+    ).toBe(false);
+    expect(
+      canPerformOrganizationAction(
+        actor!,
+        "feedback:respond_organization",
+        "org_43G1B1RhPwac7EjS",
+      ),
+    ).toBe(false);
   });
 
   it("never enables local principals in production, even if the flag is set", async () => {
