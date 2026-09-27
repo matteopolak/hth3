@@ -1,0 +1,112 @@
+[
+  {
+    "sceneId": "opening",
+    "text": "Finding work can send you through page after page. Start with the question instead: what jobs are open in Ottawa right now?",
+    "ttsText": "Finding work can send you through page after page. Start with the question instead: what jobs are open in Ottawa right now?",
+    "file": "narration-chat/opening-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 6.733787,
+    "voiceId": "R5rU293t7xe8dI1rhLd0",
+    "voiceName": "robert"
+  },
+  {
+    "sceneId": "jobs",
+    "text": "There are ten City of Ottawa roles here, with dates and sources. On a separate BC posting, prepare your answers in Envoy; the application still happens on the publisher's site.",
+    "ttsText": "There are ten City of Ottawa roles here, with dates and sources. On a separate BC posting, prepare your answers in Onvoy; the application still happens on the publisher's site.",
+    "file": "narration-chat/jobs-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 8.591383,
+    "voiceId": "R5rU293t7xe8dI1rhLd0",
+    "voiceName": "robert"
+  },
+  {
+    "sceneId": "training",
+    "text": "Maybe training is the next move. Ask about Ontario support, and Better Jobs Ontario appears with its source. A separate BC funding question brings up StudentAid grants.",
+    "ttsText": "Maybe training is the next move. Ask about Ontario support, and Better Jobs Ontario appears with its source. A separate BC funding question brings up StudentAid grants.",
+    "file": "narration-chat/training-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 8.823583,
+    "voiceId": "R5rU293t7xe8dI1rhLd0",
+    "voiceName": "robert"
+  },
+  {
+    "sceneId": "nearby",
+    "text": "If you need to go in person, ask where the office is. Then open Nearby and check the place on the map before leaving.",
+    "ttsText": "If you need to go in person, ask where the office is. Then open Nearby and check the place on the map before leaving.",
+    "file": "narration-chat/nearby-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 6.037188,
+    "voiceId": "yFCTR9LkeDbOvtFI8axB",
+    "voiceName": "asdf"
+  },
+  {
+    "sceneId": "concern",
+    "text": "Now a different question, in Toronto: a damaged bench. Envoy puts the resident's words into an editable report and stops for review.",
+    "ttsText": "Now a different question, in Toronto: a damaged bench. Onvoy puts the resident's words into an editable report and stops for review.",
+    "file": "narration-chat/concern-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 8.126984,
+    "voiceId": "yFCTR9LkeDbOvtFI8axB",
+    "voiceName": "asdf"
+  },
+  {
+    "sceneId": "submit",
+    "text": "A separate note to Envoy shows the last step. The destination is Envoy's own review team. The private receipt stays with the resident.",
+    "ttsText": "A separate note to Onvoy shows the last step. The destination is Onvoy's own review team. The private receipt stays with the resident.",
+    "file": "narration-chat/submit-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 7.291066,
+    "voiceId": "yFCTR9LkeDbOvtFI8axB",
+    "voiceName": "asdf"
+  },
+  {
+    "sceneId": "voice",
+    "text": "Typing is not the only way in. In one verified voice call, a streetlight concern led to a useful follow-up: what is the nearest intersection?",
+    "ttsText": "Typing is not the only way in. In one verified voice call, a streetlight concern led to a useful follow-up: what is the nearest intersection?",
+    "file": "narration-chat/voice-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 7.012426,
+    "voiceId": "TLEJS9fLZJSgXY7WJMYV",
+    "voiceName": "mp"
+  },
+  {
+    "sceneId": "tiger",
+    "text": "The words of a report stay in Envoy's database. Tiger receives event details for trend counts, without a copy of the private message.",
+    "ttsText": "The words of a report stay in Onvoy's database. Tiger receives event details for trend counts, without a copy of the private message.",
+    "file": "narration-chat/tiger-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 6.780227,
+    "voiceId": "TLEJS9fLZJSgXY7WJMYV",
+    "voiceName": "mp"
+  },
+  {
+    "sceneId": "presage",
+    "text": "On iPhone, the accessibility path asks permission first, then offers a quieter writing layout.",
+    "ttsText": "On iPhone, the accessibility path asks permission first, then offers a quieter writing layout.",
+    "file": "narration-chat/presage-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 7.105306,
+    "voiceId": "0n46A9P3HCcODBgAM8WN",
+    "voiceName": "yo"
+  },
+  {
+    "sceneId": "auth",
+    "text": "Staff work sits behind a separate door. Auth0 sign-in and Worker membership checks guard the queue, assignment, and replies.",
+    "ttsText": "Staff work sits behind a separate door. Auth0 sign-in and Worker membership checks guard the queue, assignment, and replies.",
+    "file": "narration-chat/auth-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 9.98458,
+    "voiceId": "0n46A9P3HCcODBgAM8WN",
+    "voiceName": "yo"
+  },
+  {
+    "sceneId": "close",
+    "text": "Ask the question. Check the source. Choose the next step. Envoy dot surf.",
+    "ttsText": "Ask the question. Check the source. Choose the next step. Onvoy dot surf.",
+    "file": "narration-chat/close-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 3.993832,
+    "voiceId": "R5rU293t7xe8dI1rhLd0",
+    "voiceName": "robert"
+  }
+]
