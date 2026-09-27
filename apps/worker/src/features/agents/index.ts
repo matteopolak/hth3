@@ -14,8 +14,8 @@ import {
 } from "./feedback-evidence.js";
 import {
   capabilityAnswer,
-  currentOttawaVacanciesAnswer,
-  currentOttawaVacanciesTool,
+  currentJobPostingsAnswer,
+  currentJobPostingsTool,
   isCapabilityQuestion,
   relevantToolForMessage,
 } from "./guidance.js";
@@ -330,7 +330,7 @@ async function sendMessage(
   }
   const vacancyTool =
     mentionedTools.length === 0
-      ? currentOttawaVacanciesTool(safeMessage)
+      ? currentJobPostingsTool(safeMessage)
       : undefined;
   if (vacancyTool) {
     const outcome = await callTool(
@@ -351,9 +351,10 @@ async function sendMessage(
         "Current postings could not be checked right now.",
         503,
       );
-    const answer = currentOttawaVacanciesAnswer(
+    const answer = currentJobPostingsAnswer(
       result.data,
       conversation.locale,
+      vacancyTool.args,
     );
     await storeMessage(conversation.id, "user", safeMessage, context);
     if (!deferAssistant)

@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
 import {
   capabilityAnswer,
-  currentOttawaVacanciesAnswer,
-  currentOttawaVacanciesTool,
+  currentJobPostingsAnswer,
+  currentJobPostingsTool,
   isCapabilityQuestion,
   relevantToolForMessage,
 } from "./guidance.js";
@@ -29,7 +29,7 @@ it("routes a specific Ottawa jobs question to bounded sourced discovery", () => 
 });
 
 it("finds current City of Ottawa roles and their closing dates without a model-selected tool", () => {
-  const tool = currentOttawaVacanciesTool(
+  const tool = currentJobPostingsTool(
     "Find current City of Ottawa job postings and include closing dates.",
   );
   expect(tool).toEqual({
@@ -46,7 +46,7 @@ it("finds current City of Ottawa roles and their closing dates without a model-s
     "/api/v1/discovery?area=jobs&type=job_posting&source=city-ottawa-open-jobs&applicationStatus=open&limit=12",
   );
   expect(
-    currentOttawaVacanciesAnswer(
+    currentJobPostingsAnswer(
       {
         total: 2,
         items: [
@@ -55,16 +55,52 @@ it("finds current City of Ottawa roles and their closing dates without a model-s
         ],
       },
       "en",
+      tool!.args,
     ),
   ).toContain("Planner (2026-10-12); Inspector (2026-10-18)");
   expect(
-    currentOttawaVacanciesTool("Apply for a saved Ottawa role"),
+    currentJobPostingsTool("Apply for a saved Ottawa role"),
   ).toBeUndefined();
   expect(
-    currentOttawaVacanciesTool(
+    currentJobPostingsTool(
       "Trouver les offres d'emploi actuelles de la Ville d'Ottawa et leurs dates de clôture.",
     )?.args,
   ).toEqual(tool?.args);
+});
+
+it("grounds generic and Toronto or BC current-job requests in individual postings", () => {
+  const cases = [
+    {
+      query: "Show current government jobs",
+      path: "/api/v1/discovery?area=jobs&type=job_posting&applicationStatus=open&limit=12",
+    },
+    {
+      query: "Find open jobs in Toronto",
+      path: "/api/v1/discovery?area=jobs&type=job_posting&location=Toronto&applicationStatus=open&limit=12",
+    },
+    {
+      query: "Find current City of Toronto vacancies",
+      path: "/api/v1/discovery?area=jobs&type=job_posting&source=city-toronto-open-jobs&applicationStatus=open&limit=12",
+    },
+    {
+      query: "Show current jobs in BC",
+      path: "/api/v1/discovery?area=jobs&type=job_posting&location=British+Columbia&applicationStatus=open&limit=12",
+    },
+    {
+      query: "List open BC Public Service jobs",
+      path: "/api/v1/discovery?area=jobs&type=job_posting&source=bc-public-service-vacancies&applicationStatus=open&limit=12",
+    },
+  ];
+  for (const { query, path } of cases) {
+    const tool = currentJobPostingsTool(query);
+    expect(tool, query).toBeDefined();
+    expect(prepareTool(tool!.name, tool!.args, "resident", null).path).toBe(
+      path,
+    );
+  }
+  expect(currentJobPostingsAnswer({ items: [], total: 0 }, "en", {})).toContain(
+    "no matching open job postings",
+  );
 });
 
 it("answers capability questions in natural language within the caller's role", () => {

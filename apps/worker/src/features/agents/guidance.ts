@@ -10,35 +10,67 @@ interface VacancyItem {
   listing?: { closingDate?: unknown } | null;
 }
 
-/** High-confidence requests for the current municipal vacancy feed bypass prose guesses. */
-export function currentOttawaVacanciesTool(
+/** High-confidence current job searches use verified individual listings. */
+export function currentJobPostingsTool(
   message: string,
 ): SelectedTool | undefined {
   if (
-    !/\b(?:City of Ottawa|Ville d['’]Ottawa)\b/iu.test(message) ||
-    !/\b(job|jobs|posting|postings|vacancy|vacancies|opening|openings|role|roles|emploi|emplois|offre|offres|poste|postes)\b/iu.test(
+    !/\b(job|jobs|posting|postings|vacancy|vacancies|opening|openings|career|careers|role|roles|emploi|emplois|offre|offres|poste|postes|carrière|carrières)\b/iu.test(
       message,
     ) ||
-    !/\b(find|show|list|search|current|open|closing|deadline|trouver|montrer|lister|chercher|actuel|actuelle|actuels|actuelles|ouvert|ouverts|clôture)\b/iu.test(
+    !/\b(find|show|list|search|browse|looking for|current|open|available|closing|deadline|trouver|montrer|lister|chercher|actuel|actuelle|actuels|actuelles|ouvert|ouverts|disponible|disponibles|clôture)\b/iu.test(
+      message,
+    ) ||
+    /\b(?:how|comment)\s+(?:do|can|to|puis|peux).*\b(?:apply|postuler)\b/iu.test(
       message,
     )
   )
     return undefined;
+  const cityOttawa = /\b(?:City of Ottawa|Ville d['’]Ottawa)\b/iu.test(message);
+  const cityToronto = /\b(?:City of Toronto|Ville de Toronto)\b/iu.test(
+    message,
+  );
+  const bcPublicService =
+    /\b(?:BC Public Service|British Columbia Public Service|fonction publique de la Colombie-Britannique)\b/iu.test(
+      message,
+    );
+  const location = cityOttawa
+    ? undefined
+    : cityToronto
+      ? undefined
+      : /\b(?:British Columbia|Colombie-Britannique|BC)\b/iu.test(message)
+        ? "British Columbia"
+        : /\bToronto\b/iu.test(message)
+          ? "Toronto"
+          : /\bOttawa\b/iu.test(message)
+            ? "Ottawa"
+            : message.match(
+                /(?:\b(?:in|near|around|dans|au|aux)\b|à)\s+([A-ZÀ-ÖØ-Þ][\p{L}’'.-]*(?:\s+[A-ZÀ-ÖØ-Þ][\p{L}’'.-]*){0,2})/u,
+              )?.[1];
   return {
     name: "search_discovery",
     args: {
       area: "jobs",
       type: "job_posting",
-      source: "city-ottawa-open-jobs",
+      ...(cityOttawa
+        ? { source: "city-ottawa-open-jobs" }
+        : cityToronto
+          ? { source: "city-toronto-open-jobs" }
+          : bcPublicService
+            ? { source: "bc-public-service-vacancies" }
+            : location
+              ? { location }
+              : {}),
       applicationStatus: "open",
       limit: 12,
     },
   };
 }
 
-export function currentOttawaVacanciesAnswer(
+export function currentJobPostingsAnswer(
   data: unknown,
   locale: "en" | "fr",
+  args: ToolArguments,
 ): string {
   const result = data as { items?: VacancyItem[]; total?: number } | null;
   const items = Array.isArray(result?.items) ? result.items : [];
@@ -48,8 +80,8 @@ export function currentOttawaVacanciesAnswer(
       : items.length;
   if (count === 0)
     return locale === "fr"
-      ? "Je n'ai trouvé aucune offre d'emploi ouverte de la Ville d'Ottawa dans les sources publiées."
-      : "I found no open City of Ottawa job postings in the published sources.";
+      ? "Je n'ai trouvé aucune offre d'emploi ouverte correspondante dans les sources publiées."
+      : "I found no matching open job postings in the published sources.";
   const sample = items
     .slice(0, 3)
     .map((item) => {
@@ -62,10 +94,29 @@ export function currentOttawaVacanciesAnswer(
       return title && closing ? `${title} (${closing})` : title;
     })
     .filter(Boolean);
+  const source = args.source;
+  const scope =
+    source === "city-ottawa-open-jobs"
+      ? locale === "fr"
+        ? "de la Ville d'Ottawa"
+        : "from the City of Ottawa"
+      : source === "city-toronto-open-jobs"
+        ? locale === "fr"
+          ? "de la Ville de Toronto"
+          : "from the City of Toronto"
+        : source === "bc-public-service-vacancies"
+          ? locale === "fr"
+            ? "de la fonction publique de la Colombie-Britannique"
+            : "from the BC Public Service"
+          : typeof args.location === "string"
+            ? locale === "fr"
+              ? `pour ${args.location}`
+              : `for ${args.location}`
+            : "";
   const heading =
     locale === "fr"
-      ? `J'ai trouvé ${count} offres ouvertes de la Ville d'Ottawa.`
-      : `I found ${count} open City of Ottawa postings.`;
+      ? `J'ai trouvé ${count} offres d'emploi ouvertes ${scope}`.trim() + "."
+      : `I found ${count} open job postings ${scope}`.trim() + ".";
   return sample.length
     ? `${heading} ${sample.join("; ")}${count > sample.length ? (locale === "fr" ? "; les autres offres et dates de clôture figurent ci-dessous." : "; the remaining roles and closing dates are below.") : "."}`
     : heading;
