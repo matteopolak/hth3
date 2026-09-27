@@ -3,10 +3,15 @@
   isolation: isolate;
 }
 
+.page-wrap.has-maple-ambient > :not(.envoy-maple-ambient) {
+  position: relative;
+  z-index: 1;
+}
+
 .envoy-maple-ambient {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   overflow: hidden;
   pointer-events: none;
 }
@@ -32,43 +37,43 @@
 }
 
 .envoy-maple-leaf:nth-child(1) {
-  --leaf-x: 9%;
-  --leaf-size: 22px;
-  --leaf-color: #ef7b68;
-  --leaf-duration: 33s;
-  --leaf-delay: -21s;
+  --leaf-x: 8%;
+  --leaf-size: 32px;
+  --leaf-color: #bb594c;
+  --leaf-duration: 23s;
+  --leaf-delay: -15s;
   --leaf-drift: 32px;
 }
 .envoy-maple-leaf:nth-child(2) {
-  --leaf-x: 82%;
-  --leaf-size: 28px;
-  --leaf-color: #efb84c;
-  --leaf-duration: 37s;
-  --leaf-delay: -12s;
+  --leaf-x: 88%;
+  --leaf-size: 36px;
+  --leaf-color: #bd7952;
+  --leaf-duration: 27s;
+  --leaf-delay: -6s;
   --leaf-drift: -43px;
 }
 .envoy-maple-leaf:nth-child(3) {
   --leaf-x: 48%;
-  --leaf-size: 18px;
-  --leaf-color: #50ae91;
-  --leaf-duration: 41s;
-  --leaf-delay: -31s;
+  --leaf-size: 24px;
+  --leaf-color: #c88a5c;
+  --leaf-duration: 29s;
+  --leaf-delay: -22s;
   --leaf-drift: 27px;
 }
 .envoy-maple-leaf:nth-child(4) {
-  --leaf-x: 94%;
-  --leaf-size: 21px;
-  --leaf-color: #9a75d1;
-  --leaf-duration: 35s;
-  --leaf-delay: -5s;
+  --leaf-x: 96%;
+  --leaf-size: 30px;
+  --leaf-color: #ae5049;
+  --leaf-duration: 25s;
+  --leaf-delay: -19s;
   --leaf-drift: -35px;
 }
 .envoy-maple-leaf:nth-child(5) {
-  --leaf-x: 27%;
-  --leaf-size: 17px;
-  --leaf-color: #4b68db;
-  --leaf-duration: 43s;
-  --leaf-delay: -38s;
+  --leaf-x: 23%;
+  --leaf-size: 26px;
+  --leaf-color: #c26c58;
+  --leaf-duration: 31s;
+  --leaf-delay: -11s;
   --leaf-drift: 29px;
 }
 
@@ -78,10 +83,10 @@
     transform: translate3d(0, -42px, 0) rotate(-20deg);
   }
   8% {
-    opacity: 0.12;
+    opacity: 0.24;
   }
   88% {
-    opacity: 0.12;
+    opacity: 0.24;
   }
   100% {
     opacity: 0;
@@ -91,16 +96,22 @@
 }
 
 @media (max-width: 620px) {
-  .envoy-maple-leaf:nth-child(n + 3) {
+  .envoy-maple-leaf:nth-child(n + 4) {
     display: none;
+  }
+
+  .envoy-maple-leaf {
+    width: min(var(--leaf-size), 30px);
+    height: min(var(--leaf-size), 30px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .envoy-maple-leaf {
     animation: none;
-    opacity: 0.09;
+    opacity: 0.2;
     transform: rotate(-14deg);
+    will-change: auto;
   }
   .envoy-maple-leaf:nth-child(1) {
     top: 14%;
