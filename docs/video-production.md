@@ -38,7 +38,15 @@ cd apps/video
 ./node_modules/.bin/remotion render src/index.ts EnvoyReview out/envoy-review.mp4 --codec h264 --x264-preset veryfast --browser-executable '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 ```
 
-The [GitHub review prerelease](https://github.com/matteopolak/hth3/releases/tag/v0.1.0-hth3-review) is a collaborator download, not the Devpost video field. After an approved review rerender, refresh its `envoy-review.mp4` asset with `gh release upload v0.1.0-hth3-review apps/video/out/envoy-review.mp4 --clobber` from the repository root and compare the remote SHA-256 digest with the local file.
+Remotion's AAC padding can make the container slightly longer than five minutes. For the September 26 production cut, the 300.053-second render was remuxed to 299.733 seconds without re-encoding. Inspect the output after trimming and upload `out/envoy-final.mp4` to the video host:
+
+```sh
+ffmpeg -i out/envoy-review.mp4 -t 299.6 -map 0 -c copy -movflags +faststart out/envoy-final.mp4
+ffmpeg -ss 1 -i out/envoy-final.mp4 -frames:v 1 -vf scale=1280:720 out/envoy-thumbnail.png
+ffprobe -v error -show_entries format=duration,size -of json out/envoy-final.mp4
+```
+
+The [GitHub review prerelease](https://github.com/matteopolak/hth3/releases/tag/v0.1.0-hth3-review) is a collaborator download, not the Devpost video field. Its `envoy-review.mp4` asset currently holds a copy of the same trimmed file: 21,637,097 bytes, SHA-256 `80a7a1414d257e8fdf276095904f18cd481bc0aa187e60420fcef30cddd2be34`. After an approved future rerender, replace the asset with `gh release upload v0.1.0-hth3-review apps/video/out/envoy-review.mp4 --clobber` from the repository root and compare the remote SHA-256 digest with the local file.
 
 The review cut covers the full five-minute story with shorter genuine interactions, held frames, and explanatory graphics. It does not show a new submitted report or private receipt, a live Tiger dashboard, or an accepted staff session. To replace those scenes, record the actual accepted actions and update `capture-manifest.json`; retain the current factual boundary if acceptance remains pending. The local synthesized narration is timed and captioned, but team approval or a replacement recording remains pending. Devpost's [video help](https://help.devpost.com/article/85-uploading-a-demo-video) says its video field needs a YouTube, Vimeo, or Youku URL with playback available to judges. A local MP4 or GitHub release asset cannot fill that field. Upload the approved cut, confirm its embed works, then paste that share URL into the draft entry.
 
