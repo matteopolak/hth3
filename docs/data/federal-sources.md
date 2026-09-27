@@ -12,13 +12,21 @@ The current pages are [Government of Canada jobs](https://www.canada.ca/en/servi
 
 Jobs and consultations expire after seven days; benefits, funding, and the office finder expire after 30 days. Expiry means Envoy must recheck the handoff page, not that a linked program closed. Individual availability and application status must be checked on the publisher's site.
 
+### Individual federal student postings
+
+`vacancies.ts` reads the Public Service Commission's [Federal Student Work Experience Program page](https://www.canada.ca/en/public-service-commission/jobs/services/recruitment/students/federal-student-work-program.html). Its specialized inventories publish an individual title, hiring organization, deadline, and direct GC Jobs poster link. The adapter verifies the page heading and structure, accepts only exact official GC Jobs poster links, parses English calendar dates, and excludes rows whose deadline passed. It keeps the poster number as a stable external ID, the direct GC Jobs URL as the handoff, and the Canada.ca page as deadline evidence. It leaves posting date and location unknown because the source page does not publish them, and tells residents to check the official poster for requirements and location. The page is rechecked daily; a completed refresh marks missing or closed listings stale. A changed format returns a source error and no new current listing.
+
+This is narrow student recruitment coverage. The [GC Jobs search](https://emploisfp-psjobs.cfp-psc.gc.ca/psrs-srfp/applicant/page2440?fromMenu=true&toggleLanguage=en) requires a JavaScript session and responds with `X-Robots-Tag: noindex, nofollow`; Envoy does not crawl its search pages. [Job Bank's job seeker terms](https://www.jobbank.gc.ca/termsofuse-seeker.xhtml) prohibit automated access, so Envoy does not scrape its federal-jobs results. The [Open Government advertisements dataset](https://open.canada.ca/data/en/dataset/e61c8587-2cc9-4775-b34e-f1041ad00410) contains advertisements that closed within a fiscal year; it cannot establish current openings. The direct GC Jobs links in the student page still let people verify and apply on the official site.
+
 ## How to change it
 
 Add or edit a definition in `FEDERAL_SOURCES` only after checking the publisher page and terms. Keep IDs stable for updates, use a precise H1 identity check, choose the relevant discovery area, and keep the summary free of claims the finder cannot verify. The office finder intentionally points to the Canada.ca ESDC contact page because that page routes to the current Service Canada locator; it is not geocoded as an office. If a future official API permits importing individual listings or locations, add a separate adapter with publisher IDs, record-level evidence, deadline/status verification, appropriate licence review, and a migration for any new kind. Update the fixture tests when a publisher changes its heading or URL.
 
+The student adapter lives in `vacancies.ts`. Its `federal-student-specialized-inventories` source ID, allowlisted publisher hosts, maximum of 30 panels, and date/link parsers form a fail-closed boundary. If the page changes, update the parser and fixture together after reviewing the new official markup. Do not carry a closed posting forward as open, infer an unavailable location, or substitute historical advertisements for current jobs.
+
 ## Configuration
 
-No API key is required. The URLs, 1 MB response limit, 12-second timeout, and 7/30-day expiry values live in the adapter. The Worker scheduled source-ingestion flow and D1 source registry are described in [official source ingestion](official-ingestion.md). The source registry must contain the `federal-service-canada-offices` entry and discovery area association before its record appears in Nearby.
+No API key is required. The finder URLs, 1 MB response limit, 12-second timeout, and 7/30-day expiry values live in the adapter. The student adapter uses a 500 KB response limit, the same timeout, and a one-day refresh threshold. The Worker scheduled source-ingestion flow and D1 source registry are described in [official source ingestion](official-ingestion.md). The source registry must contain `federal-service-canada-offices` and discovery area association before its record appears in Nearby; ingestion registers the student source with `official_link` collection mode.
 
 ## Dependencies
 
