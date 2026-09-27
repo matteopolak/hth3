@@ -4,7 +4,7 @@
 
 The guest feedback form can start a short, conversational ElevenLabs voice session. The guide asks what happened and what would improve the situation. A resident can explicitly confirm submission by voice, or stop and review the editable transcript on the website.
 
-Live status (2026-09-26): a seven-day ElevenAgents Write API key with a 5,000-credit cap is installed as a production Worker secret and expires on October 3. A production signed session and a short, fictional PCM voice conversation succeeded: ElevenLabs transcribed the streetlight report and asked for the nearest intersection. The review-team disclosure prompt is applied to the live agent. The signed webhook, browser microphone, review screen, and final feedback submission still need live acceptance. Typed feedback remains available.
+Live status (2026-09-26): a seven-day ElevenAgents Write API key with a 5,000-credit cap is installed as a production Worker secret and expires on October 3. The production route still returns a signed session and a private session token. A short, fictional PCM conversation succeeded: ElevenLabs transcribed the streetlight report and asked for the nearest intersection. The review-team disclosure prompt is applied to the live agent. No ElevenLabs workspace webhook is registered and the agent's `post_call_webhook_id` is null, so signed delivery and voice-confirmed submission have not been accepted. Browser microphone and review acceptance are also outstanding. Typed feedback remains available.
 
 ## How it works
 
@@ -56,9 +56,11 @@ The production API key is present. The provider returned `missing_permissions` f
 
 Use `elevenlabs webhooks create` to register `https://envoy.matteopolak.workers.dev/api/v1/voice/webhook` with HMAC authentication, then select its ID as the agent's post-call transcript webhook with JSON transcript format, audio off, and retries on. Configure the Worker secret from the one-time CLI response before activating it. The webhook is workspace-scoped, so it must filter for this agent ID; the handler does that. The agent's transcript events and signature details follow the [ElevenLabs post-call webhook documentation](https://elevenlabs.io/docs/eleven-agents/workflows/post-call-webhooks).
 
+The current CLI OAuth token lacks `webhooks_write`; webhook creation returned 403. The existing capped personal key has ElevenAgents Write but Webhooks No Access. An approved Webhooks Write grant on that key is sufficient to configure the webhook in the signed-in dashboard; the CLI cannot retrieve a Worker secret back from Cloudflare. Keep the callback disabled until its HMAC secret is installed in the Worker. This setup does not require a voice call or consume conversation credits.
+
 ## Verification
 
-On September 26, the deployed Worker returned HTTP 200 for a signed session. A bounded WebSocket session streamed a locally synthesized fictional streetlight report as `pcm_16000` audio. ElevenLabs returned the exact spoken transcript and asked for the streetlight's address or nearest intersection. The signed URL and key were kept out of output. This proves the deployed signing path, provider speech recognition, and conversational response; it does not prove the new post-call webhook, browser microphone permission, visible transcript review, or feedback submission through the UI.
+On September 26, the deployed Worker returned HTTP 200 for a signed session, including after the latest deployment. A bounded WebSocket session streamed a locally synthesized fictional streetlight report as `pcm_16000` audio. ElevenLabs returned the exact spoken transcript and asked for the streetlight's address or nearest intersection. The signed URL and key were kept out of output. This proves the deployed signing path, provider speech recognition, and conversational response; it does not prove the new post-call webhook, browser microphone permission, visible transcript review, or feedback submission through the UI.
 
 ## Dependencies
 
