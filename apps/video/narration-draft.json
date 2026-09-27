@@ -10,9 +10,9 @@
     ],
     "sources": [
       "A useful civic journey starts with a source people can trust.",
-      "Here, envoy opens official job finders, current public consultations, and nearby service locations.",
+      "Here, envoy brings together individual government job postings, public consultations, and nearby service locations.",
       "A nearby service record shows its publisher, address, and a link to the official site. Participation links also lead to the government publisher.",
-      "A finder link is a route to the publisher. It is not a claim that an individual vacancy is open or that someone qualifies for a program.",
+      "The job board shows the publisher, closing date, and source link for each posting. The original listing has the final details.",
       "Before visiting, residents should confirm current hours and services with the source agency.",
       "The SwiftUI companion also shows nearby services on an iPhone simulator.",
       "Physical-device and production API checks remain ahead for the native app."

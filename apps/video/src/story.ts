@@ -15,9 +15,9 @@ export const scenes = [
     seconds: 55,
     title: "Follow the official source",
     caption:
-      "Official job and participation links lead to publishers. Nearby services show source and freshness.",
+      "Browse sourced jobs and consultations. Nearby services show their publisher and freshness.",
     capture:
-      "Job finder, public consultations, nearby service detail, and official handoff",
+      "Individual job postings, public consultations, nearby service detail, and official handoff",
     required: true,
   },
   {

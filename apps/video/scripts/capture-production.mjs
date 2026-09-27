@@ -163,7 +163,7 @@ try {
         await act(frame, "participation", () => clickText(["Participation"]));
       if (frame === 19 * fps)
         await act(frame, "nearby", () => clickText(["Nearby"]));
-      if (frame === 32 * fps)
+      if (frame === 29 * fps)
         await act(frame, "select-map-pin", () =>
           evaluate(`(() => {
             const pin = document.querySelector('.nearby-map-marker');
@@ -171,7 +171,7 @@ try {
             pin.click(); return true;
           })()`),
         );
-      if (frame === 43 * fps)
+      if (frame === 37 * fps)
         await act(frame, "list", () => clickText(["List"]));
     }
     if (mode === "agent" || mode === "chat-sources") {
