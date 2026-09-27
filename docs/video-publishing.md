@@ -8,6 +8,8 @@ This is the proposed YouTube metadata for the 94-second `EnvoyChatFilmMotion` re
 
 Use `apps/video/out/envoy-chat-motion-review-local.mp4` as the video, `apps/video/out/envoy-chat-motion-review-local.srt` as English captions, and `apps/video/out/envoy-chat-motion-thumbnail.png` as the 1280×720 thumbnail. Set visibility to **Unlisted** on the Matthew Polak channel. After YouTube finishes processing, check playback while signed out, then replace the Devpost video link with that exact URL. Preserve the older hosted video until the replacement works.
 
+On September 27, an unauthenticated `yt-dlp --skip-download` request retrieved the older video's ID, title, 300-second duration, and `unlisted` availability. This confirms that its metadata is publicly reachable while the replacement awaits review; it is not a signed-out playback check.
+
 ### Proposed title
 
 Envoy — Start with a question | Hack the Hill III
