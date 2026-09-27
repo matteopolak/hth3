@@ -170,7 +170,7 @@ const en = {
   "assistant.confirmReport": "Confirm and submit report",
   "assistant.reviewUpdatedReport": "Review updated report",
   "assistant.reportDestination":
-    "Destination: Envoy's review team. Not sent to the City of Toronto.",
+    "Destination: Envoy's review team. No government office receives this report.",
   "assistant.confirmDestination":
     "I understand no municipality or government agency receives this report.",
   "assistant.approve": "Approve action",
@@ -255,9 +255,9 @@ const en = {
     "This is a different issue or a recurrence. Send a separate report.",
   "feedback.submitSeparate": "Submit separate report",
   "feedback.sandboxAcknowledgement":
-    "I understand this report goes to Envoy's review team and is not sent to the City of Toronto or another government agency.",
+    "I understand this report goes to Envoy's review team and is not sent to a government office.",
   "feedback.sandboxBadge":
-    "Sandbox · no delivery to a municipality or employer",
+    "Envoy inbox · not sent to a municipality or employer",
   "feedback.sandboxExplanation": "Your message stays here",
   "feedback.aboutThisService": "Before you share",
   "feedback.emergencyTitle": "Need urgent help?",
@@ -282,7 +282,7 @@ const en = {
   "feedback.outcomeLabel":
     "Outcome summary (required when recording an outcome)",
   "feedback.privacyNotice":
-    "Leave out passwords, banking details and Social Insurance Numbers. Your report goes to Envoy's review team. It is not sent to the City of Toronto.",
+    "Leave out passwords, banking details and Social Insurance Numbers. Your report goes to Envoy's review team, not a government office.",
   "feedback.submitted": "Feedback saved. Your private receipt is below.",
   "feedback.receiptTitle": "Feedback receipt",
   "feedback.activity": "Activity",

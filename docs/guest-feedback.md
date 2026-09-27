@@ -60,7 +60,7 @@ Staff mutations must use the explicit transition map, authorize the organization
 - `municipalityId`: Statistics Canada CSDUID. Only `3520005` has a route in this prototype.
 - `category`: optional feedback category; an explicit value narrows duplicate search and sets the stored category. If omitted, duplicate search spans categories and the new case is stored as `other_or_unsure`.
 - `duplicateOverride`: optional boolean on create. Set to `true` only after the resident confirms that a strong match is a separate issue or recurrence.
-- `sandboxAcknowledged`: must be `true` after the resident has seen and confirmed the fictional Toronto destination.
+- `sandboxAcknowledged`: must be `true` after the resident has seen and confirmed that Envoy, rather than a government office, receives the report.
 - `emergency: true`: optional explicit emergency redirect. The Worker returns localized 911 guidance with `accepted: false` and creates no case; do not infer this flag from free text.
 - `evidence`: optional array of `{ fileName, contentType, data }`, with `data` base64 encoded. Allowed content types are `application/pdf`, `image/png`, and `image/jpeg`.
 - Assistant evidence upload uses the conversation-scoped multipart endpoints above. The proposal stores only opaque IDs and file metadata; file bytes stay in private R2. Staged assets expire after 24 hours and are cleaned during later uploads for that conversation.

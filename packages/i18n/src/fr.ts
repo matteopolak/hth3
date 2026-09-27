@@ -180,7 +180,7 @@ const fr: Catalogue = {
   "assistant.confirmReport": "Confirmer et envoyer le signalement",
   "assistant.reviewUpdatedReport": "Vérifier le signalement modifié",
   "assistant.reportDestination":
-    "Destination : l’équipe d’Envoy chargée des avis. Aucun envoi à la Ville de Toronto.",
+    "Destination : l’équipe d’Envoy chargée des avis. Aucun organisme gouvernemental ne reçoit ce signalement.",
   "assistant.confirmDestination":
     "Je comprends qu’aucune municipalité ni agence gouvernementale ne reçoit ce signalement.",
   "assistant.approve": "Approuver l’action",
@@ -270,9 +270,9 @@ const fr: Catalogue = {
     "Il s’agit d’un autre problème ou d’une récidive. Envoyer un rapport distinct.",
   "feedback.submitSeparate": "Envoyer un rapport distinct",
   "feedback.sandboxAcknowledgement":
-    "Je comprends que mon avis va à l’équipe d’Envoy chargée des avis et n’est pas envoyé à la Ville de Toronto ni à un autre organisme gouvernemental.",
+    "Je comprends que mon avis va à l’équipe d’Envoy chargée des avis et n’est pas envoyé à un organisme gouvernemental.",
   "feedback.sandboxBadge":
-    "Environnement d’essai · aucun envoi à une municipalité ou à un employeur",
+    "Boîte de réception d’Envoy · aucun envoi à une municipalité ou à un employeur",
   "feedback.sandboxExplanation": "Votre message reste ici",
   "feedback.aboutThisService": "Avant de partager",
   "feedback.emergencyTitle": "Besoin d’aide urgente?",
@@ -297,7 +297,7 @@ const fr: Catalogue = {
   "feedback.outcomeLabel":
     "Résumé du résultat (requis pour consigner un résultat)",
   "feedback.privacyNotice":
-    "N’indiquez aucun mot de passe, renseignement bancaire ou numéro d’assurance sociale. Votre avis va à l’équipe d’Envoy chargée des avis. Il n’est pas envoyé à la Ville de Toronto.",
+    "N’indiquez aucun mot de passe, renseignement bancaire ou numéro d’assurance sociale. Votre avis va à l’équipe d’Envoy chargée des avis, pas à un organisme gouvernemental.",
   "feedback.submitted":
     "Commentaire enregistré. Votre reçu privé se trouve ci-dessous.",
   "feedback.receiptTitle": "Reçu de votre avis",
