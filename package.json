@@ -11,12 +11,14 @@
     "lint": "prettier --check .github/workflows/check.yml apps/worker apps/web packages/config packages/contracts packages/db packages/domain packages/i18n packages/sources packages/design-tokens packages/ui package.json pnpm-workspace.yaml tsconfig.json docs",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm exec vitest run",
+    "test:e2e:guest": "playwright test --config tests/e2e/playwright.config.ts",
     "build": "pnpm -r --if-present build",
     "deploy:production": "pnpm --filter @civicresolve/web build && pnpm --filter @civicresolve/worker deploy:production",
     "smoke": "pnpm --filter @civicresolve/worker smoke",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm smoke"
   },
   "devDependencies": {
+    "@playwright/test": "1.52.0",
     "prettier": "3.6.2",
     "typescript": "5.9.2",
     "vitest": "3.2.4"
