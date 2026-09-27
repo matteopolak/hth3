@@ -4,9 +4,9 @@ Envoy helps people find public services and opportunities, understand their next
 
 ## Demo and project links
 
-- **Live app and API:** [envoy.matteopolak.workers.dev](https://envoy.matteopolak.workers.dev/). The root page and `/api/healthz` were verified with HTTP 200.
+- **Live app and API:** [envoy.surf](https://envoy.surf/). The same Cloudflare Worker serves the site and `/api/` on this domain.
 - **Repository:** [github.com/matteopolak/hth3](https://github.com/matteopolak/hth3)
-- **Five-minute video:** [watch or download the captioned MP4](https://github.com/matteopolak/hth3/releases/download/v0.1.0-hth3-review/envoy-review.mp4). The [video notes](docs/video-production.md) identify the capture origins and pending live acceptance.
+- **Project video:** [watch or download the captioned MP4](https://github.com/matteopolak/hth3/releases/download/v0.1.0-hth3-review/envoy-review.mp4). The [video notes](docs/video-production.md) identify the capture origins and pending live acceptance.
 
 ## What is real and what is practice data
 
