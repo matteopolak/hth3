@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import {
+  Auth0JwksUnavailableError,
   Auth0JwksClient,
   Auth0TokenError,
   verifyAuth0Token,
@@ -117,6 +118,29 @@ describe("Auth0 access token verification", () => {
         NOW,
       ),
     ).rejects.toBeInstanceOf(Auth0TokenError);
+  });
+
+  it("classifies an unavailable JWKS endpoint separately from an invalid token", async () => {
+    const token = await signToken({
+      iss: `${DOMAIN}/`,
+      aud: AUDIENCE,
+      sub: "auth0|demo",
+      exp: NOW + 3600,
+    });
+    const unavailableJwks = new Auth0JwksClient(
+      vi.fn(async () => {
+        throw new TypeError("Network request failed");
+      }) as typeof fetch,
+    );
+
+    await expect(
+      verifyAuth0Token(
+        token,
+        { domain: DOMAIN, audience: AUDIENCE },
+        unavailableJwks,
+        NOW,
+      ),
+    ).rejects.toBeInstanceOf(Auth0JwksUnavailableError);
   });
 });
 

@@ -8,6 +8,8 @@ The Worker verifies Auth0 access tokens and applies an action-specific permissio
 
 Requests send `Authorization: Bearer <access-token>`. The Worker accepts only RS256 JWTs signed by the configured Auth0 issuer. It fetches signing keys from the issuer's JWKS endpoint, caches them according to the response cache policy, and validates the signature, exact issuer, API audience, expiry, not-before time, and optional issued-at time.
 
+An invalid token returns `401 UNAUTHENTICATED`. If the JWKS endpoint cannot be reached or returns a non-success response, the Worker returns `503 AUTHENTICATION_UNAVAILABLE` so a temporary identity-provider outage is not confused with a bad token. The structured warning includes only the Worker request ID.
+
 Auth0 RBAC supplies the `permissions` array (the standard `scope` string is also parsed as a fallback) and the Post-Login Action supplies `https://civicresolve.example/roles`. Role names are matched exactly:
 
 | Auth0 role claim value            | D1 role              | Worker actions                                                                                        |
@@ -24,7 +26,7 @@ For organization staff, the token must contain standard `org_id`. The Worker joi
 
 ## How to change it
 
-When Auth0 display names or role assignments change, update the explicit mapping in `packages/domain/src/permissions/index.ts` and the identity tests. When an API action changes, add it to the domain action matrix and map it to the exact API permission; then use the organization or owner authorization helper at the Worker route. Keep membership checks in `apps/worker/src/auth/identity.ts` even when Auth0 organizations emit `org_id`.
+When Auth0 display names or role assignments change, update the explicit mapping in `packages/domain/src/permissions/index.ts` and the identity tests. When an API action changes, add it to the domain action matrix and map it to the exact API permission; then use the organization or owner authorization helper at the Worker route. Keep membership checks in `apps/worker/src/auth/identity.ts` even when Auth0 organizations emit `org_id`. Keep JWKS network failure mapped separately from token-validation failures, and cover it in `apps/worker/test/auth-jwt.test.ts`.
 
 The local authorization smoke seeds only local D1 state from `apps/worker/scripts/local-authz-seed.sql`. It uses fixed `dev-*` bearer values, never accepts a caller-selected subject or role, and is enabled only for `APP_ENV=development` plus `DEV_AUTH_ENABLED=true`. Feature smoke assertions also exercise allowed sandbox staff reads, cross-tenant/cross-role denials, applicant owner reads without employer membership, civic denial from application records, and employer review. Wrangler sets the flag false by default and in the production environment. The production check rejects local identities even if a deployment mistakenly sets the flag true while `APP_ENV=production`.
 
