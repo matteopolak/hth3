@@ -24,9 +24,9 @@ const copy = {
   en: {
     jobs: {
       heading: "Find your next role",
-      body: "Browse reviewed job finders, then check current openings with the publisher.",
-      browse: "Browse job sources",
-      region: "Search sources by region",
+      body: "Browse current openings and check the full posting with the publisher.",
+      browse: "Browse jobs",
+      region: "Search jobs by region",
     },
     support: {
       heading: "Find support where you live",
@@ -35,10 +35,10 @@ const copy = {
     },
     funding: {
       heading: "Find funding and prepare",
-      browse: "Browse funding sources",
+      browse: "Browse funding programs",
       region: "Narrow by jurisdiction",
       steps: [
-        ["Find a source", "Browse reviewed funding finders."],
+        ["Find a program", "Browse funding programs."],
         [
           "Check the terms",
           "Confirm eligibility and deadlines on the official site.",
@@ -60,9 +60,9 @@ const copy = {
   fr: {
     jobs: {
       heading: "Trouvez votre prochain emploi",
-      body: "Parcourez les sources d'emplois examinées, puis vérifiez les offres auprès de l'éditeur.",
-      browse: "Parcourir les sources d'emplois",
-      region: "Chercher des sources par région",
+      body: "Parcourez les offres actuelles et vérifiez l'annonce complète auprès de l'éditeur.",
+      browse: "Parcourir les emplois",
+      region: "Chercher des emplois par région",
     },
     support: {
       heading: "Trouvez de l'aide près de chez vous",
@@ -71,13 +71,10 @@ const copy = {
     },
     funding: {
       heading: "Trouvez du financement et préparez-vous",
-      browse: "Parcourir les sources de financement",
+      browse: "Parcourir les programmes de financement",
       region: "Préciser par territoire",
       steps: [
-        [
-          "Trouver une source",
-          "Parcourez les sources de financement examinées.",
-        ],
+        ["Trouver un programme", "Parcourez les programmes de financement."],
         [
           "Vérifier les critères",
           "Confirmez l'admissibilité et les dates sur le site officiel.",

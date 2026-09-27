@@ -57,13 +57,6 @@ export class Auth0TokenError extends Error {
   }
 }
 
-export class Auth0JwksUnavailableError extends Error {
-  constructor() {
-    super("The identity signing keys are temporarily unavailable.");
-    this.name = "Auth0JwksUnavailableError";
-  }
-}
-
 export class Auth0JwksClient {
   private readonly cache = new Map<string, CachedJwks>();
 
@@ -77,15 +70,10 @@ export class Auth0JwksClient {
       throw new Auth0TokenError();
     }
 
-    let response: Response;
-    try {
-      response = await this.fetcher(`${domain}/.well-known/jwks.json`, {
-        headers: { Accept: "application/json" },
-      });
-    } catch {
-      throw new Auth0JwksUnavailableError();
-    }
-    if (!response.ok) throw new Auth0JwksUnavailableError();
+    const response = await this.fetcher(`${domain}/.well-known/jwks.json`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) throw new Auth0TokenError();
 
     const document = (await response
       .json()

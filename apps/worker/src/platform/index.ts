@@ -16,11 +16,7 @@ import {
   ORGANIZATION_ACTIONS,
   type DomainAction,
 } from "@civicresolve/domain/permissions";
-import {
-  authenticateRequest,
-  Auth0JwksUnavailableError,
-  Auth0TokenError,
-} from "../auth/index.js";
+import { authenticateRequest, Auth0TokenError } from "../auth/index.js";
 import { handleApplicationRequest } from "../features/application-core/index.js";
 import { handleFeedbackRequest } from "../features/feedback-core/index.js";
 import { handleProfileRequest } from "../features/profile/index.js";
@@ -214,16 +210,6 @@ const worker = {
           responseCors,
         );
       }
-      if (error instanceof Auth0JwksUnavailableError) {
-        console.warn("auth0_jwks_unavailable", { requestId });
-        return jsonError(
-          "AUTHENTICATION_UNAVAILABLE",
-          "Sign-in verification is temporarily unavailable. Please try again.",
-          requestId,
-          503,
-          responseCors,
-        );
-      }
       if (error instanceof IdempotencyConflictError) {
         return jsonError(
           "IDEMPOTENCY_CONFLICT",
@@ -233,11 +219,6 @@ const worker = {
           responseCors,
         );
       }
-      const errorName =
-        error instanceof Error && /^[A-Za-z][A-Za-z0-9]{0,63}$/.test(error.name)
-          ? error.name
-          : "UnknownError";
-      console.error("worker_request_failed", { requestId, errorName });
       return jsonError(
         "INTERNAL_ERROR",
         "The request could not be completed.",
@@ -248,18 +229,10 @@ const worker = {
     }
   },
   scheduled(
-    event: { cron?: string },
+    _event: unknown,
     env: Env,
     context: { waitUntil(promise: Promise<unknown>): void },
   ): void {
-    // An operator can invoke this cron only in a Wrangler remote preview with
-    // --test-scheduled; production config does not register this schedule.
-    if (event.cron === "0 0 1 1 *") {
-      context.waitUntil(
-        ingestOfficialSources(env.DB, fetch, new Date(), "vacancies"),
-      );
-      return;
-    }
     context.waitUntil(deliverFeedbackOutbox(env));
     context.waitUntil(refreshOfficialSourcesWhenDue(env.DB));
   },
