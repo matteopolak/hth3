@@ -1615,7 +1615,7 @@ function chatModelMenu(mode: ChatMode): HTMLElement {
     if (selected) option.append(iconNode("check"));
     menu.append(option);
   }
-  const modelNote = el("p", "chat-model-note", t("assistant.modelDisplayOnly"));
+  const modelNote = el("p", "sr-only", t("assistant.modelDisplayOnly"));
   modelNote.id = `chat-model-note-${mode}`;
   menu.append(modelNote);
   const levels = [
