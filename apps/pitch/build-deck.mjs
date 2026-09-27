@@ -59,20 +59,21 @@ text(s2, 'Official applications stay with publishers. Reports here reach Envoy�
 s2.speakerNotes.textFrame.setText('0:20–0:48. We serve residents navigating Canadian public services and opportunities. The institutions are official public publishers of jobs, services, and programs. Envoy links to those publishers. Reports submitted here today reach Envoy’s own review team. No municipality or employer participates yet. Civic track guidance: https://tracker.hackthehill.com/resources.');
 
 const s3 = slide(white);
-text(s3, 'A resident path, live', 76, 62, 1110, 84, 64, ink, true);
-text(s3, '1   Find a current role', 78, 207, 426, 60, 31, ink);
-text(s3, '2   Locate a service', 78, 307, 426, 60, 31, ink);
-text(s3, '3   Review a concern', 78, 407, 426, 60, 31, ink);
+text(s3, 'Ask Envoy, then act', 76, 62, 1110, 84, 64, ink, true);
+text(s3, '1   Ottawa jobs and dates', 78, 195, 430, 58, 28, ink);
+text(s3, '2   Ontario training help', 78, 278, 430, 58, 28, ink);
+text(s3, '3   An Ottawa office', 78, 361, 430, 58, 28, ink);
+text(s3, '4   Review Toronto feedback', 78, 444, 430, 58, 28, ink);
 text(s3, 'Open envoy.surf', 79, 583, 420, 58, 31, coral, true);
-const nearbyScreenshot = await fs.readFile(path.join(here, 'assets/nearby-map-crop.png'));
+const nearbyScreenshot = await fs.readFile(path.join(here, 'assets/chat-ottawa-jobs-2026-09-27.png'));
 s3.images.add({
   blob: nearbyScreenshot,
   contentType: 'image/png',
-  alt: 'Actual Envoy Nearby page showing a source-backed map and a list of public services',
-  fit: 'cover',
+  alt: 'Actual Envoy chat answer listing ten City of Ottawa jobs, closing dates, and ten official sources',
+  fit: 'contain',
   position: { left: 520, top: 170, width: 700, height: 475 },
 });
-s3.speakerNotes.textFrame.setText('0:48–3:50. Switch to the prepared browser. Search Jobs for an individual Ottawa vacancy and show source and closing date. Nearby: select an official service. Ask the assistant about a truthful product concern, review the editable proposal and Envoy destination, then submit once and show the private receipt. If AI is slow, use the prepared Feedback form. A source link does not submit an external application. See docs/judging/demo-runbook.md.');
+s3.speakerNotes.textFrame.setText('0:48–3:50. Switch to the prepared browser. Ask the guest assistant for current City of Ottawa vacancies, Ontario retraining support, and an Ottawa service office in separate fresh chats. The verified answers show individual job closing dates and ten official sources, Better Jobs Ontario, and the ServiceOntario St. Joseph Boulevard office. For a separate Toronto product concern, use the typed Feedback form as the reliable review and receipt path. Ottawa civic reports have no Envoy destination. A source link does not submit an external application. See docs/judging/demo-runbook.md.');
 
 const s4 = slide(ink);
 text(s4, 'One Worker, clear boundaries', 76, 60, 1120, 87, 62, white, true);
@@ -98,11 +99,11 @@ text(s6, 'Delivered event metadata and aggregate trends', 430, 178, 760, 54, 26,
 text(s6, 'Auth0', 80, 270, 330, 48, 35, ink, true);
 text(s6, 'JWT and role boundary built; live staff token pending', 430, 270, 760, 68, 26, muted);
 text(s6, 'ElevenLabs', 80, 371, 330, 48, 35, ink, true);
-text(s6, 'Signed voice session; end-to-end intake pending', 430, 371, 760, 68, 26, muted);
+text(s6, 'Signed call and follow-up; web handoff pending', 430, 371, 760, 68, 26, muted);
 text(s6, 'Presage', 80, 472, 330, 48, 35, ink, true);
 text(s6, 'Native integration; physical iPhone signal pending', 430, 472, 760, 68, 26, muted);
 text(s6, 'Backup for Q&A', 82, 610, 1000, 40, 23, coral, true);
-s6.speakerNotes.textFrame.setText('Backup only, not part of the five-minute pitch. Tiger Data has dated delivery evidence; refresh a read-only query for the panel. Auth0 hosted sign-in and Worker JWT rejection have evidence, but a real staff-role action is not accepted. ElevenLabs has a private agent and signed URL, but a full conversation-to-feedback run is not accepted. Presage compiles in SwiftUI; stable physical device signal is not accepted. See docs/submission-checklist.md and docs/judging/q-and-a.md. Never claim provider live acceptance from configuration or simulator footage.');
+s6.speakerNotes.textFrame.setText('Backup only, not part of the five-minute pitch. Tiger Data has dated delivery evidence; refresh a read-only query for the panel. Auth0 hosted sign-in and Worker JWT rejection have evidence, but a real staff-role action is not accepted. ElevenLabs issued a signed URL and one verified call produced a nearest-intersection follow-up; the web microphone-to-draft handoff is not accepted. Presage compiles in SwiftUI; stable physical device signal is not accepted. See docs/submission-checklist.md and docs/judging/q-and-a.md. Never claim provider end-to-end acceptance from configuration or simulator footage.');
 
 const candidate = path.join(build, 'candidate.pptx');
 await (await PresentationFile.exportPptx(p)).save(candidate);
@@ -111,7 +112,7 @@ for (let i = 0; i < p.slides.items.length; i++) {
   await fs.writeFile(path.join(out, 'slides', `slide-${String(i + 1).padStart(2, '0')}.png`), new Uint8Array(await png.arrayBuffer()));
 }
 
-const final = path.join(out, 'envoy-judges-2026-v4.pptx');
+const final = path.join(out, 'envoy-judges-2026-v6.pptx');
 await finalizePresentation({
   workspaceDir: here,
   candidatePath: candidate,
@@ -123,6 +124,6 @@ await finalizePresentation({
   requiredNativeTableOwnerSlides: [],
   fontPolicy: { basis: 'design', families: [font] },
   verifyArtifactToolImport: true,
-  receiptPath: path.join(build, 'envoy-judges-2026-v4.validation.json'),
+  receiptPath: path.join(build, 'envoy-judges-2026-v6.validation.json'),
 });
 console.log(final);

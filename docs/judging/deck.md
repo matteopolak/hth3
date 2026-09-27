@@ -2,11 +2,11 @@
 
 ## What it is
 
-An editable six-slide PowerPoint for the Hack the Hill III Civic Technology panel. Slides 1–5 support the five-minute pitch; slide 6 is an integration-evidence backup for Q&A. The output folder contains [the PPTX](../../apps/pitch/out/envoy-judges-2026-v4.pptx), [a PDF fallback](../../apps/pitch/out/envoy-judges-2026-v4.pdf), and [per-slide PNG previews](../../apps/pitch/out/slides/).
+An editable six-slide PowerPoint for the Hack the Hill III Civic Technology panel. Slides 1–5 support the five-minute pitch; slide 6 is an integration-evidence backup for Q&A. The output folder contains [the PPTX](../../apps/pitch/out/envoy-judges-2026-v6.pptx), [a PDF fallback](../../apps/pitch/out/envoy-judges-2026-v6.pdf), and [per-slide PNG previews](../../apps/pitch/out/slides/).
 
 ## How it works
 
-`apps/pitch/build-deck.mjs` authors native text boxes and speaker notes with `@oai/artifact-tool`, exports a draft, validates the PPTX package and layout, and writes each slide preview. The deck uses large Arial text on a black-and-white canvas with one restrained red accent. Slide 3 uses a crop of the real `apps/video/public/gallery/nearby-2026-09-26.png` capture as a visual cue; the browser demo remains the central proof. The speaker notes cite the [organizer's current resources](https://tracker.hackthehill.com/resources) and repository evidence.
+`apps/pitch/build-deck.mjs` authors native text boxes and speaker notes with `@oai/artifact-tool`, exports a draft, validates the PPTX package and layout, and writes each slide preview. The deck uses large Arial text on a black-and-white canvas with one restrained red accent. Slide 3 uses a crop from the real September 27 `current-chat-jobs-envoy-surf` capture showing ten City of Ottawa roles and official sources; the live browser remains the central proof. The speaker notes cite the [organizer's current resources](https://tracker.hackthehill.com/resources) and repository evidence.
 
 After generating the PPTX, LibreOffice converts it to PDF. The PPTX is editable; the PDF is a stage fallback. The [pitch script](pitch-script.md) gives the exact clock and speaking copy.
 

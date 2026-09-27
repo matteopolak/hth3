@@ -13,13 +13,13 @@ One page for the Envoy presenter, operator, and timekeeper before the Hack the H
 **At T−15 minutes:**
 
 - Open [envoy.surf](https://envoy.surf/) and `/api/healthz`; confirm both respond.
-- Select a current individual Ottawa vacancy and mapped public service. Write their titles on the cue card.
-- Load clean Assistant and Feedback tabs. Prefill the truthful wheelchair-accessibility suggestion in the [demo runbook](demo-runbook.md); rely on the form for the timed path unless the assistant has produced a real proposal card in preflight.
+- Preflight the three guest-chat prompts in the [demo runbook](demo-runbook.md): City of Ottawa jobs, Better Jobs Ontario, and an Ottawa ServiceOntario office. Record the current sourced answers on the cue card; leave fresh chats ready for the live sends.
+- Load the separate **Toronto** Feedback tab. Prefill the truthful wheelchair-accessibility suggestion; rely on the form for the timed path unless the assistant has produced a real proposal card in preflight.
 - Open the PPTX and PDF backup. Buffer the unlisted video only as a recovery asset, not as a substitute for a working live claim.
 - Turn off notifications. Check projector crop, browser zoom, mic, audio, and readable source/destination text.
 - Hide keys, JWTs, private files, and secret receipt tokens. Keep a timer visible to the timekeeper only.
 
-**At T−2 minutes:** Return to slide 1; put the browser on an already loaded Jobs tab; recheck the operator's mouse/keyboard handoff. The timekeeper calls 2:00 remaining, 1:00 remaining, and 0:20 remaining. At 5:00, stop. Preserve the remaining three minutes for judges.
+**At T−2 minutes:** Return to slide 1; put the browser on the first fresh guest chat; recheck the operator's mouse/keyboard handoff. The timekeeper calls 2:00 remaining, 1:00 remaining, and 0:20 remaining. At 5:00, stop. Preserve the remaining three minutes for judges.
 
 **If a flow fails:** Use the fallback in the runbook within ten seconds. Describe what actually rendered. If a report lacks a receipt, say it is pending rather than submitted. If the network fails, use the PDF and buffered video while identifying them as captured evidence.
 
@@ -29,7 +29,7 @@ Update deadline or format only from the current organizer rules, and record any 
 
 ## Configuration
 
-Use the English route on `https://envoy.surf/` and a clean browser at presentation-size zoom. Bring the [PPTX](../../apps/pitch/out/envoy-judges-2026-v4.pptx) and [PDF](../../apps/pitch/out/envoy-judges-2026-v4.pdf) on the presenting laptop. No live provider credentials should be projected.
+Use the English route on `https://envoy.surf/` and a clean browser at presentation-size zoom. Bring the [PPTX](../../apps/pitch/out/envoy-judges-2026-v6.pptx) and [PDF](../../apps/pitch/out/envoy-judges-2026-v6.pdf) on the presenting laptop. No live provider credentials should be projected.
 
 ## Dependencies
 

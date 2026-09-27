@@ -6,7 +6,7 @@ The current Hack the Hill III Civic Technology presentation kit is in [docs/judg
 
 ## How it works
 
-Use the [editable deck](judging/deck.md), [timed speaker script](judging/pitch-script.md), [live demo runbook](judging/demo-runbook.md), [Q&A sheet](judging/q-and-a.md), and [stage preflight](judging/stage-preflight.md) together. The main demo follows a resident from an individual official job posting through a nearby service to a reviewed concern and private receipt. The presenter states that reports reach Envoy's review team and no municipality or employer participates yet.
+Use the [editable deck](judging/deck.md), [timed speaker script](judging/pitch-script.md), [live demo runbook](judging/demo-runbook.md), [Q&A sheet](judging/q-and-a.md), and [stage preflight](judging/stage-preflight.md) together. The main demo asks Envoy about City of Ottawa jobs, Ontario training support, and an Ottawa office, then switches explicitly to a separate Toronto product concern and private receipt. The presenter states that reports reach Envoy's review team and no municipality or employer participates yet.
 
 The deck's sixth slide is a Q&A backup. It distinguishes deployed Tiger event evidence from Auth0 staff, ElevenLabs voice, and Presage device acceptance still pending. A product or provider claim moves into the main demonstration only after its exact live path succeeds.
 
