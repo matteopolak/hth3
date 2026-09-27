@@ -32,7 +32,6 @@ const copy = {
       heading: "Find support where you live",
       body: "Choose a jurisdiction to find official benefits and program sources.",
       region: "Choose a jurisdiction",
-      browse: "Browse all support sources",
     },
     funding: {
       heading: "Find funding and prepare",
@@ -69,7 +68,6 @@ const copy = {
       heading: "Trouvez de l'aide près de chez vous",
       body: "Choisissez un territoire pour trouver les sources officielles de prestations et de programmes.",
       region: "Choisir un territoire",
-      browse: "Parcourir toutes les sources d'aide",
     },
     funding: {
       heading: "Trouvez du financement et préparez-vous",
@@ -221,13 +219,6 @@ export function createDiscoveryAreaStructure({
       region.append(icon(ArrowRight));
     }
     section.append(regions);
-    const browse = button(
-      text.support.browse,
-      "discovery-structure-text-action",
-      () => onSearchLocation(""),
-    );
-    browse.append(icon(ArrowRight));
-    section.append(browse);
   } else {
     const top = element("div", "discovery-structure-funding-top");
     const heading = element("div", "discovery-structure-funding-heading");

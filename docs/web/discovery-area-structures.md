@@ -2,23 +2,25 @@
 
 ## What it is
 
-Jobs, Support, and Funding each have a compact introduction with actions suited to that area. The search, sourced results, record details, saving, and official handoff remain in the shared discovery view.
+Jobs, Support, and Funding each have an introduction and browsing layout suited to that area. Search, sourced details, saving, and official handoff remain in the shared discovery view.
 
 ## How it works
 
-`createDiscoveryAreaStructure({ area, locale, onBrowse, onSearchLocation })` returns a DOM section for one of `jobs`, `support`, or `funding`. Jobs puts the source search first. Support emphasizes choosing a jurisdiction. Funding shows the actual sequence: find a reviewed source, verify current terms with its publisher, and prepare notes before continuing to that publisher. All three offer region shortcuts for all regions, federal sources, Ontario, and British Columbia.
+`createDiscoveryAreaStructure({ area, locale, onBrowse, onSearchLocation })` returns a DOM section for one of `jobs`, `support`, or `funding`. Jobs keeps its direct source search. Support is a region-led directory: jurisdiction choices are visible first, keyword and city fields open from a native disclosure, and results appear as wide directory rows. Funding puts the actual preparation sequence above a compact search strip and shows sources in a grid. Selecting a Support or Funding source opens its detail below the results; keyboard focus moves to the detail heading and the detail scrolls into view while respecting reduced-motion preference. On narrow screens, selection swaps the list for the same source detail and its back action.
 
-The module owns no API calls or search state. `onBrowse()` should move focus to the existing discovery search, respecting the user's reduced-motion preference if it also scrolls. `onSearchLocation(location)` should set the discovery location field and run the current area search. The callback receives `""`, `"CA"` for federal sources, `"Ontario"`, or `"British Columbia"`. Pass the current `location` as `selectedLocation` so the active shortcut has both a visible state and `aria-pressed`; a custom city leaves all shortcuts unpressed. These are search filters, not claims that any particular record is currently available. The resulting list remains sourced and can be empty.
+Support and Funding start without an automatically selected record, so the browsing surface is not dominated by the first source's detail. Every source card remains a full button with `aria-pressed` selection state. The detail, save, prepare, and publisher handoff actions still use the same source data and Worker routes as Jobs.
+
+The structure module owns no API calls or search state. `onBrowse()` moves focus to the existing discovery search, respecting the user's reduced-motion preference if it scrolls. `onSearchLocation(location)` sets the discovery location field and runs the current area search. The callback receives `""`, `"CA"` for federal sources, `"Ontario"`, or `"British Columbia"`. Pass the current `location` as `selectedLocation` so the active shortcut has both a visible state and `aria-pressed`; a custom city leaves all shortcuts unpressed. These are search filters, not claims that any particular record is currently available. The resulting list remains sourced and can be empty.
 
 The introductions do not claim that Envoy hosts individual openings, adjudicates eligibility, or records an external application. The federal and provincial source adapters provide the official finder records, and the detail view provides provenance and the publisher handoff.
 
 ## How to change it
 
-Edit `apps/web/src/features/discovery/area-structures.ts` for layout copy, region shortcuts, or action wiring. Edit its adjacent `area-structures.css` for responsive presentation. Keep the module independent of API fetch state so the discovery view can rerender it with current callbacks. If a new shortcut is added, check that the Worker discovery `location` filter recognizes its value and that the source adapters cover that jurisdiction. English and French strings live together in this module.
+Edit `apps/web/src/features/discovery/area-structures.ts` for introduction copy, region shortcuts, or action wiring. The shared view in `apps/web/src/features/discovery/index.ts` controls the Support search disclosure, initial selection, and source-detail scroll; `styles.css` holds the area-specific result layouts. `area-structures.css` handles the introduction and region controls. Keep the structure module independent of API fetch state so the discovery view can rerender it with current callbacks. If a new shortcut is added, check that the Worker discovery `location` filter recognizes its value and that the source adapters cover that jurisdiction. English and French strings live in the structure module and shared discovery catalog.
 
 ## Configuration
 
-The only inputs are the selected area, `en` or `fr` locale, and the two callbacks. API base URL, saved-record authorization, and practice-record opt-in remain configured by the parent discovery view.
+The structure inputs are the selected area, `en` or `fr` locale, selected location, and the two callbacks. Search and layout behavior are selected by the area name in the parent discovery view; no new environment flags were added. API base URL, saved-record authorization, and practice-record opt-in remain configured there.
 
 ## Dependencies
 

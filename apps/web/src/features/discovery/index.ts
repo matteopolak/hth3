@@ -2,9 +2,11 @@ import type { Locale } from "@civicresolve/contracts/v1";
 import {
   Building2,
   BusFront,
+  ChevronDown,
   HandHeart,
   LibraryBig,
   MapPin,
+  SlidersHorizontal,
 } from "lucide-static";
 import { createDiscoveryAreaStructure } from "./area-structures.js";
 import "./styles.css";
@@ -107,6 +109,7 @@ const API = (
 const copy = {
   en: {
     search: "Search",
+    supportRefineSearch: "Search by keyword or city",
     keywords: "Keywords",
     searchPlaceholder: "Role, program, or service",
     location: "City or location",
@@ -216,6 +219,7 @@ const copy = {
   },
   fr: {
     search: "Rechercher",
+    supportRefineSearch: "Rechercher par mot-clé ou par ville",
     keywords: "Mots-clés",
     searchPlaceholder: "Poste, programme ou service",
     location: "Ville ou lieu",
@@ -339,7 +343,7 @@ export function createDiscoveryPage({
   onPrepare,
 }: Options): HTMLElement {
   const text = copy[locale];
-  const root = node("section", "discovery-page");
+  const root = node("section", `discovery-page discovery-page-area-${area}`);
   let query = "";
   let queryDraft = "";
   let location = "";
@@ -391,7 +395,10 @@ export function createDiscoveryPage({
         records = append ? records.concat(result.items) : result.items;
         total = result.total;
         if (!append && !records.some((item) => item.id === selected?.id)) {
-          selected = records[0] ?? null;
+          selected =
+            area === "support" || area === "funding"
+              ? null
+              : (records[0] ?? null);
           mobileDetail = false;
         }
         if (token) {
@@ -595,7 +602,7 @@ export function createDiscoveryPage({
   }
 
   function filters(): HTMLElement {
-    const form = node("form", "discovery-search");
+    const form = node("form", `discovery-search discovery-search-${area}`);
     if (area === "jobs" || area === "support" || area === "funding") {
       form.append(
         createDiscoveryAreaStructure({
@@ -678,7 +685,23 @@ export function createDiscoveryPage({
     });
     const bottom = node("div", "discovery-search-actions");
     bottom.append(current, submit);
-    form.append(fields);
+    if (area === "support") {
+      const more = node("details", "discovery-support-query");
+      more.open = Boolean(queryDraft || locationDraft || currentOnly);
+      const summary = node("summary", "", text.supportRefineSearch);
+      const summaryIcon = node("span", "discovery-support-query-icon");
+      summaryIcon.setAttribute("aria-hidden", "true");
+      summaryIcon.innerHTML = SlidersHorizontal;
+      summary.prepend(summaryIcon);
+      const chevron = node("span", "discovery-support-query-chevron");
+      chevron.setAttribute("aria-hidden", "true");
+      chevron.innerHTML = ChevronDown;
+      summary.append(chevron);
+      const controls = node("div", "discovery-support-query-controls");
+      controls.append(fields, bottom);
+      more.append(summary, controls);
+      form.append(more);
+    } else form.append(fields);
     if (area === "nearby") {
       const categories = node("div", "discovery-service-filters");
       categories.setAttribute("role", "group");
@@ -713,7 +736,7 @@ export function createDiscoveryPage({
       }
       form.append(categories);
     }
-    form.append(bottom);
+    if (area !== "support") form.append(bottom);
     return form;
   }
 
@@ -729,6 +752,18 @@ export function createDiscoveryPage({
       mobileDetail = true;
       notice = "";
       render();
+      if (area === "support" || area === "funding") {
+        root
+          .querySelector<HTMLElement>(".discovery-detail h3")
+          ?.focus({ preventScroll: true });
+        root.querySelector(".discovery-detail-panel")?.scrollIntoView({
+          block: "start",
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? "instant"
+            : "smooth",
+        });
+      }
     });
     entry.append(node("span", "discovery-type", itemType(item)));
     const title = node("span", "discovery-row-title", item.title);
@@ -882,15 +917,22 @@ export function createDiscoveryPage({
 
   function detail(item: DiscoveryItem): HTMLElement {
     const view = node("article", "discovery-detail");
+    const heading = node("h3", "", item.title);
+    heading.tabIndex = -1;
     view.append(
       action(text.back, "discovery-back discovery-link", () => {
         mobileDetail = false;
         render();
+        if (area === "support" || area === "funding")
+          root.querySelector(".discovery-results")?.scrollIntoView({
+            block: "start",
+            behavior: "instant",
+          });
       }),
     );
     view.append(
       node("span", "discovery-type", itemType(item)),
-      node("h3", "", item.title),
+      heading,
       node(
         "p",
         "discovery-detail-publisher",
