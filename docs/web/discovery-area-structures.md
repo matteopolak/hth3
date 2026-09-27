@@ -12,7 +12,7 @@ Support and Funding start without an automatically selected record, so the brows
 
 The structure module owns no API calls or search state. `onBrowse()` moves focus to the existing discovery search, respecting the user's reduced-motion preference if it scrolls. `onSearchLocation(location)` sets the discovery location field and runs the current area search. The callback receives `""`, `"CA"` for federal sources, `"Ontario"`, or `"British Columbia"`. Pass the current `location` as `selectedLocation` so the active shortcut has both a visible state and `aria-pressed`; a custom city leaves all shortcuts unpressed. These are search filters, not claims that any particular record is currently available. The resulting list remains sourced and can be empty.
 
-The introductions do not claim that Envoy hosts individual openings, adjudicates eligibility, or records an external application. The federal and provincial source adapters provide the official finder records, and the detail view provides provenance and the publisher handoff.
+The introductions do not claim that Envoy adjudicates eligibility or records an external application. Where sourced, the discovery API now supplies individual job postings and funding programs with effective status and direct publisher handoff. Career directories and other finders remain separate from those individual records, and the detail view provides provenance.
 
 ## How to change it
 
@@ -20,7 +20,7 @@ Edit `apps/web/src/features/discovery/area-structures.ts` for introduction copy,
 
 ## Configuration
 
-The structure inputs are the selected area, `en` or `fr` locale, selected location, and the two callbacks. Search and layout behavior are selected by the area name in the parent discovery view; no new environment flags were added. API base URL, saved-record authorization, and practice-record opt-in remain configured there.
+The structure inputs are the selected area, `en` or `fr` locale, selected location, and the two callbacks. Search and layout behavior are selected by the area name in the parent discovery view; no new environment flags were added. API base URL and saved-record authorization remain configured there. Practice records are hidden in production discovery; local Vite development can opt in with `?practice=1`.
 
 ## Dependencies
 

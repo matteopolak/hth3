@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
 } from "lucide-static";
 import { createDiscoveryAreaStructure } from "./area-structures.js";
+import { createNearbyMap, type NearbyMapView } from "./nearby-map.js";
 import "./styles.css";
 
 export type DiscoveryArea =
@@ -172,16 +173,9 @@ const copy = {
     chooseResult: "Choose a result to view details.",
     list: "List",
     map: "Map",
-    mapNote:
-      "Pins use source-backed coordinates. Nearby pins may be spaced for readability; this is not a street map.",
-    mapUnavailable:
-      "These services have no source-backed map pins. See the full list.",
-    mappedLocations: "Mapped locations",
-    listOnly: "Other services remain available in the list.",
     jurisdiction: "Jurisdiction",
     allJurisdictions: "All jurisdictions",
     currentOnly: "Current only",
-    practice: "Show practice records",
     noResults: "No matching records from reviewed sources yet.",
     noSaved: "Nothing saved yet.",
     emptyJobs: "No individual job postings match",
@@ -296,16 +290,9 @@ const copy = {
     chooseResult: "Choisissez un résultat pour voir les détails.",
     list: "Liste",
     map: "Carte",
-    mapNote:
-      "Les repères utilisent les coordonnées des sources. Les repères proches peuvent être espacés pour la lisibilité; ce n’est pas un plan de rues.",
-    mapUnavailable:
-      "Ces services n’ont aucun repère cartographique provenant d’une source. Consultez la liste complète.",
-    mappedLocations: "Lieux sur la carte",
-    listOnly: "Les autres services restent dans la liste.",
     jurisdiction: "Territoire",
     allJurisdictions: "Tous les territoires",
     currentOnly: "Actuels seulement",
-    practice: "Afficher les dossiers d’exercice",
     noResults:
       "Aucun dossier correspondant des sources examinées pour le moment.",
     noSaved: "Aucun élément enregistré.",
@@ -389,13 +376,18 @@ export function createDiscoveryPage({
   let locationDraft = "";
   let currentOnly = false;
   let serviceCategory: ServiceCategory | "all" = "all";
-  let includeSamples = false;
-  let display: "list" | "map" = "list";
+  const includeSamples =
+    import.meta.env.DEV &&
+    new URLSearchParams(window.location.search).get("practice") === "1";
+  let display: "list" | "map" = area === "nearby" ? "map" : "list";
   let mobileDetail = false;
+  const pageSize = area === "nearby" ? 100 : 30;
   let offset = 0;
   let total = 0;
   let records: DiscoveryItem[] = [];
   let jobBoards: DiscoveryItem[] = [];
+  let nearbyMap: NearbyMapView | null = null;
+  let nearbyMapFingerprint = "";
   let saved: SavedItem[] = [];
   let selected: DiscoveryItem | null = null;
   let loading = false;
@@ -419,7 +411,7 @@ export function createDiscoveryPage({
         }
       } else {
         const params = new URLSearchParams({
-          limit: "30",
+          limit: String(pageSize),
           offset: String(offset),
         });
         if (area !== "all" && area !== "nearby") params.set("area", area);
@@ -451,7 +443,7 @@ export function createDiscoveryPage({
             ) ?? [];
         if (!append && !records.some((item) => item.id === selected?.id)) {
           selected =
-            area === "support" || area === "funding"
+            area === "support" || area === "funding" || area === "nearby"
               ? null
               : (records[0] ?? null);
           mobileDetail = false;
@@ -506,6 +498,12 @@ export function createDiscoveryPage({
 
   function render(): void {
     root.classList.toggle("is-detail-open", mobileDetail);
+    root.classList.toggle("has-selection", selected !== null);
+    if (display !== "map" && nearbyMap) {
+      nearbyMap.destroy();
+      nearbyMap = null;
+      nearbyMapFingerprint = "";
+    }
     root.replaceChildren();
     if (area !== "saved") root.append(filters());
     if (area === "nearby" && !location) {
@@ -519,6 +517,11 @@ export function createDiscoveryPage({
     const tools = node("div", "discovery-toolbar");
     const displayed =
       area === "saved" ? saved.map((entry) => entry.item) : records;
+    if (!displayed.length && nearbyMap) {
+      nearbyMap.destroy();
+      nearbyMap = null;
+      nearbyMapFingerprint = "";
+    }
     const resultTotal = area === "saved" ? displayed.length : total;
     tools.append(
       node(
@@ -527,19 +530,6 @@ export function createDiscoveryPage({
         `${resultTotal} ${resultTotal === 1 ? text.resultSingular : text.resultCount}`,
       ),
     );
-    const practice = node("label", "discovery-check");
-    const practiceInput = document.createElement("input");
-    practiceInput.type = "checkbox";
-    practiceInput.checked = includeSamples;
-    practiceInput.addEventListener("change", () => {
-      includeSamples = practiceInput.checked;
-      query = queryDraft.trim();
-      location = locationDraft.trim();
-      offset = 0;
-      void refresh();
-    });
-    practice.append(practiceInput, node("span", "", text.practice));
-    tools.append(practice);
     if (area === "nearby" && displayed.length > 0) {
       const switcher = node("div", "discovery-view-switch");
       for (const mode of ["list", "map"] as const) {
@@ -587,7 +577,7 @@ export function createDiscoveryPage({
       if (area !== "saved" && records.length < total) {
         results.append(
           action(text.more, "discovery-button discovery-more", () => {
-            offset += 30;
+            offset += pageSize;
             void refresh(true);
           }),
         );
@@ -907,113 +897,47 @@ export function createDiscoveryPage({
   }
 
   function map(items: DiscoveryItem[]): HTMLElement {
-    const points = items.filter(
-      (
-        item,
-      ): item is DiscoveryItem & {
-        coordinates: { latitude: number; longitude: number };
-      } => !!item.coordinates && item.service?.pinEligible === true,
-    );
-    if (!points.length) {
-      const empty = node("div", "discovery-map-empty");
-      empty.append(
-        node("p", "", text.mapUnavailable),
-        action(text.list, "discovery-button", () => {
-          display = "list";
-          render();
-        }),
-      );
-      return empty;
-    }
-    const latitudes = points.map((item) => item.coordinates.latitude);
-    const longitudes = points.map((item) => item.coordinates.longitude);
-    const minLat = Math.min(...latitudes) - 0.3;
-    const maxLat = Math.max(...latitudes) + 0.3;
-    const minLon = Math.min(...longitudes) - 0.3;
-    const maxLon = Math.max(...longitudes) + 0.3;
-    const view = node("div", "discovery-map");
-    view.append(node("span", "discovery-map-north", "N"));
-    const key = node("div", "discovery-map-key");
-    key.append(
-      node(
-        "strong",
-        "discovery-map-key-heading",
-        `${points.length} ${text.mappedLocations}`,
-      ),
-    );
-    const placed: Array<{ x: number; y: number }> = [];
-    for (const [index, item] of points.entries()) {
-      const rawX =
-        7 + ((item.coordinates.longitude - minLon) / (maxLon - minLon)) * 86;
-      const rawY =
-        7 + (1 - (item.coordinates.latitude - minLat) / (maxLat - minLat)) * 86;
-      const offsets: Array<[number, number]> = [
-        [0, 0],
-        [0, 9],
-        [9, 0],
-        [-9, 0],
-        [0, -9],
-        [9, 9],
-        [-9, 9],
-        [9, -9],
-        [-9, -9],
-      ];
-      const place = offsets
-        .map(([dx, dy]) => ({
-          x: Math.max(7, Math.min(93, rawX + dx)),
-          y: Math.max(7, Math.min(93, rawY + dy)),
-        }))
-        .find(({ x, y }) =>
-          placed.every((point) => Math.hypot(point.x - x, point.y - y) >= 8),
-        ) ?? { x: rawX, y: rawY };
-      placed.push(place);
-      const marker = action(
-        item.title,
-        `discovery-map-pin category-${item.service?.category ?? "other"} ${item.service?.pinKind === "sample" ? "is-sample" : ""}`,
-        () => {
-          selected = item;
+    const points = items
+      .filter((item) => item.coordinates && item.service?.pinEligible === true)
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        latitude: item.coordinates!.latitude,
+        longitude: item.coordinates!.longitude,
+        category: item.service!.category,
+      }));
+    const fingerprint = points
+      .map(
+        (point) =>
+          `${point.id}:${point.latitude}:${point.longitude}:${point.category}`,
+      )
+      .join("|");
+    if (!nearbyMap) {
+      nearbyMap = createNearbyMap({
+        locale,
+        points,
+        selectedId: selected?.id ?? null,
+        onSelect: (id) => {
+          const match = records.find((item) => item.id === id);
+          if (!match) return;
+          selected = match;
           mobileDetail = true;
+          notice = "";
           render();
         },
-      );
-      marker.textContent = String(index + 1);
-      const label = `${item.title} · ${item.service ? serviceCategoryName(item.service.category) : text.locationRecord}${item.service?.locationPrecision === "station" ? ` · ${text.serviceStationPin}` : ""}${item.origin === "sample" ? ` · ${text.practiceLabel}` : ""}`;
-      marker.setAttribute("aria-label", label);
-      marker.title = label;
-      marker.style.left = `${place.x}%`;
-      marker.style.top = `${place.y}%`;
-      if (selected?.id === item.id) marker.classList.add("is-selected");
-      view.append(marker);
-      const keyRow = action(item.title, "discovery-map-key-row", () => {
-        selected = item;
-        mobileDetail = true;
-        render();
+        onFallback: () => {
+          display = "list";
+          mobileDetail = false;
+          render();
+        },
       });
-      keyRow.replaceChildren(
-        node(
-          "span",
-          `discovery-map-key-number category-${item.service?.category ?? "other"}`,
-          String(index + 1),
-        ),
-        node("span", "discovery-map-key-copy", item.title),
-      );
-      keyRow.append(
-        node(
-          "small",
-          "",
-          item.service
-            ? serviceCategoryName(item.service.category)
-            : text.locationRecord,
-        ),
-      );
-      if (selected?.id === item.id) keyRow.classList.add("is-selected");
-      key.append(keyRow);
-    }
-    const container = node("div", "discovery-map-wrap");
-    container.append(view, key, node("p", "discovery-muted", text.mapNote));
-    if (points.length < items.length)
-      container.append(node("p", "discovery-muted", text.listOnly));
-    return container;
+      nearbyMapFingerprint = fingerprint;
+    } else if (nearbyMapFingerprint !== fingerprint) {
+      nearbyMap.setPoints(points, selected?.id ?? null);
+      nearbyMapFingerprint = fingerprint;
+    } else nearbyMap.setSelected(selected?.id ?? null);
+    requestAnimationFrame(() => nearbyMap?.resize());
+    return nearbyMap.element;
   }
 
   function itemType(item: DiscoveryItem): string {
