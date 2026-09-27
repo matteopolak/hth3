@@ -43,6 +43,7 @@ const colors = {
   coral: "#ff9e8a",
   blue: "#8daef5",
 };
+const webCaptureAspectRatio = 1600 / 812;
 
 const Brand = () => (
   <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
@@ -135,10 +136,10 @@ const WebMonitor = ({ children }: { children: ReactNode }) => (
     <div
       style={{
         position: "absolute",
-        top: 8,
+        top: 32,
         left: 8,
-        right: 8,
-        bottom: 45,
+        width: "calc(100% - 34px)",
+        boxSizing: "content-box",
         border: `9px solid ${colors.ink}`,
         borderRadius: 22,
         background: colors.white,
@@ -150,7 +151,7 @@ const WebMonitor = ({ children }: { children: ReactNode }) => (
       <div
         style={{
           width: "100%",
-          height: "100%",
+          aspectRatio: webCaptureAspectRatio,
           position: "relative",
           overflow: "hidden",
         }}
@@ -161,7 +162,7 @@ const WebMonitor = ({ children }: { children: ReactNode }) => (
     <div
       style={{
         position: "absolute",
-        bottom: 15,
+        bottom: 41,
         left: "calc(50% - 46px)",
         width: 92,
         height: 31,
@@ -172,7 +173,7 @@ const WebMonitor = ({ children }: { children: ReactNode }) => (
     <div
       style={{
         position: "absolute",
-        bottom: 5,
+        bottom: 31,
         left: "calc(50% - 115px)",
         width: 230,
         height: 12,
@@ -506,19 +507,19 @@ const SceneFrame = ({ scene, review }: { scene: Scene; review: boolean }) => {
               {hasClip && capture.file ? (
                 <OffthreadVideo
                   src={staticFile(capture.file)}
-                  style={{ width: "100%", height: "100%", objectFit: "fill" }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   volume={0}
                 />
               ) : showDraftClip && draftClip ? (
                 <OffthreadVideo
                   src={staticFile(draftClip.file)}
-                  style={{ width: "100%", height: "100%", objectFit: "fill" }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   volume={0}
                 />
               ) : still ? (
                 <Img
                   src={staticFile(still.file)}
-                  style={{ width: "100%", height: "100%", objectFit: "fill" }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : scene.id === "tiger" ? (
                 <TigerSnapshot />
