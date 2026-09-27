@@ -80,7 +80,7 @@ export async function handleApplicationRequest(
   context: FeatureContext,
 ): Promise<Response | null> {
   if (url.pathname === "/api/v1/postings") {
-    if (request.method === "GET") return listPublicPostings(context);
+    if (request.method === "GET") return listPublicPostings(url, context);
     return featureError(context, "METHOD_NOT_ALLOWED", "Use GET.", 405);
   }
 
@@ -89,7 +89,7 @@ export async function handleApplicationRequest(
   );
   if (postingMatch) {
     if (request.method === "GET")
-      return getPublicPosting(postingMatch[1]!, context);
+      return getPublicPosting(postingMatch[1]!, url, context);
     return featureError(context, "METHOD_NOT_ALLOWED", "Use GET.", 405);
   }
 
@@ -130,17 +130,23 @@ export async function handleApplicationRequest(
   return null;
 }
 
-async function listPublicPostings(context: FeatureContext): Promise<Response> {
+async function listPublicPostings(
+  url: URL,
+  context: FeatureContext,
+): Promise<Response> {
+  const includeSamples = url.searchParams.get("includeSamples") === "true";
   const rows = await context.env.DB.prepare(
     `SELECT p.id, p.organization_id, o.display_name AS organization_name,
        p.title, p.description, p.location_name, p.sample
      FROM postings AS p JOIN organizations AS o ON o.id = p.organization_id
      WHERE p.status = 'published' AND (
-       (p.sample = 1 AND o.sample = 1) OR
+       (? = 1 AND p.sample = 1 AND o.sample = 1) OR
        (p.sample = 0 AND o.sample = 0 AND o.verification_status = 'verified')
      )
      ORDER BY p.created_at DESC LIMIT 50`,
-  ).all<PostingRow>();
+  )
+    .bind(includeSamples ? 1 : 0)
+    .all<PostingRow>();
   return featureJson(context, {
     apiVersion: API_VERSION,
     postings: (rows.results ?? []).map(publicPostingView),
@@ -149,9 +155,14 @@ async function listPublicPostings(context: FeatureContext): Promise<Response> {
 
 async function getPublicPosting(
   postingId: string,
+  url: URL,
   context: FeatureContext,
 ): Promise<Response> {
-  const row = await findPublicPosting(context.env.DB, postingId);
+  const row = await findPublicPosting(
+    context.env.DB,
+    postingId,
+    url.searchParams.get("includeSamples") === "true",
+  );
   if (!row)
     return featureError(context, "NOT_FOUND", "Posting not found.", 404);
   return featureJson(context, {
@@ -204,7 +215,7 @@ async function submitApplication(
       400,
     );
 
-  const posting = await findPublicPosting(context.env.DB, body.postingId);
+  const posting = await findPublicPosting(context.env.DB, body.postingId, true);
   if (!posting)
     return featureError(context, "NOT_FOUND", "Posting not found.", 404);
 
@@ -563,6 +574,7 @@ async function changeApplicationStatus(
 async function findPublicPosting(
   database: D1Database,
   postingId: string,
+  includeSamples: boolean,
 ): Promise<PostingRow | null> {
   return database
     .prepare(
@@ -570,11 +582,11 @@ async function findPublicPosting(
         p.title, p.description, p.location_name, p.sample
        FROM postings AS p JOIN organizations AS o ON o.id = p.organization_id
        WHERE p.id = ? AND p.status = 'published' AND (
-         (p.sample = 1 AND o.sample = 1) OR
+         (? = 1 AND p.sample = 1 AND o.sample = 1) OR
          (p.sample = 0 AND o.sample = 0 AND o.verification_status = 'verified')
        )`,
     )
-    .bind(postingId)
+    .bind(postingId, includeSamples ? 1 : 0)
     .first<PostingRow>();
 }
 
