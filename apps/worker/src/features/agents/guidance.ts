@@ -10,6 +10,13 @@ interface VacancyItem {
   listing?: { closingDate?: unknown } | null;
 }
 
+function markdownText(value: string): string {
+  return value
+    .replace(/\s+/gu, " ")
+    .trim()
+    .replace(/([\\`*_{}\[\]()!])/gu, "\\$1");
+}
+
 /** High-confidence current job searches use verified individual listings. */
 export function currentJobPostingsTool(
   message: string,
@@ -78,22 +85,25 @@ export function currentJobPostingsAnswer(
     typeof result?.total === "number" && Number.isFinite(result.total)
       ? result.total
       : items.length;
-  if (count === 0)
+  if (items.length === 0)
     return locale === "fr"
       ? "Je n'ai trouvé aucune offre d'emploi ouverte correspondante dans les sources publiées."
       : "I found no matching open job postings in the published sources.";
-  const sample = items
-    .slice(0, 3)
+  const listings = items
     .map((item) => {
-      const title = typeof item.title === "string" ? item.title.trim() : "";
+      const title =
+        typeof item.title === "string" ? markdownText(item.title) : "";
       const closing =
         typeof item.listing?.closingDate === "string" &&
         /^\d{4}-\d{2}-\d{2}$/.test(item.listing.closingDate)
           ? item.listing.closingDate
           : null;
-      return title && closing ? `${title} (${closing})` : title;
+      if (!title) return null;
+      return locale === "fr"
+        ? `- ${title} — ${closing ? `clôture le ${closing}` : "date de clôture non indiquée"}`
+        : `- ${title} — ${closing ? `closes ${closing}` : "closing date not listed"}`;
     })
-    .filter(Boolean);
+    .filter((line): line is string => line !== null);
   const source = args.source;
   const scope =
     source === "city-ottawa-open-jobs"
@@ -117,9 +127,14 @@ export function currentJobPostingsAnswer(
     locale === "fr"
       ? `J'ai trouvé ${count} offres d'emploi ouvertes ${scope}`.trim() + "."
       : `I found ${count} open job postings ${scope}`.trim() + ".";
-  return sample.length
-    ? `${heading} ${sample.join("; ")}${count > sample.length ? (locale === "fr" ? "; les autres offres et dates de clôture figurent ci-dessous." : "; the remaining roles and closing dates are below.") : "."}`
-    : heading;
+  if (!listings.length) return heading;
+  const partial =
+    count > items.length
+      ? locale === "fr"
+        ? ` Voici ${items.length} offres sur ${count} :`
+        : ` Showing ${items.length} of ${count}:`
+      : "";
+  return `${heading}${partial}\n\n${listings.join("\n")}`;
 }
 
 /** Keep a model's broad catalogue choice from drowning a specific job search. */

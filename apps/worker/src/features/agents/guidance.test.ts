@@ -57,7 +57,7 @@ it("finds current City of Ottawa roles and their closing dates without a model-s
       "en",
       tool!.args,
     ),
-  ).toContain("Planner (2026-10-12); Inspector (2026-10-18)");
+  ).toContain("- Planner — closes 2026-10-12\n- Inspector — closes 2026-10-18");
   expect(
     currentJobPostingsTool("Apply for a saved Ottawa role"),
   ).toBeUndefined();
@@ -66,6 +66,24 @@ it("finds current City of Ottawa roles and their closing dates without a model-s
       "Trouver les offres d'emploi actuelles de la Ville d'Ottawa et leurs dates de clôture.",
     )?.args,
   ).toEqual(tool?.args);
+});
+
+it("lists every returned vacancy and deadline in the grounded reply", () => {
+  const items = Array.from({ length: 10 }, (_, index) => ({
+    title: `Role ${index + 1}`,
+    listing: { closingDate: `2026-10-${String(index + 10).padStart(2, "0")}` },
+  }));
+  const answer = currentJobPostingsAnswer({ items, total: 10 }, "en", {
+    source: "city-ottawa-open-jobs",
+  });
+  for (let index = 0; index < 10; index++)
+    expect(answer).toContain(
+      `- Role ${index + 1} — closes 2026-10-${String(index + 10).padStart(2, "0")}`,
+    );
+  expect(answer).not.toContain("below");
+  expect(
+    currentJobPostingsAnswer({ items: items.slice(0, 2), total: 10 }, "en", {}),
+  ).toContain("Showing 2 of 10:");
 });
 
 it("grounds generic and Toronto or BC current-job requests in individual postings", () => {

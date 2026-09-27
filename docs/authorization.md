@@ -8,7 +8,7 @@ The Worker verifies Auth0 access tokens and applies an action-specific permissio
 
 Requests send `Authorization: Bearer <access-token>`. The Worker accepts only RS256 JWTs signed by the configured Auth0 issuer. It fetches signing keys from the issuer's JWKS endpoint, caches them according to the response cache policy, and validates the signature, exact issuer, API audience, expiry, not-before time, and optional issued-at time.
 
-An invalid token returns `401 UNAUTHENTICATED`. If the JWKS endpoint cannot be reached or returns a non-success response, the Worker returns `503 AUTHENTICATION_UNAVAILABLE` so a temporary identity-provider outage is not confused with a bad token. Its structured diagnostic includes only the Worker request ID, whether the fetch failed at the network layer or returned HTTP, and the HTTP status when available.
+An invalid token returns `401 UNAUTHENTICATED`. If the JWKS endpoint cannot be reached or returns a non-success response, the Worker returns `503 AUTHENTICATION_UNAVAILABLE` so a temporary identity-provider outage is not confused with a bad token. The structured warning includes only the Worker request ID.
 
 Auth0 RBAC supplies the `permissions` array (the standard `scope` string is also parsed as a fallback) and the Post-Login Action supplies `https://civicresolve.example/roles`. Role names are matched exactly:
 
