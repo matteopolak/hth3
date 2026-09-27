@@ -1,17 +1,17 @@
 {
-  "mode": "chat-jobs",
+  "mode": "chat-nearby",
   "origin": "https://envoy.surf/",
   "route": "/",
-  "recordedAt": "2026-09-27T04:29:05.187Z",
+  "recordedAt": "2026-09-27T04:25:51.342Z",
   "viewport": {
     "width": 1600,
     "height": 812
   },
   "fps": 8,
   "seconds": 50,
-  "file": "/var/folders/fh/v9s7s7zx0svb3wp8dl0nnl4w0000gn/T/envoy-video-candidates/production-chat-jobs-20260927T042905Z.mp4",
-  "frameDir": "/var/folders/fh/v9s7s7zx0svb3wp8dl0nnl4w0000gn/T/envoy-video-chat-jobs-frames-mEwOZ1",
-  "sha256": "40a2ee630c03d6f5dcc55f82fc2d1d74d9448e14f1bc1192ebdca346c2c7da29",
+  "file": "/var/folders/fh/v9s7s7zx0svb3wp8dl0nnl4w0000gn/T/envoy-video-candidates/production-chat-nearby-20260927T042551Z.mp4",
+  "frameDir": "/var/folders/fh/v9s7s7zx0svb3wp8dl0nnl4w0000gn/T/envoy-video-chat-nearby-frames-fOHr1q",
+  "sha256": "71e88474bbde9045f55e5d0e6a50c889a8e2400853f68a22b2ebbbef4dada265",
   "actions": [
     {
       "frame": 80,

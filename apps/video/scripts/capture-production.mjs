@@ -28,6 +28,7 @@ const specs = {
   "feedback-submit": { seconds: 24, route: "/feedback" },
   "still-home": { seconds: 0, route: "/" },
   "still-nearby": { seconds: 0, route: "/explore/nearby" },
+  "still-nearby-ottawa": { seconds: 0, route: "/explore/nearby" },
   "gallery-assistant": { seconds: 0, route: "/" },
   "gallery-jobs": { seconds: 0, route: "/explore/jobs" },
   "gallery-nearby": { seconds: 0, route: "/explore/nearby" },
@@ -149,6 +150,16 @@ try {
       node.focus(); return true;
     })()`);
   }
+  async function typeInput(selector, value) {
+    return await evaluate(`(() => {
+      const node = document.querySelector(${JSON.stringify(selector)});
+      if (!(node instanceof HTMLInputElement)) return false;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(
+        node, ${JSON.stringify(value)});
+      node.dispatchEvent(new Event('input', { bubbles: true }));
+      node.focus(); return true;
+    })()`);
+  }
   async function act(frame, label, operation) {
     const ok = await operation();
     actions.push({ frame, seconds: frame / fps, label, ok });
@@ -175,6 +186,21 @@ try {
   if (isGallery || isStill) {
     if (mode === "gallery-nearby" || mode === "still-nearby")
       await delay(mode === "still-nearby" ? 6500 : 2600);
+    if (mode === "still-nearby-ottawa") {
+      const filled = await typeInput(
+        ".discovery-search-field:nth-child(2) .discovery-input",
+        "Ottawa",
+      );
+      const searched =
+        filled && (await clickSelector(".discovery-button-primary"));
+      actions.push({ label: "search-ottawa-nearby", ok: searched });
+      if (!searched) throw new Error("Ottawa Nearby search was unavailable");
+      await delay(1200);
+      const openedMap = await clickText(["Map"]);
+      actions.push({ label: "show-ottawa-on-map", ok: openedMap });
+      if (!openedMap) throw new Error("Ottawa Nearby map was unavailable");
+      await delay(6000);
+    }
     if (mode === "gallery-feedback") {
       const filled = await typeText(
         "textarea",
@@ -206,7 +232,7 @@ try {
           file,
           sha256,
           actions,
-          note: "Unaltered 3:2 production browser screenshot. Review its visible data and claims before using in the gallery.",
+          note: "Unaltered production browser screenshot at the recorded viewport. Review its visible data and claims before use.",
         },
         null,
         2,

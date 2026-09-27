@@ -5,21 +5,21 @@
   "assets": [
     {
       "file": "captures/current-home-envoy-surf-2026-09-26.png",
-      "recordedAt": "2026-09-27T03:30:00Z",
-      "sha256": "f9e1d389712504a450fffb64f29d121d7d028e0727e501b08de2c0b3aa6ca940",
-      "observed": "Current neutral sidebar and guest assistant entry point; no user interaction."
+      "recordedAt": "2026-09-27T04:39:23Z",
+      "sha256": "d2b1d30a60392f95d6dcde7a8813d00f279c262eed6d2aec5321a7ecea3b2585",
+      "observed": "Current neutral sidebar, subtle maple-leaf background, and guest assistant entry point; no user interaction."
     },
     {
       "file": "captures/current-job-flow-envoy-surf-2026-09-26.mp4",
-      "recordedAt": "2026-09-27T03:30:01.284Z",
-      "sha256": "1ae08397534328094b3414c129f4c46daa3ca2b1474e75f98257930367de313b",
-      "observed": "Select official BC vacancy at 2s; Prepare application at 6s; Continue on official site at 14s. All three click actions returned true. External submission is not recorded in Envoy."
+      "recordedAt": "2026-09-27T04:30:38Z",
+      "sha256": "f293d29cca907f85f24eb0d6e8803b6a31f2ae4f81e45b4af3664b37af325f86",
+      "observed": "On the current maple-leaf deploy, selected an official BC vacancy at 2s, opened Prepare application at 6s, and activated Continue on official site at 14s. All three click actions returned true. External submission is not recorded in Envoy."
     },
     {
       "file": "captures/current-nearby-envoy-surf-2026-09-26.png",
-      "recordedAt": "2026-09-27T03:30:44Z",
-      "sha256": "8b30bba35fb7656f980b05d49d52c93fa30173d9ce2c224be44f71152baf9581",
-      "observed": "Fully loaded tiled Nearby map, neutral sidebar, 78 source-backed results."
+      "recordedAt": "2026-09-27T04:40:14Z",
+      "sha256": "aabc04b31ebfb7730c9252fbcbfddf2fe74d2169e5815dbf835ae66ecb3ff5c3",
+      "observed": "Fully loaded tiled Canada-wide Nearby map, neutral sidebar, 78 source-backed results, and current seasonal background. This wide view is a catalog context, not an Ottawa zoom."
     },
     {
       "file": "captures/production-feedback-submit-redacted-2026-09-26.mp4",
@@ -30,21 +30,45 @@
     },
     {
       "file": "captures/current-agent-envoy-surf-2026-09-26.mp4",
-      "recordedAt": "2026-09-27T03:41:29Z",
-      "sha256": "c06a8f97dc17d82abcf9006276ecca350cfeb081d9d48508efdc487e6e9c5fc7",
-      "observed": "After the duplicate-check fix, the production guest bench prompt returned a pending editable feedback proposal. Approval remained unchecked and Confirm disabled; no report was submitted. A separate failed recapture was excluded."
+      "recordedAt": "2026-09-27T04:27:23Z",
+      "sha256": "f1c5934a5240b4eeef0f804638c4fd7e602fac690500434c60fe903a62527bd8",
+      "observed": "On the current maple-leaf deploy, the production guest Toronto bench prompt returned a pending editable feedback proposal. Approval remained unchecked and Confirm disabled; no report was submitted. A separate failed Ottawa capture was excluded."
     },
     {
       "file": "captures/current-agent-pending-envoy-surf-2026-09-26.png",
       "sourceVideoSecond": 25,
-      "sha256": "71be8f3bb1638f7ab4e68176eb8bcdd47cb9a573e9a58a4fda0ac303ea44779a",
-      "observed": "Still extracted from the same successful guest conversation, showing the Envoy-only pending proposal."
+      "sha256": "d05c41e98ec1f31d7f4808c3b3d1dbfa23c8a2cf57bf9efd6996d57192480f52",
+      "observed": "Still extracted from the refreshed guest conversation, showing the Envoy-only pending proposal and current seasonal background."
     },
     {
       "file": "captures/current-chat-jobs-envoy-surf-2026-09-27.mp4",
-      "recordedAt": "2026-09-27T04:11:56Z",
-      "sha256": "dfaa559a09e33b12130bf0d018ca7fc9334770c2e92b61a919bf8b1c34144d7e",
-      "observed": "Guest chat on envoy.surf returned 10 individual City of Ottawa job postings with closing dates and a ten-source panel. The question asked for official posting links; the visible answer lists roles and dates, while official URLs are represented in the source panel. No application was submitted."
+      "recordedAt": "2026-09-27T04:29:05Z",
+      "sha256": "40a2ee630c03d6f5dcc55f82fc2d1d74d9448e14f1bc1192ebdca346c2c7da29",
+      "observed": "On the current maple-leaf deploy, guest chat returned 10 individual City of Ottawa job postings with closing dates and a ten-source panel. The question asked for official posting links; the visible answer lists roles and dates, while official URLs are represented in the source panel. No application was submitted."
+    },
+    {
+      "file": "captures/current-chat-nearby-envoy-surf-2026-09-27.mp4",
+      "recordedAt": "2026-09-27T04:25:51Z",
+      "sha256": "71e88474bbde9045f55e5d0e6a50c889a8e2400853f68a22b2ebbbef4dada265",
+      "observed": "After the focused grounding fix, the exact Ottawa service prompt returned one ServiceOntario office at 2864 St. Joseph Boulevard, Ottawa, and an official Government of Ontario location link. The prior false Service BC reply was excluded."
+    },
+    {
+      "file": "captures/current-nearby-ottawa-list-envoy-surf-2026-09-27.png",
+      "recordedAt": "2026-09-27T04:46:50Z",
+      "sha256": "3f243448b58b9435f976da8878349972dc609458ff0ac0b407a2235e44b6c2ff",
+      "observed": "Ottawa-filtered Nearby page shows one ServiceOntario St. Joseph result with full street address. A Map click did not switch from List to a single-office map, so the film presents this as an address check and uses the separate 78-place map only for wider browsing."
+    },
+    {
+      "file": "captures/current-chat-support-envoy-surf-2026-09-27.mp4",
+      "recordedAt": "2026-09-27T04:36:08Z",
+      "sha256": "c4a27240a3cf5bf98394524f081d0b26f43f1b70e7555bbc04875b0c343192de",
+      "observed": "Production guest chat answered an Ontario retraining question with one official Better Jobs Ontario result, a source panel, and publisher-site continuation. The prior preview-only and grammatical-error captures were excluded."
+    },
+    {
+      "file": "captures/current-chat-funding-bc-envoy-surf-2026-09-27.mp4",
+      "recordedAt": "2026-09-27T04:27:24Z",
+      "sha256": "4a2011dc3895d732c30deac963d478c06cdee99a4e17ac42c2c1b43676e7cdb1",
+      "observed": "Production guest chat answered a separately labeled British Columbia student-grants question with seven official StudentAid BC opportunities and linked publisher sources. No grant application was submitted."
     },
     {
       "file": "music-your-breath-mixkit.mp3",

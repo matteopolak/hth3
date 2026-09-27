@@ -1,0 +1,24 @@
+{
+  "mode": "chat-support",
+  "origin": "https://envoy.surf/",
+  "route": "/",
+  "recordedAt": "2026-09-27T04:36:08.717Z",
+  "viewport": {
+    "width": 1600,
+    "height": 812
+  },
+  "fps": 8,
+  "seconds": 35,
+  "file": "/Users/matthew/projects/hth3/apps/video/public/captures/production-chat-support-20260927T043608Z.mp4",
+  "frameDir": "/var/folders/fh/v9s7s7zx0svb3wp8dl0nnl4w0000gn/T/envoy-video-chat-support-frames-18tqfb",
+  "sha256": "c4a27240a3cf5bf98394524f081d0b26f43f1b70e7555bbc04875b0c343192de",
+  "actions": [
+    {
+      "frame": 80,
+      "seconds": 10,
+      "label": "send",
+      "ok": true
+    }
+  ],
+  "note": "Isolated headless Chrome captured the deployed product. Review frames and claims before selecting this clip for the video."
+}

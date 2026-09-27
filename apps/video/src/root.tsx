@@ -1,4 +1,9 @@
 import { Composition } from "remotion";
+import {
+  EnvoyChatFilm,
+  chatFilmDurationFrames,
+  chatFilmFps,
+} from "./chat-film";
 import { EnvoyEvidence } from "./video";
 import { EnvoyRecut, recutDurationFrames } from "./recut";
 import {
@@ -12,6 +17,14 @@ const Review = () => <EnvoyEvidence review />;
 
 export const Root = () => (
   <>
+    <Composition
+      id="EnvoyChatFilm"
+      component={EnvoyChatFilm}
+      durationInFrames={chatFilmDurationFrames}
+      fps={chatFilmFps}
+      width={1920}
+      height={1080}
+    />
     <Composition
       id="EnvoyStageFallback"
       component={EnvoyStageFallback}

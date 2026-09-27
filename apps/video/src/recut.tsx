@@ -239,7 +239,13 @@ function Paint({ frame, color }: { frame: number; color: string }) {
   );
 }
 
-function Monitor({ children, frame }: { children: ReactNode; frame: number }) {
+export function Monitor({
+  children,
+  frame,
+}: {
+  children: ReactNode;
+  frame: number;
+}) {
   const y = Math.sin(frame / 42) * 2.8;
   const [topLeft, topRight, , bottomLeft] = modelProjection.screen as [
     [number, number],

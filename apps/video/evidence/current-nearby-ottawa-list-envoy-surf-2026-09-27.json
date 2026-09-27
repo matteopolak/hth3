@@ -1,0 +1,23 @@
+{
+  "mode": "still-nearby-ottawa",
+  "origin": "https://envoy.surf/",
+  "route": "/explore/nearby",
+  "recordedAt": "2026-09-27T04:46:50.435Z",
+  "viewport": {
+    "width": 1600,
+    "height": 812
+  },
+  "file": "/var/folders/fh/v9s7s7zx0svb3wp8dl0nnl4w0000gn/T/envoy-video-candidates/production-still-nearby-ottawa-20260927T044650Z.png",
+  "sha256": "3f243448b58b9435f976da8878349972dc609458ff0ac0b407a2235e44b6c2ff",
+  "actions": [
+    {
+      "label": "search-ottawa-nearby",
+      "ok": true
+    },
+    {
+      "label": "show-ottawa-on-map",
+      "ok": true
+    }
+  ],
+  "note": "Unaltered 1600x812 production browser screenshot. Ottawa search returned one ServiceOntario office in List view; the Map click did not switch to a single-office map."
+}
