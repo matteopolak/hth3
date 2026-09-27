@@ -199,7 +199,7 @@ p {
 .page-wrap {
   width: min(100% - 64px, 1080px);
   margin: 0 auto;
-  padding: 35px 0 75px;
+  padding: 35px 0 24px;
 }
 .page-wrap.page-route-enter > * {
   animation: page-route-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -785,7 +785,7 @@ p {
   }
   .page-wrap {
     width: calc(100% - 32px);
-    padding: 24px 0 60px;
+    padding: 24px 0 22px;
   }
   .two-column {
     gap: 24px;

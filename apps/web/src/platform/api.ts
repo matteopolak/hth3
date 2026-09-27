@@ -100,6 +100,12 @@ export interface AgentTool {
   description: string;
 }
 
+export interface AgentMessageResponse {
+  message: string;
+  toolResult?: unknown;
+  proposal?: AgentProposal;
+}
+
 export class WorkerApiError extends Error {
   constructor(
     message: string,
@@ -262,16 +268,24 @@ export const api = {
     id: string,
     credentials: ConversationCredentials,
     message: string,
+    toolMentions: string[] = [],
   ) =>
-    request<{
-      message: string;
-      toolResult?: unknown;
-      proposal?: AgentProposal;
-    }>(`/agent/conversations/${encodeURIComponent(id)}/messages`, {
-      method: "POST",
-      headers: conversationHeaders(credentials),
-      body: { message },
-    }),
+    request<AgentMessageResponse>(
+      `/agent/conversations/${encodeURIComponent(id)}/messages`,
+      {
+        method: "POST",
+        headers: conversationHeaders(credentials),
+        body: { message, ...(toolMentions.length ? { toolMentions } : {}) },
+      },
+    ),
+  streamConversationMessage: (
+    id: string,
+    credentials: ConversationCredentials,
+    message: string,
+    toolMentions: string[],
+    onText: (delta: string) => void,
+  ) =>
+    streamConversationMessage(id, credentials, message, toolMentions, onText),
   decideConversationProposal: (
     id: string,
     proposalId: string,
@@ -470,6 +484,106 @@ function conversationHeaders(
       ? { "X-Receipt-Token": credentials.receiptToken }
       : {}),
   };
+}
+
+async function streamConversationMessage(
+  id: string,
+  credentials: ConversationCredentials,
+  message: string,
+  toolMentions: string[],
+  onText: (delta: string) => void,
+): Promise<AgentMessageResponse | null> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${apiBaseUrl}/agent/conversations/${encodeURIComponent(id)}/messages/stream`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "text/event-stream",
+          "Content-Type": "application/json",
+          ...conversationHeaders(credentials),
+        },
+        body: JSON.stringify({
+          message,
+          ...(toolMentions.length ? { toolMentions } : {}),
+        }),
+      },
+    );
+  } catch {
+    throw new WorkerApiError("Network unavailable", 0, "NETWORK_ERROR", "");
+  }
+  if ([404, 405, 501].includes(response.status)) return null;
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as {
+      error?: { code?: string; message?: string; requestId?: string };
+    } | null;
+    throw new WorkerApiError(
+      payload?.error?.message ?? `Request failed (${response.status})`,
+      response.status,
+      payload?.error?.code ?? "REQUEST_FAILED",
+      payload?.error?.requestId ?? "",
+    );
+  }
+  if (!response.headers.get("Content-Type")?.includes("text/event-stream"))
+    throw new WorkerApiError("Invalid stream", 502, "BAD_RESPONSE", "");
+  if (!response.body)
+    throw new WorkerApiError("Empty stream", 502, "BAD_RESPONSE", "");
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let final: AgentMessageResponse | null = null;
+  const consume = (block: string) => {
+    const lines = block.split("\n");
+    const event = lines
+      .find((line) => line.startsWith("event:"))
+      ?.slice(6)
+      .trim();
+    const data = lines
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trimStart())
+      .join("\n");
+    if (!event || !data) return;
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(data) as Record<string, unknown>;
+    } catch {
+      throw new WorkerApiError("Invalid stream event", 502, "BAD_RESPONSE", "");
+    }
+    if (event === "text" && typeof parsed.delta === "string")
+      onText(parsed.delta);
+    if (event === "final" && typeof parsed.message === "string")
+      final = parsed as unknown as AgentMessageResponse;
+    if (event === "error")
+      throw new WorkerApiError(
+        typeof parsed.message === "string" ? parsed.message : "Stream failed",
+        502,
+        typeof parsed.code === "string" ? parsed.code : "STREAM_ERROR",
+        "",
+      );
+  };
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+      buffer = buffer.replaceAll("\r\n", "\n");
+      let boundary = buffer.indexOf("\n\n");
+      while (boundary >= 0) {
+        consume(buffer.slice(0, boundary));
+        buffer = buffer.slice(boundary + 2);
+        boundary = buffer.indexOf("\n\n");
+      }
+    }
+    buffer += decoder.decode();
+    if (buffer.trim()) consume(buffer.trim());
+  } finally {
+    reader.releaseLock();
+  }
+  if (!final)
+    throw new WorkerApiError("Incomplete response", 502, "BAD_RESPONSE", "");
+  return final;
 }
 
 async function request<T>(

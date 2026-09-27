@@ -27,6 +27,20 @@ import { createResidentFeedbackCase } from "../features/feedback/resident-case.j
 import { reopenResidentFeedback } from "../features/feedback/api.js";
 import { playPaintSplash } from "../features/paint/index.js";
 import { solidNavIcon } from "../features/paint/solid-icons.js";
+import { addMapleAmbient } from "../features/paint/maple-ambient.js";
+import {
+  assistantMarkdown,
+  sourceAttribution,
+} from "../features/chat-rich/index.js";
+import {
+  matchingTools,
+  mentionableTools,
+  mentionQueryAtCaret,
+  toolDescription,
+  toolLabel,
+  toolReferencePrefix,
+  visibleToolReferences,
+} from "../features/chat-rich/mentions.js";
 import {
   agentApprovalIntro,
   agentApprovalState,
@@ -73,6 +87,7 @@ import {
   MessagesSquare,
   LayoutDashboard,
   Check,
+  X,
 } from "lucide-static";
 import {
   api,
@@ -119,6 +134,7 @@ interface ChatMessage {
   role: "user" | "assistant" | "tool";
   content: string;
   result?: unknown;
+  streaming?: boolean;
 }
 
 interface ChatHistoryEntry {
@@ -134,6 +150,7 @@ interface ChatState {
   messages: ChatMessage[];
   proposals: AgentProposal[];
   draft: string;
+  mentions: string[];
   pending: boolean;
   error: string;
   approvalChecked: Record<string, boolean>;
@@ -158,6 +175,7 @@ function newChatState(): ChatState {
     messages: [],
     proposals: [],
     draft: "",
+    mentions: [],
     pending: false,
     error: "",
     approvalChecked: {},
@@ -495,6 +513,7 @@ function render(routeSync = false): void {
   workspace.append(header());
   const page = mainPage();
   if (enterPage) page.classList.add("page-route-enter");
+  addMapleAmbient(page);
   workspace.append(page);
   shell.append(workspace);
   shell.inert = state.searchOpen;
@@ -1206,19 +1225,37 @@ function chatPage(mode: ChatMode): HTMLElement {
   for (const message of chat.messages) {
     if (message.role === "tool") {
       thread.append(
-        agentResult(message.result ?? message.content, state.locale),
+        sourceAttribution(message.result ?? message.content, state.locale) ??
+          agentResult(message.result ?? message.content, state.locale),
       );
       continue;
     }
-    const entry = el("article", `chat-message chat-${message.role}`);
+    const entry = el(
+      "article",
+      `chat-message chat-${message.role} ${message.streaming ? "is-streaming" : ""}`,
+    );
     entry.append(
       el(
         "span",
         "chat-author",
         message.role === "user" ? t("assistant.you") : t("app.name"),
       ),
-      el("p", "", message.content),
     );
+    if (message.role === "assistant") {
+      entry.append(assistantMarkdown(message.content));
+      if (message.streaming && !message.content) entry.hidden = true;
+    } else {
+      const visible = visibleToolReferences(message.content);
+      if (visible.names.length) {
+        const references = el("div", "chat-user-mentions");
+        for (const name of visible.names)
+          references.append(
+            el("span", "chat-user-mention", toolLabel(name, state.locale)),
+          );
+        entry.append(references);
+      }
+      if (visible.text) entry.append(el("p", "", visible.text));
+    }
     thread.append(entry);
   }
   for (const proposal of chat.proposals) {
@@ -1240,7 +1277,7 @@ function chatPage(mode: ChatMode): HTMLElement {
   const composer = el("form", "chat-composer");
   const input = el("textarea", "chat-input") as HTMLTextAreaElement;
   input.rows = 3;
-  input.maxLength = 4000;
+  input.maxLength = 3600;
   input.placeholder = t(
     mode === "resident"
       ? "assistant.placeholder"
@@ -1256,9 +1293,191 @@ function chatPage(mode: ChatMode): HTMLElement {
             : "assistant.staffPlaceholder",
   );
   input.setAttribute("aria-label", input.placeholder);
+  input.setAttribute("aria-autocomplete", "list");
+  input.setAttribute("aria-haspopup", "listbox");
+  input.setAttribute("aria-expanded", "false");
   input.value = chat.draft;
-  input.addEventListener("input", () => (chat.draft = input.value));
+  const chips = el("div", "chat-mention-chips");
+  const picker = el("div", "chat-mention-picker");
+  picker.id = `chat-mention-picker-${mode}`;
+  picker.setAttribute("role", "listbox");
+  picker.setAttribute(
+    "aria-label",
+    state.locale === "fr" ? "Outils disponibles" : "Available tools",
+  );
+  picker.hidden = true;
+  input.setAttribute("aria-controls", picker.id);
+  let mentionActive = 0;
+  let mentionLoading = false;
+  let mentionLoadFailed = false;
+
+  const renderMentionChips = () => {
+    chips.replaceChildren();
+    for (const name of chat.mentions) {
+      const tool = chat.tools.find((item) => item.name === name);
+      const label = toolLabel(name, state.locale);
+      const chip = button("", "chat-mention-chip", () => {
+        chat.mentions = chat.mentions.filter((item) => item !== name);
+        renderMentionChips();
+        input.focus();
+      });
+      const tooltip = el(
+        "span",
+        "chat-mention-tooltip",
+        tool ? toolDescription(tool, state.locale) : label,
+      );
+      tooltip.id = `chat-mention-description-${mode}-${name}`;
+      chip.setAttribute(
+        "aria-label",
+        state.locale === "fr"
+          ? `Retirer l’outil ${label}`
+          : `Remove ${label} tool`,
+      );
+      chip.setAttribute("aria-describedby", tooltip.id);
+      const close = el("span", "chat-mention-close");
+      close.setAttribute("aria-hidden", "true");
+      close.innerHTML = X;
+      chip.append(el("span", "", label), close, tooltip);
+      chips.append(chip);
+    }
+  };
+
+  const hideMentionPicker = () => {
+    picker.hidden = true;
+    input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+  };
+
+  const chooseMention = (tool: AgentTool) => {
+    const match = mentionQueryAtCaret(input.value, input.selectionStart);
+    if (!match) return;
+    const caret = match.start;
+    input.value =
+      input.value.slice(0, match.start) +
+      input.value.slice(input.selectionStart);
+    chat.draft = input.value;
+    if (!chat.mentions.includes(tool.name) && chat.mentions.length < 3)
+      chat.mentions.push(tool.name);
+    renderMentionChips();
+    hideMentionPicker();
+    input.focus();
+    input.setSelectionRange(caret, caret);
+  };
+
+  const updateMentionPicker = () => {
+    const match = mentionQueryAtCaret(input.value, input.selectionStart);
+    if (!match) {
+      hideMentionPicker();
+      return;
+    }
+    picker.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+    picker.replaceChildren();
+    if (!chat.tools.length) {
+      picker.append(
+        el(
+          "p",
+          "chat-mention-picker-note",
+          mentionLoadFailed
+            ? state.locale === "fr"
+              ? "Outils indisponibles pour le moment"
+              : "Tools unavailable right now"
+            : chat.id
+              ? state.locale === "fr"
+                ? "Aucun outil disponible"
+                : "No tools available"
+              : state.locale === "fr"
+                ? "Chargement des outils…"
+                : "Loading tools…",
+        ),
+      );
+      if (!chat.id && !mentionLoading && !mentionLoadFailed) {
+        mentionLoading = true;
+        void ensureConversation(mode)
+          .catch((error) => {
+            chat.error = formatError(error).message;
+            mentionLoadFailed = true;
+          })
+          .finally(() => {
+            mentionLoading = false;
+            if (input.isConnected) updateMentionPicker();
+          });
+      }
+      return;
+    }
+    const matches = matchingTools(
+      mentionableTools(chat.tools).filter(
+        (item) => !chat.mentions.includes(item.name),
+      ),
+      match.query,
+      state.locale,
+    );
+    if (!matches.length) {
+      picker.append(
+        el(
+          "p",
+          "chat-mention-picker-note",
+          state.locale === "fr"
+            ? "Aucun outil correspondant"
+            : "No matching tools",
+        ),
+      );
+      return;
+    }
+    mentionActive = Math.min(mentionActive, matches.length - 1);
+    matches.forEach((tool, index) => {
+      const choice = button("", "chat-mention-option", () =>
+        chooseMention(tool),
+      );
+      choice.id = `${picker.id}-option-${index}`;
+      choice.setAttribute("role", "option");
+      choice.setAttribute("aria-selected", String(index === mentionActive));
+      choice.append(
+        el("strong", "", toolLabel(tool.name, state.locale)),
+        el("small", "", toolDescription(tool, state.locale)),
+      );
+      if (index === mentionActive) choice.classList.add("is-active");
+      picker.append(choice);
+    });
+    input.setAttribute(
+      "aria-activedescendant",
+      `${picker.id}-option-${mentionActive}`,
+    );
+  };
+
+  renderMentionChips();
+  input.addEventListener("input", () => {
+    chat.draft = input.value;
+    mentionActive = 0;
+    updateMentionPicker();
+  });
+  input.addEventListener("click", updateMentionPicker);
   input.addEventListener("keydown", (event) => {
+    if (!picker.hidden) {
+      const choices = Array.from(
+        picker.querySelectorAll<HTMLButtonElement>(".chat-mention-option"),
+      );
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        mentionActive =
+          (mentionActive +
+            (event.key === "ArrowDown" ? 1 : -1) +
+            choices.length) %
+          Math.max(choices.length, 1);
+        updateMentionPicker();
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        hideMentionPicker();
+        return;
+      }
+      if (event.key === "Enter" && choices[mentionActive]) {
+        event.preventDefault();
+        choices[mentionActive]!.click();
+        return;
+      }
+    }
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       void sendChat(mode);
@@ -1317,7 +1536,7 @@ function chatPage(mode: ChatMode): HTMLElement {
   send.setAttribute("aria-label", t("assistant.send"));
   send.disabled = chat.pending;
   controls.append(add, el("span", "chat-controls-spacer"), model, mic, send);
-  composer.append(input, controls);
+  composer.append(chips, input, controls, picker);
   if (chat.tray === "actions") composer.append(chatActionMenu(mode));
   if (chat.modelOpen) composer.append(chatModelMenu(mode));
   composer.addEventListener("dragover", (event) => {
@@ -2288,22 +2507,33 @@ async function loadRecent(mode: ChatMode): Promise<void> {
   render();
 }
 
+const conversationStartRequests: Partial<Record<ChatMode, Promise<void>>> = {};
+
 async function ensureConversation(mode: ChatMode): Promise<void> {
   const chat = state.chats[mode];
   if (chat.id) return;
-  const created = await api.createConversation(
-    mode,
-    state.locale,
-    chatCredentials(mode),
-  );
-  chat.id = created.conversation.id;
-  chat.token = created.conversationToken ?? "";
-  chat.tools = created.tools;
-  sessionStorage.setItem(
-    chatStorageKey(mode),
-    JSON.stringify({ id: chat.id, token: chat.token }),
-  );
-  rememberConversation(mode, t("assistant.conversation"));
+  if (conversationStartRequests[mode]) return conversationStartRequests[mode];
+  const start = (async () => {
+    const created = await api.createConversation(
+      mode,
+      state.locale,
+      chatCredentials(mode),
+    );
+    chat.id = created.conversation.id;
+    chat.token = created.conversationToken ?? "";
+    chat.tools = created.tools;
+    sessionStorage.setItem(
+      chatStorageKey(mode),
+      JSON.stringify({ id: chat.id, token: chat.token }),
+    );
+    rememberConversation(mode, t("assistant.conversation"));
+  })();
+  conversationStartRequests[mode] = start;
+  try {
+    await start;
+  } finally {
+    delete conversationStartRequests[mode];
+  }
 }
 
 async function openConversation(mode: ChatMode, id: string): Promise<void> {
@@ -2505,9 +2735,14 @@ async function restoreChat(mode: ChatMode): Promise<void> {
 async function sendChat(mode: ChatMode): Promise<void> {
   const chat = state.chats[mode];
   const draft = chat.draft.trim();
-  const message = chat.contextArea
+  const messageText = chat.contextArea
     ? `For ${chat.contextArea}: ${draft}`
     : draft;
+  const mentions = chat.mentions.filter((name) =>
+    chat.tools.some((tool) => tool.name === name),
+  );
+  const reference = toolReferencePrefix(mentions);
+  const message = reference ? `${reference} ${messageText}` : messageText;
   if (!draft || chat.pending) return;
   if (mode === "employee" && !currentToken()) {
     chat.error = t("error.unauthenticated");
@@ -2515,18 +2750,52 @@ async function sendChat(mode: ChatMode): Promise<void> {
     return;
   }
   chat.draft = "";
+  chat.mentions = [];
   chat.error = "";
   chat.pending = true;
-  chat.messages.push({ role: "user", content: message });
+  const userMessage: ChatMessage = { role: "user", content: message };
+  const assistantMessage: ChatMessage = {
+    role: "assistant",
+    content: "",
+    streaming: true,
+  };
+  chat.messages.push(userMessage, assistantMessage);
   render();
+  let paintFrame = 0;
+  const paintStream = () => {
+    paintFrame = 0;
+    const live = document.querySelector<HTMLElement>(
+      ".chat-message.chat-assistant.is-streaming",
+    );
+    if (!live) return;
+    live.hidden = false;
+    live
+      .querySelector(".chat-rich-markdown")
+      ?.replaceWith(assistantMarkdown(assistantMessage.content));
+    document.querySelector(".chat-thread .chat-typing")?.remove();
+  };
   try {
     await ensureConversation(mode);
-    const response = await api.sendConversationMessage(
-      chat.id,
-      chatCredentials(mode),
-      message,
-    );
-    chat.messages.push({ role: "assistant", content: response.message });
+    const response =
+      (await api.streamConversationMessage(
+        chat.id,
+        chatCredentials(mode),
+        message,
+        mentions,
+        (delta) => {
+          assistantMessage.content += delta;
+          if (!paintFrame) paintFrame = requestAnimationFrame(paintStream);
+        },
+      )) ??
+      (await api.sendConversationMessage(
+        chat.id,
+        chatCredentials(mode),
+        message,
+        mentions,
+      ));
+    if (paintFrame) cancelAnimationFrame(paintFrame);
+    assistantMessage.content = response.message;
+    assistantMessage.streaming = false;
     if (
       response.toolResult !== undefined &&
       !feedbackDuplicateStatusFromResult(response.toolResult)
@@ -2542,11 +2811,14 @@ async function sendChat(mode: ChatMode): Promise<void> {
         });
     }
     if (response.proposal) chat.proposals.push(response.proposal);
-    rememberConversation(mode, message);
+    rememberConversation(mode, messageText);
   } catch (error) {
+    if (paintFrame) cancelAnimationFrame(paintFrame);
     chat.error = formatError(error).message;
     chat.draft = draft;
-    chat.messages.pop();
+    chat.mentions = mentions;
+    const userAt = chat.messages.indexOf(userMessage);
+    if (userAt >= 0) chat.messages.splice(userAt, 2);
   } finally {
     chat.pending = false;
     render();
