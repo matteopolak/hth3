@@ -219,6 +219,12 @@ const worker = {
           requestId,
           source: error.source,
           ...(error.status === undefined ? {} : { status: error.status }),
+          ...(error.networkErrorName === undefined
+            ? {}
+            : { errorName: error.networkErrorName }),
+          ...(error.networkFailureCategory === undefined
+            ? {}
+            : { failureCategory: error.networkFailureCategory }),
         });
         return jsonError(
           "AUTHENTICATION_UNAVAILABLE",

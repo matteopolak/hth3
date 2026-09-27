@@ -61,16 +61,26 @@ export class Auth0JwksUnavailableError extends Error {
   constructor(
     readonly source: "network" | "http",
     readonly status?: number,
+    readonly networkErrorName?: string,
+    readonly networkFailureCategory?: Auth0JwksNetworkFailureCategory,
   ) {
     super("The identity signing keys are temporarily unavailable.");
     this.name = "Auth0JwksUnavailableError";
   }
 }
 
+type Auth0JwksNetworkFailureCategory =
+  | "request_context"
+  | "dns"
+  | "tls"
+  | "timeout"
+  | "redirect"
+  | "other";
+
 export class Auth0JwksClient {
   private readonly cache = new Map<string, CachedJwks>();
 
-  constructor(private readonly fetcher: typeof fetch = fetch) {}
+  constructor(private readonly fetcher?: typeof fetch) {}
 
   async getSigningKey(domain: string, kid: string): Promise<Auth0Jwk> {
     const cached = this.cache.get(domain);
@@ -82,11 +92,19 @@ export class Auth0JwksClient {
 
     let response: Response;
     try {
-      response = await this.fetcher(`${domain}/.well-known/jwks.json`, {
-        headers: { Accept: "application/json" },
-      });
-    } catch {
-      throw new Auth0JwksUnavailableError("network");
+      response = await (this.fetcher ?? globalThis.fetch)(
+        `${domain}/.well-known/jwks.json`,
+        {
+          headers: { Accept: "application/json" },
+        },
+      );
+    } catch (error) {
+      throw new Auth0JwksUnavailableError(
+        "network",
+        undefined,
+        safeErrorName(error),
+        classifyAuth0JwksNetworkFailure(error),
+      );
     }
     if (!response.ok)
       throw new Auth0JwksUnavailableError("http", response.status);
@@ -119,6 +137,31 @@ export class Auth0JwksClient {
     if (!key) throw new Auth0TokenError();
     return key;
   }
+}
+
+function safeErrorName(error: unknown): string {
+  return error instanceof Error &&
+    /^[A-Za-z][A-Za-z0-9]{0,63}$/.test(error.name)
+    ? error.name
+    : "UnknownError";
+}
+
+function classifyAuth0JwksNetworkFailure(
+  error: unknown,
+): Auth0JwksNetworkFailureCategory {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  if (
+    /request context|different request|context.{0,20}active|active.{0,20}context/.test(
+      message,
+    )
+  )
+    return "request_context";
+  if (/dns|resolve|host not found|name not resolved|no address/.test(message))
+    return "dns";
+  if (/tls|ssl|certificate|handshake/.test(message)) return "tls";
+  if (/timeout|timed out|timedout|deadline/.test(message)) return "timeout";
+  if (/redirect/.test(message)) return "redirect";
+  return "other";
 }
 
 const jwksClients = new Map<string, Auth0JwksClient>();

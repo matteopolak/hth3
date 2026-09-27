@@ -119,6 +119,27 @@ describe("Auth0 access token verification", () => {
     ).rejects.toBeInstanceOf(Auth0TokenError);
   });
 
+  it("looks up the Worker fetch binding when a cached client is used", async () => {
+    const client = new Auth0JwksClient();
+    const fetcher = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ keys: [jwk] }), {
+          status: 200,
+          headers: { "Cache-Control": "max-age=300" },
+        }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+
+    try {
+      await expect(client.getSigningKey(DOMAIN, KEY_ID)).resolves.toMatchObject(
+        { kid: KEY_ID },
+      );
+      expect(fetcher).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("classifies an unavailable JWKS endpoint separately from an invalid token", async () => {
     const token = await signToken({
       iss: `${DOMAIN}/`,
@@ -128,7 +149,9 @@ describe("Auth0 access token verification", () => {
     });
     const unavailableJwks = new Auth0JwksClient(
       vi.fn(async () => {
-        throw new TypeError("Network request failed");
+        throw new TypeError(
+          "Cannot perform I/O on behalf of a different request",
+        );
       }) as typeof fetch,
     );
 
@@ -143,6 +166,8 @@ describe("Auth0 access token verification", () => {
       name: "Auth0JwksUnavailableError",
       source: "network",
       status: undefined,
+      networkErrorName: "TypeError",
+      networkFailureCategory: "request_context",
     });
 
     const unavailableResponse = new Auth0JwksClient(
