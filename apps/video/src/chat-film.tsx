@@ -10,6 +10,7 @@ import {
 } from "remotion";
 import evidence from "./evidence-snippets.generated.json";
 import narration from "./chat-narration.generated.json";
+import motionSeconds from "./chat-film-timing.json";
 import { TurningMonitor } from "./monitor-turn";
 import { Monitor } from "./recut";
 import { highlightCode } from "./syntax";
@@ -109,19 +110,6 @@ export const chatFilmDurationFrames = beats.reduce(
   0,
 );
 
-const motionSeconds: Record<Beat["id"], number> = {
-  opening: 8,
-  jobs: 10,
-  training: 10,
-  nearby: 9,
-  concern: 9,
-  submit: 8,
-  voice: 8,
-  tiger: 8,
-  presage: 8,
-  auth: 11,
-  close: 5,
-};
 const motionMarkers: Partial<Record<Beat["id"], string>> = {
   voice: "Voice follow-up",
   presage: "SwiftUI consent flow",
