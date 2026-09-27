@@ -30,7 +30,7 @@ Add a new typed entry in `apps/worker/src/features/agents/tools.ts`, with a fixe
 
 ## Configuration
 
-`[ai] binding = "AI"` in `apps/worker/wrangler.toml` provides Workers AI. The model and 200-inference-per-UTC-day application cap are in `apps/worker/src/features/agents/index.ts`; the cap is persisted in D1 to limit free-credit use. `FEEDBACK_ABUSE_HMAC_KEY` must have at least 32 characters for feedback approval. Auth0 variables and D1/R2 bindings are shared with the existing Worker. The Worker must allow the `X-Conversation-Token` CORS header. There is no paid AI fallback: if the binding or free quota is unavailable, message generation returns `AI_UNAVAILABLE`, while direct read tools and proposal approvals still use the Worker API.
+`[ai] binding = "AI"` in `apps/worker/wrangler.toml` provides Workers AI. Local Vite development uses `apps/worker/wrangler.dev.toml`, where the same binding has `remote = true`: Workers AI has no local simulation, so local chat requires Cloudflare login and a network connection while D1 and R2 remain local. The Vite plugin must allow remote bindings for this to work. The model and 200-inference-per-UTC-day application cap are in `apps/worker/src/features/agents/index.ts`; the cap is persisted in D1 to limit free-credit use. `FEEDBACK_ABUSE_HMAC_KEY` must have at least 32 characters for feedback approval. Auth0 variables and D1/R2 bindings are shared with the existing Worker. The Worker must allow the `X-Conversation-Token` CORS header. There is no paid AI fallback: if the binding or free quota is unavailable, message generation returns `AI_UNAVAILABLE`, while direct read tools and proposal approvals still use the Worker API.
 
 ## Dependencies
 

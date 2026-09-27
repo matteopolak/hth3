@@ -35,7 +35,6 @@ export default defineConfig(({ command, mode }) => {
             ...cloudflare({
               configPath: workerConfigPath,
               persistState: { path: workerStatePath },
-              remoteBindings: false,
               config: (workerConfig) => ({
                 vars: {
                   ...workerConfig.vars,
