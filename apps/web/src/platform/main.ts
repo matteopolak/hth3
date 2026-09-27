@@ -323,6 +323,8 @@ let lastAuthIdentity = "";
 let staffSummary: StaffWorkspaceSummary | null = null;
 let staffSummaryFor = "";
 let staffSummaryError = "";
+let lastRenderedPageKey: string | null = null;
+let pendingRouteEntrance: string | null = null;
 let staffDefaultRequested = window.location.pathname === "/staff";
 
 function applyRoute(route: Partial<AppState>): void {
@@ -345,7 +347,7 @@ if (initialRoute) applyRoute(initialRoute);
 listenForRoutes((route, pathname) => {
   if (pathname === "/staff") staffDefaultRequested = true;
   applyRoute(route);
-  render();
+  render(true);
   if (state.page === "employee" && currentToken()) {
     if (state.employeePage === "assistant") void restoreChat("employee");
     else if (state.staffView === "issues" && !state.selectedFeedbackId)
@@ -451,7 +453,27 @@ function continueAfterSignIn(): void {
   sessionStorage.removeItem(SIGNIN_INTENT_KEY);
 }
 
-function render(): void {
+function transitionPageKey(): string {
+  if (state.page === "discovery") return `discovery:${state.discoveryArea}`;
+  if (state.page === "applications")
+    return `applications:${state.applicationView}`;
+  if (state.page === "programs") return `programs:${state.programView}`;
+  if (state.page === "employee")
+    return state.employeePage === "assistant"
+      ? "employee:assistant"
+      : `employee:${state.staffView}`;
+  return state.page;
+}
+
+function render(routeSync = false): void {
+  const pageKey = transitionPageKey();
+  const changedPage =
+    lastRenderedPageKey !== null && pageKey !== lastRenderedPageKey;
+  const replayRouteEntrance = routeSync && pendingRouteEntrance === pageKey;
+  const enterPage = changedPage || replayRouteEntrance;
+  if (changedPage) pendingRouteEntrance = routeSync ? null : pageKey;
+  else if (replayRouteEntrance || !routeSync) pendingRouteEntrance = null;
+  lastRenderedPageKey = pageKey;
   syncRoute(state);
   if (state.page === "employee" && currentToken()) void ensureStaffSummary();
   document.documentElement.lang = state.locale;
@@ -471,7 +493,9 @@ function render(): void {
     shell.append(backdrop);
   }
   workspace.append(header());
-  workspace.append(mainPage());
+  const page = mainPage();
+  if (enterPage) page.classList.add("page-route-enter");
+  workspace.append(page);
   shell.append(workspace);
   shell.inert = state.searchOpen;
   root!.append(shell);

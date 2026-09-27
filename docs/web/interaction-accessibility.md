@@ -10,6 +10,8 @@ The closed mobile rail is hidden from keyboard and screen-reader navigation. The
 
 `apps/web/src/platform/styles.css` supplies a rounded blue focus halo, readable muted text, and 44-pixel control targets for coarse pointers. The chat textarea delegates its focus treatment to the rounded composer. In forced-colors mode the halo becomes a system-color outline. The compact desktop layout remains intact. The main map's dense numbered pins are exempt from the 44-pixel rule; the same sourced places remain available through the 44-pixel map key rows and full list. At narrow widths the chat textarea grows to show the longer French prompt without an internal scrollbar. The app also honors `prefers-reduced-motion` and `prefers-contrast: more`.
 
+Route changes animate the new main area for 220 ms without moving the header or rail. Same-page rerenders, including typing and menu state, do not receive the entrance class. `prefers-reduced-motion: reduce` disables the route animation.
+
 The staff workspace uses a darker muted-text token for readable supporting copy and stacks page actions below headings on very narrow screens so French titles retain their full width.
 
 The shell maps `@civicresolve/design-tokens` colors into CSS variables; `CivicTheme` carries the same light design foundation in SwiftUI. Status labels carry the meaning independently of color.
