@@ -7,12 +7,28 @@ export interface Posting extends PublicPostingView {
 export interface OfficialJob {
   id: string;
   origin: "official_external" | "participating_org" | "sample";
+  type: "job_posting" | "jobs_finder";
   title: string;
   summary: string;
   publisher: string;
   sourceUrl: string;
-  freshness: string;
+  verified: boolean;
+  verifiedAt: string | null;
+  freshness: "current" | "stale" | "expired" | "error" | "unknown";
   jurisdiction: { name: string };
+  listing: {
+    category: "job";
+    postedDate: string | null;
+    closingDate: string | null;
+    locationText: string | null;
+    applicationStatus: "open" | "closed" | "unknown";
+  } | null;
+  handoff: {
+    url: string;
+    publisher: string;
+    verifyOnPublisherSite: true;
+    externalSubmissionRecorded: false;
+  } | null;
 }
 export interface ApplicationMessage {
   id: string;
@@ -52,13 +68,30 @@ export const applicationsApi = {
   official: async (): Promise<OfficialJob[]> =>
     (
       await direct<{ items: OfficialJob[] }>(
-        "/discovery?area=jobs&limit=100",
+        "/discovery?area=jobs&type=job_posting&limit=100",
         null,
       )
     ).items.filter(
       (item) =>
         item.origin === "official_external" &&
-        item.sourceUrl.startsWith("https://"),
+        item.type === "job_posting" &&
+        item.verified &&
+        item.freshness === "current" &&
+        item.listing?.applicationStatus !== "closed" &&
+        item.handoff?.url.startsWith("https://"),
+    ),
+  finders: async (): Promise<OfficialJob[]> =>
+    (
+      await direct<{ items: OfficialJob[] }>(
+        "/discovery?area=jobs&type=jobs_finder&includeFinders=true&limit=30",
+        null,
+      )
+    ).items.filter(
+      (item) =>
+        item.origin === "official_external" &&
+        item.type === "jobs_finder" &&
+        item.verified &&
+        item.handoff?.url.startsWith("https://"),
     ),
   own: async (token: string): Promise<ApplicationView[]> =>
     (await api.getApplications(token)).applications,

@@ -11,7 +11,7 @@ import {
   Send,
   Upload,
 } from "lucide-static";
-import { filledCheckIcon, playPaintSplash } from "../paint/index.js";
+import { filledCheckIcon } from "../paint/index.js";
 import {
   applicationsApi,
   type ApplicationMessage,
@@ -67,9 +67,17 @@ const copy = {
     practice: "Practice listing",
     practiceNote:
       "This is an Envoy practice posting. It is not a real vacancy or affiliated with the named city or government.",
+    officialPosting: "Official posting",
     officialFinder: "Official job finder",
+    officialFinders: "Official job boards",
     officialNote:
-      "This source leads to the publisher’s own job search. Open positions and application requirements must be checked there. Envoy does not record an external submission.",
+      "Apply on the publisher’s site. Confirm the current requirements and deadline there; Envoy does not record an external submission.",
+    finderNote:
+      "Browse current openings on the publisher’s site. Envoy does not record an external submission.",
+    posted: "Posted",
+    closing: "Closes",
+    statusOpen: "Open per source",
+    statusUnknown: "Check status on official site",
     source: "Source",
     publisher: "Publisher",
     locationLabel: "Location",
@@ -105,6 +113,8 @@ const copy = {
     shareFailed:
       "The application was submitted, but résumé sharing failed. You can share it from your profile.",
     noResults: "No roles match your search.",
+    noCurrentRoles:
+      "No current roles match. Try another search or browse an official job board below.",
     noApplications: "No applications yet.",
     loading: "Loading roles…",
     error: "Unable to load roles.",
@@ -151,9 +161,17 @@ const copy = {
     practice: "Offre d’exercice",
     practiceNote:
       "Cette offre d’Envoy est un exercice. Ce n’est pas un vrai poste et elle n’est affiliée à aucune ville ou administration nommée.",
+    officialPosting: "Offre officielle",
     officialFinder: "Recherche d’emplois officielle",
+    officialFinders: "Sites officiels d’emploi",
     officialNote:
-      "Cette source mène à la recherche d’emplois de l’éditeur. Vérifiez les postes et les exigences sur son site. Envoy n’enregistre aucune demande externe.",
+      "Postulez sur le site de l’éditeur. Vérifiez les exigences et la date limite; Envoy n’enregistre aucune candidature externe.",
+    finderNote:
+      "Parcourez les postes sur le site de l’éditeur. Envoy n’enregistre aucune candidature externe.",
+    posted: "Publiée",
+    closing: "Date limite",
+    statusOpen: "Ouverte selon la source",
+    statusUnknown: "Vérifier sur le site officiel",
     source: "Source",
     publisher: "Éditeur",
     locationLabel: "Lieu",
@@ -189,6 +207,8 @@ const copy = {
     shareFailed:
       "La candidature a été soumise, mais le partage du CV a échoué. Vous pouvez le partager depuis votre profil.",
     noResults: "Aucun poste ne correspond.",
+    noCurrentRoles:
+      "Aucun poste actuel ne correspond. Essayez une autre recherche ou consultez un site officiel ci-dessous.",
     noApplications: "Aucune candidature.",
     loading: "Chargement des postes…",
     error: "Impossible de charger les postes.",
@@ -228,6 +248,7 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
   let view = options.view;
   let postings: Posting[] = [];
   let official: OfficialJob[] = [];
+  let finders: OfficialJob[] = [];
   let applications: ApplicationView[] = [];
   let messages: ApplicationMessage[] = [];
   let messagesLoading = false;
@@ -252,8 +273,9 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
   let notice = "";
 
   const allResults = (): Result[] => [
-    ...postings.map((posting) => ({ kind: "inApp" as const, posting })),
     ...official.map((record) => ({ kind: "official" as const, record })),
+    ...postings.map((posting) => ({ kind: "inApp" as const, posting })),
+    ...finders.map((record) => ({ kind: "official" as const, record })),
   ];
   const key = (item: Result) =>
     `${item.kind}:${item.kind === "inApp" ? item.posting.id : item.record.id}`;
@@ -297,17 +319,29 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
     render();
     try {
       if (view === "browse") {
-        const [jobs, sources] = await Promise.allSettled([
+        const [jobs, sources, boards] = await Promise.allSettled([
           applicationsApi.postings(),
           applicationsApi.official(),
+          applicationsApi.finders(),
         ]);
-        postings = jobs.status === "fulfilled" ? jobs.value : [];
+        postings =
+          jobs.status === "fulfilled"
+            ? jobs.value.filter((posting) => !posting.sample)
+            : [];
         official = sources.status === "fulfilled" ? sources.value : [];
-        if (jobs.status === "rejected" && sources.status === "rejected")
+        finders = boards.status === "fulfilled" ? boards.value : [];
+        if (
+          jobs.status === "rejected" &&
+          sources.status === "rejected" &&
+          boards.status === "rejected"
+        )
           throw new Error(text.error);
         if (jobs.status === "rejected") error = text.participatingUnavailable;
-        if (sources.status === "rejected") error = text.officialUnavailable;
-        selected ||= allResults()[0] ? key(allResults()[0]!) : "";
+        if (sources.status === "rejected" && boards.status === "rejected")
+          error = text.officialUnavailable;
+        if (!postings.length && filter === "all") filter = "official";
+        if (!visibleResults().some((item) => key(item) === selected))
+          selected = visibleResults()[0] ? key(visibleResults()[0]!) : "";
         if (options.token)
           resumes = await applicationsApi
             .resumes(options.token)
@@ -378,29 +412,45 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
 
   function resultList(): string {
     const rows = visibleResults();
-    return `<div class="ja-list-head"><strong>${rows.length} ${h(rows.length === 1 ? text.role : text.roles)}</strong><div class="ja-filters"><button data-filter="all" class="${filter === "all" ? "active" : ""}">${h(text.all)}</button><button data-filter="inApp" class="${filter === "inApp" ? "active" : ""}">${h(text.inApp)}</button><button data-filter="official" class="${filter === "official" ? "active" : ""}">${h(text.official)}</button></div></div><div class="ja-result-list">${
-      rows
-        .map((item) => {
-          const title =
-            item.kind === "inApp" ? item.posting.title : item.record.title;
-          const organization =
-            item.kind === "inApp"
-              ? item.posting.organizationName
-              : item.record.publisher;
-          const location =
-            item.kind === "inApp"
-              ? (item.posting.location ?? "")
-              : item.record.jurisdiction.name;
-          const badge =
-            item.kind === "inApp"
-              ? item.posting.sample
-                ? text.practice
-                : text.inApp
-              : text.officialFinder;
-          return `<button class="ja-result ${active() && key(active()!) === key(item) ? "selected" : ""}" data-result="${h(key(item))}"><span class="ja-result-badge">${h(badge)}</span><strong>${h(title)}</strong><span>${h(organization)}</span><small>${h(location)}</small>${icon(ChevronRight)}</button>`;
-        })
-        .join("") || `<p class="ja-empty">${h(text.noResults)}</p>`
-    }</div>`;
+    const roles = rows.filter(
+      (item) => item.kind === "inApp" || item.record.type === "job_posting",
+    );
+    const boards = rows.filter(
+      (item) => item.kind === "official" && item.record.type === "jobs_finder",
+    );
+    const row = (item: Result) => {
+      const title =
+        item.kind === "inApp" ? item.posting.title : item.record.title;
+      const organization =
+        item.kind === "inApp"
+          ? item.posting.organizationName
+          : item.record.publisher;
+      const location =
+        item.kind === "inApp"
+          ? (item.posting.location ?? "")
+          : (item.record.listing?.locationText ??
+            item.record.jurisdiction.name);
+      const badge =
+        item.kind === "inApp"
+          ? text.inApp
+          : item.record.type === "job_posting"
+            ? text.officialPosting
+            : text.officialFinder;
+      return `<button class="ja-result ${active() && key(active()!) === key(item) ? "selected" : ""}" data-result="${h(key(item))}"><strong>${h(title)}</strong><span>${h(organization)}</span><small>${h(location)} · ${h(badge)}</small>${icon(ChevronRight)}</button>`;
+    };
+    const filters = postings.length
+      ? `<div class="ja-filters"><button data-filter="all" class="${filter === "all" ? "active" : ""}">${h(text.all)}</button><button data-filter="inApp" class="${filter === "inApp" ? "active" : ""}">${h(text.inApp)}</button><button data-filter="official" class="${filter === "official" ? "active" : ""}">${h(text.official)}</button></div>`
+      : "";
+    const heading = roles.length
+      ? `${roles.length} ${h(roles.length === 1 ? text.role : text.roles)}`
+      : boards.length
+        ? h(text.officialFinders)
+        : h(text.official);
+    const empty =
+      !roles.length && (search || place || !boards.length)
+        ? `<p class="ja-empty">${h(boards.length ? text.noCurrentRoles : text.noResults)}</p>`
+        : "";
+    return `<div class="ja-list-head"><strong>${heading}</strong>${filters}</div><div class="ja-result-list">${roles.map(row).join("")}${empty}${boards.length ? `${roles.length ? `<div class="ja-section-divider">${h(text.officialFinders)}</div>` : ""}${boards.map(row).join("")}` : ""}</div>`;
   }
 
   function searchBar(): string {
@@ -413,10 +463,17 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
       return `<div class="ja-detail ja-placeholder">${icon(BriefcaseBusiness)}<p>${h(text.noResults)}</p></div>`;
     if (item.kind === "official") {
       const record = item.record;
-      return `<article class="ja-detail"><div class="ja-detail-head"><span class="ja-kicker">${h(text.officialFinder)}</span><h2>${h(record.title)}</h2><p class="ja-org">${h(record.publisher)} · ${h(record.jurisdiction.name)}</p><p>${h(record.summary)}</p></div><div class="ja-note">${h(text.officialNote)}</div><div class="ja-actions"><button class="ja-btn primary" data-action="prepare" data-id="${h(record.id)}">${h(text.prepare)}${icon(ArrowRight)}</button><a class="ja-btn" target="_blank" rel="noopener noreferrer" href="${h(record.sourceUrl)}">${h(text.openOfficial)}${icon(ArrowUpRight)}</a></div></article>`;
+      const isPosting = record.type === "job_posting";
+      const listing = record.listing;
+      const place = listing?.locationText ?? record.jurisdiction.name;
+      const facts =
+        isPosting && listing
+          ? `<div class="ja-facts"><div><span>${h(text.locationLabel)}</span><strong>${h(place)}</strong></div>${listing.postedDate ? `<div><span>${h(text.posted)}</span><strong>${h(date(listing.postedDate, options.locale))}</strong></div>` : ""}${listing.closingDate ? `<div><span>${h(text.closing)}</span><strong>${h(date(listing.closingDate, options.locale))}</strong></div>` : ""}<div><span>${h(text.source)}</span><strong>${h(listing.applicationStatus === "open" ? text.statusOpen : text.statusUnknown)}</strong></div></div>`
+          : "";
+      return `<article class="ja-detail"><div class="ja-detail-head"><h2>${h(record.title)}</h2><p class="ja-org">${h(record.publisher)} · ${h(place)}</p></div>${facts}<section class="ja-section"><h3>${h(isPosting ? text.about : text.officialFinder)}</h3><p>${h(record.summary)}</p></section><div class="ja-actions">${isPosting ? `<button class="ja-btn" data-action="prepare" data-id="${h(record.id)}">${h(text.prepare)}${icon(ArrowRight)}</button>` : ""}<a class="ja-btn primary" target="_blank" rel="noopener noreferrer" href="${h(record.handoff?.url ?? record.sourceUrl)}">${h(text.openOfficial)}${icon(ArrowUpRight)}</a></div><p class="ja-footnote">${h(isPosting ? text.officialNote : text.finderNote)}</p></article>`;
     }
     const posting = item.posting;
-    const introduction = `<div class="ja-detail-head"><span class="ja-kicker">${h(posting.sample ? text.practice : text.inApp)}</span><h2>${h(posting.title)}</h2><p class="ja-org">${h(posting.organizationName)}${posting.location ? ` · ${h(posting.location)}` : ""}</p></div>`;
+    const introduction = `<div class="ja-detail-head"><h2>${h(posting.title)}</h2><p class="ja-org">${h(posting.organizationName)}${posting.location ? ` · ${h(posting.location)}` : ""}</p></div>`;
     const practice = posting.sample
       ? `<div class="ja-note">${h(text.practiceNote)}</div>`
       : "";
@@ -582,7 +639,6 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
       render();
     }
     if (action === "submit" && options.token) {
-      const actionBounds = target.getBoundingClientRect();
       const current = active();
       if (!current || current.kind !== "inApp") return;
       const confirmed =
@@ -606,7 +662,6 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
         applications.unshift(application);
         notice = text.submitted;
         step = "submitted";
-        playPaintSplash(actionBounds, "blue");
         if (sharing && selectedResume) {
           try {
             await applicationsApi.shareResume(
