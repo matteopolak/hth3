@@ -29,7 +29,7 @@ Update deadline or format only from the current organizer rules, and record any 
 
 ## Configuration
 
-Use the English route on `https://envoy.surf/` and a clean browser at presentation-size zoom. Bring the [PPTX](../../apps/pitch/out/envoy-judges-2026-v3.pptx) and [PDF](../../apps/pitch/out/envoy-judges-2026-v3.pdf) on the presenting laptop. No live provider credentials should be projected.
+Use the English route on `https://envoy.surf/` and a clean browser at presentation-size zoom. Bring the [PPTX](../../apps/pitch/out/envoy-judges-2026-v4.pptx) and [PDF](../../apps/pitch/out/envoy-judges-2026-v4.pdf) on the presenting laptop. No live provider credentials should be projected.
 
 ## Dependencies
 

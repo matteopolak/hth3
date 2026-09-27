@@ -4,7 +4,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Presentation, PresentationFile } from '@oai/artifact-tool';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const repo = path.resolve(here, '../..');
 const skill = '/Users/matthew/.codex/plugins/cache/openai-primary-runtime/presentations/26.909.12148/skills/presentations';
 const build = path.join(here, '.build');
 const out = path.join(here, 'out');
@@ -65,13 +64,12 @@ text(s3, '1   Find a current role', 78, 207, 426, 60, 31, ink);
 text(s3, '2   Locate a service', 78, 307, 426, 60, 31, ink);
 text(s3, '3   Review a concern', 78, 407, 426, 60, 31, ink);
 text(s3, 'Open envoy.surf', 79, 583, 420, 58, 31, coral, true);
-const nearbyScreenshot = await fs.readFile(path.join(repo, 'apps/video/public/gallery/nearby-2026-09-26.png'));
+const nearbyScreenshot = await fs.readFile(path.join(here, 'assets/nearby-map-crop.png'));
 s3.images.add({
   blob: nearbyScreenshot,
   contentType: 'image/png',
   alt: 'Actual Envoy Nearby page showing a source-backed map and a list of public services',
   fit: 'cover',
-  crop: { left: 0.18, top: 0.02, right: 0.01, bottom: 0.02 },
   position: { left: 520, top: 170, width: 700, height: 475 },
 });
 s3.speakerNotes.textFrame.setText('0:48–3:50. Switch to the prepared browser. Search Jobs for an individual Ottawa vacancy and show source and closing date. Nearby: select an official service. Ask the assistant about a truthful product concern, review the editable proposal and Envoy destination, then submit once and show the private receipt. If AI is slow, use the prepared Feedback form. A source link does not submit an external application. See docs/judging/demo-runbook.md.');
@@ -113,7 +111,7 @@ for (let i = 0; i < p.slides.items.length; i++) {
   await fs.writeFile(path.join(out, 'slides', `slide-${String(i + 1).padStart(2, '0')}.png`), new Uint8Array(await png.arrayBuffer()));
 }
 
-const final = path.join(out, 'envoy-judges-2026-v3.pptx');
+const final = path.join(out, 'envoy-judges-2026-v4.pptx');
 await finalizePresentation({
   workspaceDir: here,
   candidatePath: candidate,
@@ -125,6 +123,6 @@ await finalizePresentation({
   requiredNativeTableOwnerSlides: [],
   fontPolicy: { basis: 'design', families: [font] },
   verifyArtifactToolImport: true,
-  receiptPath: path.join(build, 'envoy-judges-2026-v3.validation.json'),
+  receiptPath: path.join(build, 'envoy-judges-2026-v4.validation.json'),
 });
 console.log(final);

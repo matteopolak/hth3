@@ -2,7 +2,7 @@
 
 ## What it is
 
-A five-minute, in-person Civic Technology presentation for Envoy, followed by three minutes of questions. The deck is in [`apps/pitch/out/envoy-judges-2026-v3.pptx`](../../apps/pitch/out/envoy-judges-2026-v3.pptx). The live browser carries the middle of the pitch; the slides frame the problem, technical decisions, and evidence.
+A five-minute, in-person Civic Technology presentation for Envoy, followed by three minutes of questions. The deck is in [`apps/pitch/out/envoy-judges-2026-v4.pptx`](../../apps/pitch/out/envoy-judges-2026-v4.pptx). The live browser carries the middle of the pitch; the slides frame the problem, technical decisions, and evidence.
 
 ## How it works
 
