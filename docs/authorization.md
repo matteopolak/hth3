@@ -36,7 +36,7 @@ The local authorization smoke seeds only local D1 state from `apps/worker/script
 - `permissions` (or standard `scope`): exact API grants configured with Auth0 RBAC.
 - `APP_ENV`: `development` or `production`; production disables the local test identities.
 - `DEV_AUTH_ENABLED`: local smoke override only. Keep false in checked-in Wrangler vars and production.
-- Auth0 client IDs, callbacks, API scopes, Action, organization, and role membership are provisioned in the Auth0 tenant; credentials are not stored in this repository. Web callbacks include `http://localhost:5173/callback`, the current LAN dev origin, and `https://civicresolve-api-production.matteopolak.workers.dev/callback`; native callback is `civicresolve://auth/callback`.
+- Auth0 client IDs, callbacks, API scopes, Action, organization, and role membership are provisioned in the Auth0 tenant; credentials are not stored in this repository. Web callbacks include `http://localhost:5173/callback`, the current LAN dev origin, and `https://envoy.matteopolak.workers.dev/callback`; native callback is `civicresolve://auth/callback`.
 - The staff sandbox uses Auth0 organization `org_43G1B1RhPwac7EjS` and a matching production D1 `organizations.id` and `auth0_org_id`. A sandbox staff member also needs a matching `organization_memberships` row with the intended D1 role. The workspace is unaffiliated with a government account.
 
 ## Live acceptance status

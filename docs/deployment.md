@@ -2,11 +2,11 @@
 
 ## What it is
 
-Envoy is one Cloudflare Worker application. The Worker serves the built Vite site and handles its API at `/api/` on the same origin. Its existing Cloudflare script name, `civicresolve-api-production`, is retained so the installed HMAC and ElevenLabs secrets remain attached. The public endpoint is `https://civicresolve-api-production.matteopolak.workers.dev/`.
+Envoy is one Cloudflare Worker application. The Worker serves the built Vite site and handles its API at `/api/` on the same origin: `https://envoy.matteopolak.workers.dev/`. It was renamed in place from `civicresolve-api-production`, retaining its immutable Worker ID, deployed versions, bindings, and installed secrets.
 
 ## How it works
 
-`pnpm deploy:production` builds `apps/web/dist`, then Wrangler uploads those assets with `apps/worker/src/platform/index.ts` as one Worker deployment. `[env.production.assets]` in `apps/worker/wrangler.toml` serves static files and falls back to `index.html` for SPA navigation. `/api` and `/api/*` run the Worker script first. The Vite build defaults to `/api/v1`, so browser requests stay on the same origin and need no separate API host. `pnpm dev -- --host` continues to run the Cloudflare Vite plugin with the Worker and local D1/R2 on port 5173 for LAN use.
+`pnpm deploy:production` builds `apps/web/dist`, then Wrangler uploads those assets with `apps/worker/src/platform/index.ts` as one Worker deployment. `[env.production]` sets the stable script name `envoy`. Its asset settings serve static files and fall back to `index.html` for SPA navigation. `/api` and `/api/*` run the Worker script first. The Vite build defaults to `/api/v1`, so browser requests stay on the same origin and need no separate API host. `pnpm dev -- --host` continues to run the Cloudflare Vite plugin with the Worker and local D1/R2 on port 5173 for LAN use.
 
 Production bindings attach D1, private R2, Workers AI, Vectorize, and Hyperdrive to that Worker. The five-minute cron delivers feedback events and refreshes due official sources. The production CORS allowlist contains the Worker origin. The former `envoy-web` Pages project has been deleted after the combined Worker was verified.
 
