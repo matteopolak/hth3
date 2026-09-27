@@ -24,6 +24,7 @@ import { createPublicApplicationsPage } from "../features/applications/index.js"
 import { createPublicProgramsPage } from "../features/programs/index.js";
 import { createExternalPreparationPage } from "../features/external-preparation/index.js";
 import { createResidentFeedbackCase } from "../features/feedback/resident-case.js";
+import { addFeedbackWritingStarters } from "../features/feedback/index.js";
 import { reopenResidentFeedback } from "../features/feedback/api.js";
 import { playPaintSplash } from "../features/paint/index.js";
 import { solidNavIcon } from "../features/paint/solid-icons.js";
@@ -3466,6 +3467,7 @@ function feedbackForm(): HTMLElement {
     ),
   );
   form.addEventListener("submit", (event) => event.preventDefault());
+  addFeedbackWritingStarters(form, state.locale);
   return form;
 }
 
