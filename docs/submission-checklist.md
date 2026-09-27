@@ -11,7 +11,7 @@ This is the release and evidence checklist for the Civic Technology submission. 
 - [ ] Open `https://envoy.matteopolak.workers.dev/` on a clean browser and confirm the deployed commit/build. The combined Worker serves the web app and `/api/*`.
 - [ ] Confirm guest chat, source search, feedback, and receipt paths work end to end from that one origin.
 - [ ] Recheck source freshness. The 2026-09-26 unified production view showed six job finders, four open consultations plus three official directories, and 78 Nearby results. A previous source snapshot had 65 Service BC office records. Do not call a finder an individual vacancy, award, or eligibility result.
-- [ ] Submit one new, clearly labeled practice report, confirm its private receipt, and verify persistence after refresh. Keep the token private.
+- [ ] Submit one new non-emergency report to the Envoy review team, confirm its private receipt, and verify persistence after refresh. Keep the token private and make the destination clear.
 - [ ] Verify a new outbox event reaches Tiger; note synchronization time. The 2026-09-26 19:41 UTC read-only check showed four delivered and four aggregate events, including submitted and classified events from an earlier Envoy report. Recheck before presenting.
 - [ ] Retain the new production Workers AI bench proposal capture, with its Envoy-only destination and disabled Confirm button visible. The 2026-09-26 combined Worker version `837bf16a` returned this pending card; recheck the final deployed build before judging.
 - [ ] Check the English presentation path visually at desktop and mobile widths. Check the French critical flow for missing strings without delaying the English demo for cosmetic polish.
@@ -32,21 +32,24 @@ Workers AI is part of the core product story and has a production proposal resul
 
 ### Devpost and judging handoff
 
-- [ ] Select the Civic Technology challenge; select only optional sponsor challenges whose claim gates above have passed.
-- [ ] Add the final public web URL, repository URL, short project description, accurate architecture and team roster.
+- [x] Another session completed Devpost submission; the observer saw **SUBMITTED 5/5** without clicking the final Submit control. Project details contain the production web URL, story, code link, and gallery; team roster and Additional info are saved.
+- [ ] Recheck the saved Civic Technology and optional sponsor selections against the claim gates above. Remove any unsupported selection if Devpost still permits an edit.
 - [ ] Review the completed five-minute captioned [Remotion cut](https://github.com/matteopolak/hth3/releases/download/v0.1.0-hth3-review/envoy-review.mp4) with the team. Its web interactions and assistant proposal are genuine; its Tiger card is dated, native screen is from a simulator, and staff access is explained rather than shown as accepted. Approve the narration or replace any scene that changes before hosting.
 - [ ] Check playback, audio, readability, redaction, and report-destination claims in the approved cut. Upload it to YouTube, Vimeo, or Youku and enter its share URL. [Devpost requires an embeddable video-host URL](https://help.devpost.com/article/85-uploading-a-demo-video); the GitHub review asset cannot fill that field.
 - [ ] Run one timed four-minute live rehearsal against the final combined Worker deploy, followed by three minutes of questions as required by the [official rules](https://hack-the-hill-iii.devpost.com/rules). Record any fallback used and confirm the backup tabs are ready before judges arrive.
 - [ ] State clearly that no municipality or employer participates yet and that resident reports reach Envoy's team, not a government office. Describe external source links as handoffs, not completed applications or reports.
 - [ ] Have another collaborator verify every sponsor and government-participation sentence against the footage and current build.
-- [ ] Submit by **10:00 a.m. EDT on Sunday, September 27, 2026**. The [official rules](https://hack-the-hill-iii.devpost.com/rules) and the [Devpost requirements](https://hack-the-hill-iii.devpost.com/) say 10:00 a.m. for judging, while the page banner says 11:00 a.m.; use the earlier cutoff. Verify the on-site schedule separately.
-- [ ] Save a copy of the submitted text, selected tracks, URLs, and final video file/link for the team. Record the final submission receipt or confirmation.
+- [ ] Save a copy of the submitted text, selected tracks, URLs, and final video file/link for the team. Preserve the observed submission confirmation and verify whether the video field can still be updated. The [official rules](https://hack-the-hill-iii.devpost.com/rules) and [Devpost requirements](https://hack-the-hill-iii.devpost.com/) list **10:00 a.m. EDT on Sunday, September 27, 2026** for judging, earlier than the page banner's 11:00 a.m.; verify the on-site schedule separately.
 
 If a provider or staff role cannot pass live acceptance, remove that segment and side-challenge selection. Public sources, the guest agent proposal, Envoy's report and receipt path, and dated Tiger delivery can still support the core story. Do not submit a fabricated success capture to preserve a planned segment.
 
-### Copy-ready Devpost draft
+### Devpost submission record and revision copy
 
-The [envoy Devpost project](https://devpost.com/software/envoy-y5wgnv) was created in the user's signed-in Chrome on September 26 and remains a **draft**. The name, pitch, current story, web link, code link, direct review-video link, and four current product gallery images are saved. The gallery shows Assistant, Jobs, Nearby, and the unsent feedback review. The owner supplied **University of Ottawa** and **Carleton University** for the required team-school field; Additional info still needs those schools, Civic Technology, and the AI-use explanation saved together. Teammate accounts, an embeddable hosted video, and final review remain pending. The GitHub MP4 is downloadable but does not fill Devpost's video-embed field. Leave the final submission action untouched until the team has checked every field. The [official rules](https://hack-the-hill-iii.devpost.com/rules) require a GitHub link and every teammate on the submission; they allow up to four people per team. The rules specify a four-minute live presentation with three minutes for questions. The page banner shows an 11:00 a.m. deadline but both the rules and requirements say 10:00 a.m. EDT on September 27, 2026; use **10:00 a.m.**
+The [envoy Devpost project](https://devpost.com/software/envoy-y5wgnv) showed **SUBMITTED 5/5** in the user's Chrome on September 26. Another session completed submission; the person checking this page did not click Submit. Project details show the production URL `https://envoy.matteopolak.workers.dev/`, story, GitHub link, and four gallery images. Additional info has **University of Ottawa**, **Carleton University**, `envoy.surf`, sponsor selections, and an AI-use explanation saved. The demo-video embed remains blank pending a final hosted YouTube, Vimeo, or Youku URL; the GitHub review MP4 is only a supplementary download. Verify whether the submitted entry remains editable before adding the final video. The [official rules](https://hack-the-hill-iii.devpost.com/rules) require a GitHub link and every teammate on the submission and specify a four-minute live presentation plus three minutes of questions.
+
+**Team on the submitted entry:** Matthew Polak (`@matteopolak`), Raef Sarofiem (`@rsarofiem`), Robert Zuchniak (`@RZuchniak`), and Vasil Topalovic (`@vasiltop`).
+
+The field copy below is proposed for an editable revision. It may differ from the text currently submitted; compare it with Devpost before changing anything.
 
 **Project name:** envoy
 
@@ -54,31 +57,31 @@ The [envoy Devpost project](https://devpost.com/software/envoy-y5wgnv) was creat
 
 **Project story:**
 
-> Finding the right public service often means jumping between websites, interpreting unfamiliar language, and deciding which office can help. When something goes wrong, people should be able to describe the issue in their own words and review the destination before sending anything.
+> Finding a job, service, benefit, or way to participate in a public decision often means jumping between websites and interpreting unfamiliar language. Envoy gives people one place to explore source-linked information and see where each record came from.
 >
-> envoy brings those steps into one resident experience. Guests can browse official public source links, inspect Service BC locations with attribution and freshness, and ask an assistant about a civic issue. In a production check, Workers AI prepared an editable report proposal for a damaged bench at Nathan Phillips Square. The proposal named Envoy's review team as its destination and waited for the person's approval; the model did not submit it.
+> A guest can ask the assistant for help with a civic issue. Workers AI can prepare an editable feedback proposal, show the destination, and wait for explicit approval. Residents can send non-emergency feedback to the Envoy review team and keep a private receipt.
 >
-> Residents can submit non-emergency feedback to Envoy's review team and receive a private receipt. No municipality or employer participates yet, and reports do not reach a government office. During validation, a submitted report was stored in D1 and its privacy-safe submitted and classified events reached Tiger Data through an outbox; a dated read-only query confirmed both events. Resident message bodies stay out of Tiger.
->
-> The web experience is served from one Cloudflare Worker, with D1, R2, and Workers AI behind it and Tiger Data for event analytics. A native SwiftUI companion and Auth0-backed staff access are being developed, but device and live staff-role acceptance are still pending. Voice and sensing integrations are also pending complete live acceptance. Our next step is to connect an actual participating organization and verify the resident-to-staff journey with them.
+> No municipality or employer participates today, and Envoy does not forward feedback to a government office. External opportunities lead to their official publishers; opening a link does not count as an application. The web app and API run on Cloudflare Workers with D1, R2, and Workers AI. Privacy-safe feedback events reach Tiger Data while report text stays out of analytics. We also built a bilingual web experience and native SwiftUI companion. Our next step is a verified organization pilot.
 
 **What was challenging:** Keeping source provenance and freshness visible, making AI suggestions reviewable, and showing the report's actual destination before submission.
 
 **What we learned:** A civic interface has to tell residents where information came from, when it was checked, and who will actually receive a report. An AI suggestion is useful only when the person stays in control.
 
-**Built with:** TypeScript, React, Cloudflare Workers, D1, R2, Workers AI, Tiger Data, SwiftUI, Auth0, Remotion. List ElevenLabs and Presage only after the final draft explicitly distinguishes configuration from completed live behavior.
+**AI use:** We used AI coding assistance to build and review the project. In Envoy, Cloudflare Workers AI helps interpret requests and prepare editable feedback proposals through typed tools. A person reviews the wording and destination before any write; the model does not submit a report on its own.
 
-**Links to enter:**
+**Built with:** TypeScript, React, Cloudflare Workers, D1, R2, Workers AI, Tiger Data, SwiftUI, Auth0, Remotion. List ElevenLabs and Presage as demonstrated capabilities only after their live flows are verified.
+
+**Submitted links and pending asset:**
 
 | Field           | Link or asset                                                                                                                                                     | Gate                                                                                                                                  |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Code            | `https://github.com/matteopolak/hth3`                                                                                                                             | Include the repository link and confirm commits are within the event window.                                                          |
 | Web app and API | `https://envoy.matteopolak.workers.dev/`                                                                                                                          | Combined Worker origin returned HTTP 200 on 2026-09-26; recheck critical flows before final submission.                               |
 | Video           | [Five-minute captioned review cut](https://github.com/matteopolak/hth3/releases/download/v0.1.0-hth3-review/envoy-review.mp4) (`apps/video/out/envoy-review.mp4`) | Review the exact cut with the team, host the approved version on YouTube, Vimeo, or Youku, verify embedding, and paste its share URL. |
-| Gallery         | `apps/video/public/captures/color-home-2026-09-26.png`, `color-jobs-2026-09-26.png`, `color-nearby-2026-09-26.png`, `color-feedback-review-2026-09-26.png`        | Four current images are uploaded and captioned in the draft.                                                                          |
-| Team            | Every actual teammate's Devpost account                                                                                                                           | Do not invent names or omit collaborators.                                                                                            |
+| Gallery         | `apps/video/public/captures/color-home-2026-09-26.png`, `color-jobs-2026-09-26.png`, `color-nearby-2026-09-26.png`, `color-feedback-review-2026-09-26.png`        | Four images are saved on the submitted entry.                                                                                         |
+| Team            | Matthew Polak `@matteopolak`; Raef Sarofiem `@rsarofiem`; Robert Zuchniak `@RZuchniak`; Vasil Topalovic `@vasiltop`                                               | All four were visible on the submitted entry.                                                                                         |
 
-Save **Civic Technology** with the supplied school names in Additional info. Keep optional sponsor selections unselected until their claim gates above pass on the final deploy. Tiger Data has dated event evidence; recheck it and the visible analytics route before selecting that prize. Auth0, ElevenLabs, and Presage still need their live acceptance steps. The embeddable video URL remains pending.
+Additional info and the team roster are saved. Audit the actual sponsor selections against the claim gates above; Tiger Data has dated event evidence, while Auth0, ElevenLabs, and Presage have separate live acceptance requirements. The embeddable video URL remains pending.
 
 ## How to change it
 
