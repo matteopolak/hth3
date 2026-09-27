@@ -1256,7 +1256,7 @@ p {
 }
 .sidebar-history {
   flex: 1;
-  min-height: 70px;
+  min-height: 0;
 }
 .history-toggle {
   width: calc(100% - 20px);
@@ -1285,8 +1285,68 @@ p {
   color: #222;
 }
 .sidebar-footer {
+  position: sticky;
+  z-index: 2;
+  bottom: 0;
+  flex-shrink: 0;
   border-top: 1px solid #e8e8e8;
+  background: #f7f7f7;
   padding-top: 7px;
+}
+.sidebar-account {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  margin: 2px 0 6px;
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+.sidebar-account-avatar {
+  position: relative;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #dedede;
+  border-radius: 50%;
+  background: #ececec;
+  color: #3d3d3d;
+  font-size: 11px;
+  font-weight: 650;
+}
+.sidebar-account-picture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sidebar-account-details {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 1px;
+}
+.sidebar-account-name,
+.sidebar-account-secondary {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar-account-name {
+  color: #252525;
+  font-size: 13px;
+  font-weight: 650;
+}
+.sidebar-account-secondary {
+  color: #696969;
+  font-size: 11px;
+  font-weight: 450;
 }
 .sidebar-footer .local-identity {
   display: block;

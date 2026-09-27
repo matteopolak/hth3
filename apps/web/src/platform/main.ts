@@ -54,6 +54,7 @@ import {
   viewAllowed,
 } from "../features/staff/index.js";
 import { webAuth } from "./auth0.js";
+import { createSidebarAccount } from "./account-ui.js";
 import { listenForRoutes, routeState, syncRoute } from "./router.js";
 import {
   Activity,
@@ -745,9 +746,7 @@ function navigation(): HTMLElement {
   const footer = el("div", "sidebar-footer");
   const auth = webAuth.snapshot();
   if (auth.status === "authenticated") {
-    footer.append(
-      el("p", "sidebar-account", auth.displayName ?? t("auth.account")),
-    );
+    footer.append(createSidebarAccount(auth, state.locale));
     footer.append(
       sidebarAction("logout", t("auth.signOut"), () => void webAuth.logout()),
     );

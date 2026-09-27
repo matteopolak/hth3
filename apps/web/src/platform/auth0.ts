@@ -13,6 +13,8 @@ export interface WebAuthSnapshot {
   accessToken: string | null;
   mode: WebAuthMode | null;
   displayName: string | null;
+  email: string | null;
+  pictureUrl: string | null;
   organizationId: string | null;
   error: string | null;
 }
@@ -39,6 +41,8 @@ let current: WebAuthSnapshot = {
   accessToken: null,
   mode: null,
   displayName: null,
+  email: null,
+  pictureUrl: null,
   organizationId: null,
   error: null,
 };
@@ -95,14 +99,118 @@ async function loadAuthenticatedSession(
   });
   if (!accessToken) throw new Error("Auth0 did not issue an access token.");
   const user: User | undefined = await auth0.getUser();
+  const identity = accountIdentity(user, claims);
   return update({
     status: "authenticated",
     accessToken,
     mode,
-    displayName: user?.name ?? user?.email ?? null,
+    ...identity,
     organizationId,
     error: null,
   });
+}
+
+type ProfileFields = {
+  email?: unknown;
+  given_name?: unknown;
+  family_name?: unknown;
+  name?: unknown;
+  nickname?: unknown;
+  preferred_username?: unknown;
+  picture?: unknown;
+};
+
+/** Derives a short public label while retaining the full email for accessibility. */
+export function accountIdentity(
+  user: ProfileFields | undefined,
+  claims: ProfileFields | undefined,
+): Pick<WebAuthSnapshot, "displayName" | "email" | "pictureUrl"> {
+  const email = profileText(user?.email) ?? profileText(claims?.email);
+  const fullName = [
+    profileText(user?.given_name) ?? profileText(claims?.given_name),
+    profileText(user?.family_name) ?? profileText(claims?.family_name),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const suppliedName = [
+    fullName,
+    user?.name,
+    claims?.name,
+    user?.nickname,
+    claims?.nickname,
+    user?.preferred_username,
+  ]
+    .map(humanName)
+    .find(Boolean);
+  const derivedName = [
+    user?.nickname,
+    claims?.nickname,
+    user?.preferred_username,
+    email,
+  ]
+    .map(identifierName)
+    .find(Boolean);
+  return {
+    displayName: suppliedName ?? derivedName ?? compactEmailLabel(email),
+    email,
+    pictureUrl:
+      safePictureUrl(user?.picture) ?? safePictureUrl(claims?.picture),
+  };
+}
+
+function humanName(value: unknown): string | null {
+  const name = profileText(value);
+  if (!name || !/^[\p{L}][\p{L} '’\-]*$/u.test(name)) return null;
+  return name.replace(
+    /(^|[ '’\-])(\p{L})/gu,
+    (_, prefix: string, letter: string) => prefix + letter.toLocaleUpperCase(),
+  );
+}
+
+function identifierName(value: unknown): string | null {
+  const raw = profileText(value);
+  if (!raw) return null;
+  const local = raw.split("@")[0]!;
+  const segments = local.split(/[._-]+/);
+  if (
+    segments.length < 2 ||
+    segments.some((part) => !/^\p{L}{2,}$/u.test(part) && !/^\d+$/u.test(part))
+  )
+    return null;
+  const words = segments.filter((part) => /^\p{L}{2,}$/u.test(part));
+  if (words.length < 2) return null;
+  return words
+    .slice(0, 3)
+    .map((word) => word[0]!.toLocaleUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function profileText(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function compactEmailLabel(email: string | null): string | null {
+  if (!email || email.length <= 29) return email;
+  const at = email.lastIndexOf("@");
+  if (at < 1) return `${email.slice(0, 28)}…`;
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  const shortDomain = domain.length > 17 ? `${domain.slice(0, 14)}…` : domain;
+  const localLimit = Math.max(5, 28 - shortDomain.length - 2);
+  const shortLocal =
+    local.length > localLimit ? `${local.slice(0, localLimit)}…` : local;
+  return `${shortLocal}@${shortDomain}`;
+}
+
+function safePictureUrl(value: unknown): string | null {
+  const picture = profileText(value);
+  if (!picture) return null;
+  try {
+    const url = new URL(picture);
+    return url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
 function errorSnapshot(error: unknown): WebAuthSnapshot {
@@ -111,6 +219,8 @@ function errorSnapshot(error: unknown): WebAuthSnapshot {
     accessToken: null,
     mode: null,
     displayName: null,
+    email: null,
+    pictureUrl: null,
     organizationId: null,
     error: error instanceof Error ? error.message : "Sign-in is unavailable.",
   });
@@ -147,6 +257,8 @@ export const webAuth = {
           accessToken: null,
           mode: null,
           displayName: null,
+          email: null,
+          pictureUrl: null,
           organizationId: null,
           error: null,
         });
@@ -177,6 +289,8 @@ export const webAuth = {
       accessToken: null,
       mode: null,
       displayName: null,
+      email: null,
+      pictureUrl: null,
       organizationId: null,
       error: null,
     });
