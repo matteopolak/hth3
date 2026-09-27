@@ -32,6 +32,10 @@ The resident assistant uses a separate staged upload because binary data must no
 
 Guest create, duplicate preview, reply, reopen, and assistant evidence upload actions use an HMAC of Cloudflare’s `CF-Connecting-IP` header as a short-lived abuse-control key. Raw IP addresses are not stored. Current limits are 8 new reports, 8 duplicate previews, 16 replies, 4 reopens, and 8 evidence uploads per IP per hour; previews and uploads use separate keyed buckets and do not consume the create allowance. The keyed counters are deleted after 24 hours. Idempotent write retries do not consume additional requests.
 
+## Production acceptance
+
+At 2026-09-27 00:04 UTC, a clearly labeled fictional Toronto practice report was submitted through the deployed guest API. Creation returned HTTP 201 with `sample: true`; the token-protected receipt returned HTTP 200 with status `submitted` and one message. A fictional follow-up returned HTTP 200, and a second token-protected read returned HTTP 200 with two messages, including the follow-up. No case ID, receipt token, or report text is recorded in this document. Reopen was not exercised because `submitted` is an open status; the reopen endpoint applies only after an outcome or closure. An immediate read-only Tiger query had no row for this case; after the next scheduled delivery window, the query returned `feedback.submitted`, `feedback.classified`, and `feedback.message_added`. This proves event arrival for this practice case, not the staff analytics UI or a live government workflow.
+
 ## How to change it
 
 Add schema changes as forward-only migrations and keep the domain transition rules in `packages/domain/src/feedback/`. `0019_feedback_staff_workflow.sql` adds the organization-scoped staff assignment table without replacing the independent taxonomy assignment. Keep the original resident wording separate from any summary or staff reply. A new municipal destination must use an authoritative municipality identifier and explicit D1 routing row; never route an unsupported municipality to Toronto. Preserve the fictional destination label until a real organization has been verified and configured.
