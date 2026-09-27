@@ -26,7 +26,16 @@ Each adapter must retain source provenance, a publisher ID where available, an e
 
 No API key is required. Apply D1 migrations through `0028_individual_programs.sql` before refreshing individual listings. Source URLs, identity text, response size caps, and expiry rules are constants in the adapters; network timeouts are 12 seconds. Link-only entries record [Canada.ca terms](https://www.canada.ca/en/transparency/terms.html), [BC page copyright](https://www2.gov.bc.ca/gov/content/home/copyright), or [Ontario terms](https://www.ontario.ca/page/terms-use), as appropriate. A general Ontario web page is not treated as an open-data-licensed dataset.
 
-For an immediate vacancy refresh after migration and deploy, a curator can call `POST /api/v1/staff/sources/refresh` with a valid bearer token. When a curator token is unavailable, an operator with Wrangler production access can start a one-time remote preview from `apps/worker` with `wrangler dev --remote --env production --test-scheduled --port 8799`, then request `http://127.0.0.1:8799/__scheduled?cron=0%200%201%201%20*`. This invokes the vacancy-only scheduled branch against the preview's remote bindings; the special cron is deliberately absent from `wrangler.toml` and cannot be called on the public production Worker. Stop the preview afterward. The installed Wrangler version advertises `/__scheduled` for `--test-scheduled`; check `wrangler dev --help` if that path changes.
+For an immediate vacancy refresh after migration and deploy, a curator can call `POST /api/v1/staff/sources/refresh` with a valid bearer token. If no curator token is available, an operator with Wrangler production access can run the local SQL export and authenticated D1 import:
+
+```sh
+./node_modules/.bin/tsc -p packages/sources/tsconfig.build.json
+node scripts/prepare-official-vacancies.mjs /tmp/envoy-official-vacancies.sql
+cd apps/worker
+./node_modules/.bin/wrangler d1 execute civicresolve-prod --remote --env production --file /tmp/envoy-official-vacancies.sql
+```
+
+The exporter calls the same four official vacancy adapters as the Worker, writes no file if any source fails or the full source set is absent, validates identifiers and direct HTTPS evidence, and includes only current individual postings. Review the printed source counts and SQL before applying it. The SQL is idempotent: it marks previously imported listings stale, upserts the current records and listing metadata, and respects curator-controlled registry terms. No public refresh endpoint is involved. The remote-preview scheduled test route did not invoke the handler in the production Worker with Wrangler 4.113.0, so use this CLI flow for the immediate import.
 
 On September 26, 2026, direct automated fetches of Ontario.ca pages returned HTTP 403, and the Ontario jobs portal had previously returned a CAPTCHA. The Ontario adapter leaves those sources in an error or unknown state instead of copying or bypassing them. A prior remote Worker preview returned 65 Service BC offices and three BC finder links; Canada.ca returned HTTP 520 in that preview. These are observed results, not guaranteed future counts. The adapters preserve and expose the next fetch outcome, including safe HTTP, timeout, network, invalid JSON, and identity error codes.
 

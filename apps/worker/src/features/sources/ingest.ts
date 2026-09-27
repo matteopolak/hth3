@@ -25,7 +25,8 @@ export async function ingestOfficialSources(
   for (const sourceId of new Set(result.refreshedSourceIds ?? [])) {
     await database
       .prepare(
-        `UPDATE source_records SET freshness_state='stale', updated_at=?
+        `UPDATE source_records SET freshness_state='stale', last_error_code=NULL,
+           updated_at=?
          WHERE source_id=? AND id IN (SELECT record_id FROM source_record_listings)`,
       )
       .bind(now.toISOString(), sourceId)
