@@ -226,6 +226,7 @@ const copy = {
     resultSingular: "result",
     resultCount: "results",
     nearbyNoLocation: "Location not set.",
+    nearbyPlaces: "Places",
     nearbyBrowse:
       "Enter a city above to narrow public services. Without a city, results are sorted by jurisdiction and name, not distance.",
     all: "All",
@@ -350,6 +351,7 @@ const copy = {
     resultSingular: "résultat",
     resultCount: "résultats",
     nearbyNoLocation: "Lieu non défini.",
+    nearbyPlaces: "Lieux",
     nearbyBrowse:
       "Entrez une ville ci-dessus pour limiter les services publics. Sans ville, les résultats sont triés par territoire et par nom, pas par distance.",
     all: "Tout",
@@ -591,8 +593,60 @@ export function createDiscoveryPage({
     );
     workspace.append(results, panel);
     root.append(workspace);
+    if (area === "nearby" && display === "map")
+      root.append(nearbyPreview(displayed));
     if (area === "jobs" && total <= 3 && !loading)
       root.append(jobBoardSection());
+  }
+
+  function nearbyPreview(items: DiscoveryItem[]): HTMLElement {
+    const section = node("section", "discovery-nearby-preview");
+    section.append(
+      node("h2", "discovery-nearby-preview-heading", text.nearbyPlaces),
+    );
+    const list = node("ul", "discovery-nearby-preview-list");
+    for (const item of items) {
+      const entry = node("li", "discovery-nearby-preview-item");
+      const control = node(
+        "button",
+        `discovery-nearby-preview-row ${selected?.id === item.id ? "is-selected" : ""}`,
+      ) as HTMLButtonElement;
+      control.type = "button";
+      control.setAttribute("aria-pressed", String(selected?.id === item.id));
+      control.addEventListener("click", () => selectNearbyItem(item));
+      if (item.service) control.append(serviceIcon(item.service.category));
+      else control.append(serviceIcon("other"));
+      const labels = node("span", "discovery-nearby-preview-copy");
+      labels.append(
+        node("strong", "", item.title),
+        node(
+          "small",
+          "",
+          item.service
+            ? serviceCategoryName(item.service.category)
+            : itemType(item),
+        ),
+      );
+      control.append(labels);
+      entry.append(control);
+      list.append(entry);
+    }
+    section.append(list);
+    return section;
+  }
+
+  function selectNearbyItem(item: DiscoveryItem): void {
+    selected = item;
+    mobileDetail = true;
+    notice = "";
+    render();
+    root
+      .querySelector<HTMLElement>(".discovery-detail h3")
+      ?.focus({ preventScroll: true });
+    root.querySelector(".discovery-detail-panel")?.scrollIntoView({
+      block: "nearest",
+      behavior: "instant",
+    });
   }
 
   function jobBoardSection(): HTMLElement {
@@ -920,10 +974,7 @@ export function createDiscoveryPage({
         onSelect: (id) => {
           const match = records.find((item) => item.id === id);
           if (!match) return;
-          selected = match;
-          mobileDetail = true;
-          notice = "";
-          render();
+          selectNearbyItem(match);
         },
         onFallback: () => {
           display = "list";

@@ -389,6 +389,87 @@
   display: none;
 }
 
+.discovery-nearby-preview {
+  min-width: 0;
+  margin-top: 5px;
+  border-top: 1px solid #e7e7e7;
+}
+
+.discovery-nearby-preview-heading {
+  margin: 0;
+  padding: 13px 3px 9px;
+  color: #444;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.discovery-nearby-preview-list {
+  max-height: 350px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+
+.discovery-nearby-preview-item {
+  border-top: 1px solid #ededed;
+}
+
+.discovery-nearby-preview-row {
+  display: flex;
+  width: 100%;
+  min-height: 54px;
+  align-items: flex-start;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  color: #202020;
+  padding: 11px 4px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.discovery-nearby-preview-row:hover,
+.discovery-nearby-preview-row.is-selected {
+  background: #f4f4f4;
+}
+
+.discovery-nearby-preview-row:focus-visible {
+  outline: 2px solid #202020;
+  outline-offset: -2px;
+}
+
+.discovery-nearby-preview-row > .discovery-service-icon {
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+}
+
+.discovery-nearby-preview-row > .discovery-service-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.discovery-nearby-preview-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.discovery-nearby-preview-copy strong {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.discovery-nearby-preview-copy small {
+  color: #707070;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
 @media (min-width: 901px) {
   .discovery-page-area-nearby {
     display: grid;
@@ -414,6 +495,12 @@
 
   .discovery-page-area-nearby > .discovery-toolbar {
     grid-row: 3;
+  }
+
+  .discovery-page-area-nearby > .discovery-nearby-preview {
+    grid-column: 1;
+    grid-row: 4;
+    align-self: start;
   }
 
   .discovery-page-area-nearby > .discovery-workspace,
@@ -490,6 +577,14 @@
 }
 
 @media (max-width: 900px) {
+  .discovery-page-area-nearby .discovery-nearby-preview-list {
+    max-height: 260px;
+  }
+
+  .discovery-page-area-nearby.is-detail-open .discovery-nearby-preview {
+    display: none;
+  }
+
   .discovery-page-area-nearby .discovery-workspace {
     display: block;
     min-height: 0;
@@ -1182,6 +1277,10 @@
 }
 
 @media (max-width: 500px) {
+  .discovery-page-area-nearby .discovery-search-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .discovery-service-facts {
     grid-template-columns: minmax(0, 1fr);
   }
