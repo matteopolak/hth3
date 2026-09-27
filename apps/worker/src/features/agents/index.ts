@@ -14,6 +14,8 @@ import {
 } from "./feedback-evidence.js";
 import {
   capabilityAnswer,
+  currentOttawaVacanciesAnswer,
+  currentOttawaVacanciesTool,
   isCapabilityQuestion,
   relevantToolForMessage,
 } from "./guidance.js";
@@ -326,6 +328,43 @@ async function sendMessage(
       await storeMessage(conversation.id, "assistant", answer, context);
     return featureJson(context, { apiVersion: API_VERSION, message: answer });
   }
+  const vacancyTool =
+    mentionedTools.length === 0
+      ? currentOttawaVacanciesTool(safeMessage)
+      : undefined;
+  if (vacancyTool) {
+    const outcome = await callTool(
+      request,
+      conversation,
+      vacancyTool.name,
+      vacancyTool.args,
+      context,
+    );
+    if (outcome instanceof Response) return outcome;
+    const result = outcome.result as
+      | { status: number; data: unknown }
+      | undefined;
+    if (!result || result.status >= 400)
+      return featureError(
+        context,
+        "SOURCE_UNAVAILABLE",
+        "Current postings could not be checked right now.",
+        503,
+      );
+    const answer = currentOttawaVacanciesAnswer(
+      result.data,
+      conversation.locale,
+    );
+    await storeMessage(conversation.id, "user", safeMessage, context);
+    if (!deferAssistant)
+      await storeMessage(conversation.id, "assistant", answer, context);
+    return featureJson(context, {
+      apiVersion: API_VERSION,
+      message: answer,
+      toolResult: result,
+      groundedRead: true,
+    });
+  }
   if (!context.env.AI)
     return featureError(
       context,
@@ -631,6 +670,7 @@ async function streamMessage(
     message: string;
     toolResult?: unknown;
     proposal?: unknown;
+    groundedRead?: boolean;
   };
   const draft = envelope.message;
   const encoder = new TextEncoder();
@@ -651,7 +691,10 @@ async function streamMessage(
       };
       let answer = "";
       try {
-        if (context.env.AI && (await reserveAiCall(context))) {
+        if (envelope.groundedRead) {
+          answer = draft;
+          send("text", { delta: draft });
+        } else if (context.env.AI && (await reserveAiCall(context))) {
           const generated = await context.env.AI.run(MODEL, {
             messages: [
               {

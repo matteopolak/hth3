@@ -21,12 +21,27 @@ export function agentResult(value: unknown, locale: Locale): HTMLElement {
   const collection = resultCollection(data);
   if (!collection) return fallback(value, locale);
   const { kind, items, total } = collection;
+  const jobListings =
+    kind === "source" &&
+    items.length > 0 &&
+    items.every((item) => item.type === "job_posting");
+  const heading = jobListings
+    ? locale === "fr"
+      ? "Emplois"
+      : "Jobs"
+    : label(kind, locale);
   const section = element("section", "agent-result");
-  section.setAttribute("aria-label", label(kind, locale));
+  section.setAttribute("aria-label", heading);
   const header = element("div", "agent-result-head");
   header.append(
-    element("span", "agent-result-type", label(kind, locale)),
-    element("strong", "agent-result-total", countLabel(kind, total, locale)),
+    element("span", "agent-result-type", heading),
+    element(
+      "strong",
+      "agent-result-total",
+      jobListings
+        ? `${total} ${locale === "fr" ? (total === 1 ? "emploi" : "emplois") : total === 1 ? "job" : "jobs"}`
+        : countLabel(kind, total, locale),
+    ),
   );
   section.append(header);
   if (!items.length) {
@@ -36,22 +51,23 @@ export function agentResult(value: unknown, locale: Locale): HTMLElement {
     return section;
   }
   const list = element("div", "agent-result-list");
-  for (const item of items.slice(0, 6))
+  const visibleLimit = jobListings ? 12 : 6;
+  for (const item of items.slice(0, visibleLimit))
     list.append(resultItem(kind, item, locale));
   section.append(list);
-  if (items.length > 6) {
+  if (items.length > visibleLimit) {
     const more = element("details", "agent-result-more");
     more.append(
       element(
         "summary",
         "",
         locale === "fr"
-          ? `Afficher ${items.length - 6} autres résultats`
-          : `Show ${items.length - 6} more results`,
+          ? `Afficher ${items.length - visibleLimit} autres résultats`
+          : `Show ${items.length - visibleLimit} more results`,
       ),
     );
     const remaining = element("div", "agent-result-list");
-    for (const item of items.slice(6))
+    for (const item of items.slice(visibleLimit))
       remaining.append(resultItem(kind, item, locale));
     more.append(remaining);
     section.append(more);
@@ -187,6 +203,21 @@ function resultItem(
   if (kind === "source") {
     const publisher = string(item.publisher);
     if (publisher) meta.append(element("span", "", publisher));
+    const listing = record(item.listing);
+    const closingDate = string(listing?.closingDate);
+    if (
+      item.type === "job_posting" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(closingDate ?? "")
+    )
+      meta.append(
+        element(
+          "span",
+          "",
+          locale === "fr"
+            ? `Clôture : ${closingDate}`
+            : `Closes ${closingDate}`,
+        ),
+      );
     if (item.verified === true)
       meta.append(
         element(

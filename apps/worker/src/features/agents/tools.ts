@@ -492,7 +492,7 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       "Search real sourced jobs, support, funding, offices and participation records with filters.",
     method: "GET",
     path: (args) =>
-      `/api/v1/discovery${discoveryQuery(args, ["area", "type", "audience", "status", "source", "location", "q", "jurisdiction", "language", "freshness", "limit", "offset", "includeSamples"])}`,
+      `/api/v1/discovery${discoveryQuery(args, ["area", "type", "audience", "status", "source", "location", "q", "jurisdiction", "language", "freshness", "applicationStatus", "limit", "offset", "includeSamples"])}`,
     handler: handleDiscoveryRequest,
   },
   read_discovery_item: {
