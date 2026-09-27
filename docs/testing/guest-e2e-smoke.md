@@ -10,6 +10,14 @@ Each language checks a direct Jobs route, in-app navigation and browser back, a 
 
 The duplicate response is deliberately mocked to exercise a stable review state without seeding private reports. Other data reads use the running local Worker and its source fixtures. Passing these checks shows the tested guest paths work locally; it does not establish live Auth0, staff, résumé submission, agent approval, real duplicate detection, screen-reader, or physical-device acceptance for issue #42.
 
+## Production guest follow-up
+
+On September 26, 2026, an isolated headless Chrome session opened the live Envoy Worker at `https://envoy.matteopolak.workers.dev`. Assistant, Jobs, Feedback, and Nearby returned HTTP 200 in English at 1280 pixels and French at 390 pixels. Both languages showed 25 job results, 78 Nearby results, the Nearby map and list, a usable chat composer, and the feedback editor. Visual inspection found no document overflow or page exceptions at either width. This checks rendering and basic navigation, not an AI reply or submission.
+
+A live English job handoff returned HTTP 200 and opened an HTTPS posting at `bcpublicservice.hua.hrsmart.com`. English and French feedback review requests initially received HTTP 200 from duplicate checking without creating a report. Repeated probes in the same short interval later received HTTP 429, so no further feedback requests were made and the production review screen was not asserted. Local browser tests still cover the review state with an intercepted duplicate response.
+
+Native Discovery had already passed simulator build and visual checks for its map/list flow under issue #32. This production follow-up does not cover a physical device. Authenticated applicant, employer, civic staff and admin journeys, real résumé-assisted apply, feedback receipt and staff response, agent approval, comprehensive screen-reader checks, and live native interaction remain unverified for issue #42.
+
 ## How to change it
 
 Keep assertions on user-visible labels and stable semantic controls. If a route or label changes, update both entries in the test's `copy` table. If the handoff API changes, preserve the assertion that the popup URL equals the Worker response and uses HTTPS. Do not add a real feedback send to this smoke; use a dedicated isolated test with cleanup for that stateful flow.
