@@ -1,11 +1,33 @@
 import { Composition } from "remotion";
 import { EnvoyEvidence } from "./video";
+import { EnvoyRecut, recutDurationFrames } from "./recut";
+import {
+  EnvoyStageFallback,
+  stageFallbackDurationFrames,
+  stageFallbackFps,
+} from "./stage-fallback";
 import { durationInFrames, FPS } from "./story";
 
 const Review = () => <EnvoyEvidence review />;
 
 export const Root = () => (
   <>
+    <Composition
+      id="EnvoyStageFallback"
+      component={EnvoyStageFallback}
+      durationInFrames={stageFallbackDurationFrames}
+      fps={stageFallbackFps}
+      width={1920}
+      height={1080}
+    />
+    <Composition
+      id="EnvoyRecut"
+      component={EnvoyRecut}
+      durationInFrames={recutDurationFrames}
+      fps={FPS}
+      width={1920}
+      height={1080}
+    />
     <Composition
       id="EnvoyEvidence"
       component={EnvoyEvidence}

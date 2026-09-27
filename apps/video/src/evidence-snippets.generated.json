@@ -1,0 +1,460 @@
+{
+  "voice": [
+    {
+      "file": "apps/worker/src/features/voice/index.ts",
+      "rows": [
+        {
+          "number": 80,
+          "text": "  const endpoint = new URL("
+        },
+        {
+          "number": 81,
+          "text": "    \"https://api.elevenlabs.io/v1/convai/conversation/get-signed-url\","
+        },
+        {
+          "number": 83,
+          "text": "  endpoint.searchParams.set(\"agent_id\", agentId);"
+        },
+        {
+          "number": 84,
+          "text": "  const response = await fetch(endpoint, {"
+        },
+        {
+          "number": 85,
+          "text": "    headers: { \"xi-api-key\": apiKey },"
+        },
+        {
+          "number": 86,
+          "text": "    signal: AbortSignal.timeout(10_000),"
+        }
+      ]
+    },
+    {
+      "file": "apps/worker/src/features/voice/index.ts",
+      "rows": [
+        {
+          "number": 387,
+          "text": "  const last = turns.at(-1);"
+        },
+        {
+          "number": 390,
+          "text": "    last.role !== \"user\" ||"
+        },
+        {
+          "number": 391,
+          "text": "    !/^(?:yes[, ]+submit(?: it)?|oui[, ]+envoyez(?:-le)?)[.!]?$/i.test("
+        },
+        {
+          "number": 395,
+          "text": "    return null;"
+        },
+        {
+          "number": 396,
+          "text": "  const disclosure = turns.at(-2);"
+        },
+        {
+          "number": 400,
+          "text": "    !/envoy/i.test(disclosure.message) ||"
+        },
+        {
+          "number": 401,
+          "text": "    !/review team|équipe de révision/i.test(disclosure.message) ||"
+        },
+        {
+          "number": 402,
+          "text": "    !/not a government office|pas à un bureau gouvernemental/i.test("
+        },
+        {
+          "number": 405,
+          "text": "    !/submit|envoyer/i.test(disclosure.message)"
+        },
+        {
+          "number": 407,
+          "text": "    return null;"
+        }
+      ]
+    }
+  ],
+  "tiger": [
+    {
+      "file": "scripts/tiger/001_feedback_analytics.sql",
+      "rows": [
+        {
+          "number": 6,
+          "text": "CREATE TABLE IF NOT EXISTS feedback_events ("
+        },
+        {
+          "number": 7,
+          "text": "  occurred_at TIMESTAMPTZ NOT NULL,"
+        },
+        {
+          "number": 8,
+          "text": "  event_id TEXT NOT NULL,"
+        },
+        {
+          "number": 9,
+          "text": "  organization_id TEXT NOT NULL,"
+        },
+        {
+          "number": 10,
+          "text": "  submission_id TEXT NOT NULL,"
+        },
+        {
+          "number": 11,
+          "text": "  event_type TEXT NOT NULL,"
+        },
+        {
+          "number": 12,
+          "text": "  category TEXT NOT NULL DEFAULT 'unclassified',"
+        },
+        {
+          "number": 13,
+          "text": "  intent TEXT NOT NULL DEFAULT 'unclassified',"
+        },
+        {
+          "number": 14,
+          "text": "  municipality_csd_uid TEXT,"
+        },
+        {
+          "number": 18,
+          "text": ");"
+        }
+      ]
+    },
+    {
+      "file": "apps/worker/src/features/analytics/index.ts",
+      "rows": [
+        {
+          "number": 202,
+          "text": "        await sql`"
+        },
+        {
+          "number": 203,
+          "text": "          INSERT INTO feedback_events ("
+        },
+        {
+          "number": 204,
+          "text": "            event_id, occurred_at, organization_id, submission_id, event_type,"
+        },
+        {
+          "number": 205,
+          "text": "            category, intent, municipality_csd_uid, status, sample"
+        },
+        {
+          "number": 207,
+          "text": "            ${event.event_id}, ${event.occurred_at}, ${event.organization_id},"
+        },
+        {
+          "number": 208,
+          "text": "            ${event.aggregate_id}, ${event.event_type}, ${category}, ${intent},"
+        },
+        {
+          "number": 209,
+          "text": "            ${municipality}, ${status}, ${sample}"
+        },
+        {
+          "number": 210,
+          "text": "          ) ON CONFLICT (occurred_at, event_id) DO NOTHING`;"
+        },
+        {
+          "number": 211,
+          "text": "        await env.DB.prepare("
+        },
+        {
+          "number": 212,
+          "text": "          `UPDATE outbox_events SET delivered_at = ?, last_error = NULL"
+        },
+        {
+          "number": 213,
+          "text": "           WHERE event_id = ? AND delivered_at IS NULL`,"
+        },
+        {
+          "number": 215,
+          "text": "          .bind(new Date().toISOString(), event.event_id)"
+        },
+        {
+          "number": 216,
+          "text": "          .run();"
+        }
+      ]
+    }
+  ],
+  "presage": [
+    {
+      "file": "apps/mobile/ios/CivicResolve/Features/Accessibility/AccessibilityView.swift",
+      "rows": [
+        {
+          "number": 39,
+          "text": "                if cameraConsent {"
+        },
+        {
+          "number": 40,
+          "text": "                    if configuredKey == nil {"
+        },
+        {
+          "number": 44,
+          "text": "                    } else {"
+        },
+        {
+          "number": 45,
+          "text": "                        preview"
+        },
+        {
+          "number": 46,
+          "text": "                        Button(isMeasuring ? copy(\"stop\") : copy(\"start\")) {"
+        },
+        {
+          "number": 47,
+          "text": "                            Task { await toggleMeasurement() }"
+        },
+        {
+          "number": 51,
+          "text": "                        .disabled(sdk.processingStatus == .stopping)"
+        },
+        {
+          "number": 58,
+          "text": "                        if let lastStableBreathingRate {"
+        },
+        {
+          "number": 59,
+          "text": "                            Text(String(format: copy(\"reading\"), lastStableBreathingRate))"
+        },
+        {
+          "number": 61,
+          "text": "                            Text(copy(\"offer\"))"
+        },
+        {
+          "number": 63,
+          "text": "                            Button(calmWriting ? copy(\"turnOff\") : copy(\"turnOn\")) {"
+        },
+        {
+          "number": 64,
+          "text": "                                calmWriting.toggle()"
+        }
+      ]
+    },
+    {
+      "file": "apps/mobile/ios/CivicResolve/Features/Accessibility/AccessibilityView.swift",
+      "rows": [
+        {
+          "number": 88,
+          "text": "                  let sample = sdk.metrics?.breathing.rate.last,"
+        },
+        {
+          "number": 89,
+          "text": "                  sample.stable,"
+        },
+        {
+          "number": 90,
+          "text": "                  sample.value.isFinite else { return }"
+        },
+        {
+          "number": 91,
+          "text": "            lastStableBreathingRate = Int(sample.value.rounded())"
+        },
+        {
+          "number": 93,
+          "text": "        .onChange(of: cameraConsent) { _, enabled in"
+        },
+        {
+          "number": 94,
+          "text": "            if !enabled {"
+        },
+        {
+          "number": 95,
+          "text": "                lastStableBreathingRate = nil"
+        },
+        {
+          "number": 96,
+          "text": "                Task { await stopMeasurement() }"
+        }
+      ]
+    }
+  ],
+  "auth": [
+    {
+      "file": "apps/web/src/platform/auth0.ts",
+      "rows": [
+        {
+          "number": 160,
+          "text": "  async login(mode: WebAuthMode): Promise<void> {"
+        },
+        {
+          "number": 162,
+          "text": "    await auth0.loginWithRedirect({"
+        },
+        {
+          "number": 164,
+          "text": "      authorizationParams: {"
+        },
+        {
+          "number": 165,
+          "text": "        audience,"
+        },
+        {
+          "number": 166,
+          "text": "        scope,"
+        },
+        {
+          "number": 167,
+          "text": "        redirect_uri: `${window.location.origin}/callback`,"
+        },
+        {
+          "number": 168,
+          "text": "        ...(mode === \"employee\" ? { organization: staffOrganizationId } : {}),"
+        },
+        {
+          "number": 169,
+          "text": "      },"
+        }
+      ]
+    },
+    {
+      "file": "apps/worker/src/auth/identity.ts",
+      "rows": [
+        {
+          "number": 149,
+          "text": "  if (organizationAuth0Id && organizationRoles.length > 0) {"
+        },
+        {
+          "number": 153,
+          "text": "        `SELECT m.organization_id, m.role"
+        },
+        {
+          "number": 154,
+          "text": "         FROM organization_memberships AS m"
+        },
+        {
+          "number": 155,
+          "text": "         JOIN organizations AS o ON o.id = m.organization_id"
+        },
+        {
+          "number": 156,
+          "text": "         WHERE m.user_subject = ? AND o.auth0_org_id = ?"
+        },
+        {
+          "number": 157,
+          "text": "           AND m.role IN (${placeholders})`,"
+        },
+        {
+          "number": 159,
+          "text": "      .bind(subject, organizationAuth0Id, ...organizationRoles)"
+        },
+        {
+          "number": 165,
+          "text": "      memberRoles = memberships"
+        },
+        {
+          "number": 166,
+          "text": "        .filter((membership) => membership.organization_id === organizationId)"
+        },
+        {
+          "number": 167,
+          "text": "        .map((membership) => membership.role);"
+        },
+        {
+          "number": 175,
+          "text": "    permissions: permissionsForRoles([...applicantRole, ...memberRoles]).filter("
+        },
+        {
+          "number": 176,
+          "text": "      (permission) => claimedPermissions.includes(permission),"
+        },
+        {
+          "number": 177,
+          "text": "    ),"
+        }
+      ]
+    },
+    {
+      "file": "apps/worker/src/features/feedback-core/staff.ts",
+      "rows": [
+        {
+          "number": 396,
+          "text": "async function assignFeedback("
+        },
+        {
+          "number": 398,
+          "text": "  organizationId: string,"
+        },
+        {
+          "number": 399,
+          "text": "  submissionId: string,"
+        },
+        {
+          "number": 403,
+          "text": "  const feedback = await loadFeedbackForOrganization("
+        },
+        {
+          "number": 404,
+          "text": "    context.env.DB,"
+        },
+        {
+          "number": 405,
+          "text": "    submissionId,"
+        },
+        {
+          "number": 406,
+          "text": "    organizationId,"
+        },
+        {
+          "number": 411,
+          "text": "  const body = await jsonBody<FeedbackAssignmentBody>(request);"
+        },
+        {
+          "number": 412,
+          "text": "  const departmentId = body?.departmentId;"
+        },
+        {
+          "number": 413,
+          "text": "  const assigneeSubject = body?.assigneeSubject;"
+        }
+      ]
+    },
+    {
+      "file": "apps/worker/src/features/feedback-core/staff.ts",
+      "rows": [
+        {
+          "number": 876,
+          "text": "async function addStaffMessage("
+        },
+        {
+          "number": 878,
+          "text": "  organizationId: string,"
+        },
+        {
+          "number": 879,
+          "text": "  submissionId: string,"
+        },
+        {
+          "number": 883,
+          "text": "  const feedback = await loadFeedbackForOrganization("
+        },
+        {
+          "number": 884,
+          "text": "    context.env.DB,"
+        },
+        {
+          "number": 885,
+          "text": "    submissionId,"
+        },
+        {
+          "number": 886,
+          "text": "    organizationId,"
+        },
+        {
+          "number": 890,
+          "text": "  const body = await jsonBody<FeedbackMessageBody>(request);"
+        },
+        {
+          "number": 891,
+          "text": "  const message = normalizedMessage(body?.message);"
+        },
+        {
+          "number": 892,
+          "text": "  const clientKey = parseIdempotencyKey(request);"
+        }
+      ]
+    }
+  ]
+}

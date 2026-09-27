@@ -1,0 +1,29 @@
+{
+  "model": "apps/video/public/models/creative-trio-monitor.glb",
+  "image": "apps/video/public/models/creative-trio-monitor.png",
+  "triangles": 68,
+  "screen": [
+    [
+      141.85,
+      49.63
+    ],
+    [
+      1029.09,
+      88.99
+    ],
+    [
+      1029.09,
+      504.8
+    ],
+    [
+      141.85,
+      465.45
+    ]
+  ],
+  "bounds": [
+    -0.2238505637401777,
+    -0.008983933464383661,
+    0.22385064063557134,
+    0.29861210631317076
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "origin": "https://envoy.surf/",
+  "capturedLocalDate": "2026-09-26 America/Toronto",
+  "method": "Isolated headless Chrome at 1600x812. The user's active browser was not used. Screen video is edited inside a modeled monitor without changing report content.",
+  "assets": [
+    {
+      "file": "captures/current-home-envoy-surf-2026-09-26.png",
+      "recordedAt": "2026-09-27T03:30:00Z",
+      "sha256": "f9e1d389712504a450fffb64f29d121d7d028e0727e501b08de2c0b3aa6ca940",
+      "observed": "Current neutral sidebar and guest assistant entry point; no user interaction."
+    },
+    {
+      "file": "captures/current-job-flow-envoy-surf-2026-09-26.mp4",
+      "recordedAt": "2026-09-27T03:30:01.284Z",
+      "sha256": "1ae08397534328094b3414c129f4c46daa3ca2b1474e75f98257930367de313b",
+      "observed": "Select official BC vacancy at 2s; Prepare application at 6s; Continue on official site at 14s. All three click actions returned true. External submission is not recorded in Envoy."
+    },
+    {
+      "file": "captures/current-nearby-envoy-surf-2026-09-26.png",
+      "recordedAt": "2026-09-27T03:30:44Z",
+      "sha256": "8b30bba35fb7656f980b05d49d52c93fa30173d9ce2c224be44f71152baf9581",
+      "observed": "Fully loaded tiled Nearby map, neutral sidebar, 78 source-backed results."
+    },
+    {
+      "file": "captures/production-feedback-submit-redacted-2026-09-26.mp4",
+      "recordedAt": "2026-09-27T03:18:17.479Z",
+      "sha256": "fe47cbb07e0373156effb52131dc17679d454edd5442a4697a61667040c866ac",
+      "sourceSha256": "75ccd76c24ac4fcbd31807656aa6eec6fa1f06140c36e286e73e057466c3c248",
+      "observed": "One nonpersonal product-feedback sample was reviewed, Envoy-only destination acknowledged, and submitted. Receipt status showed Submitted. The receipt identifier was covered in every frame beginning before it first appeared; no token was visible. OCR was checked at 2fps from source seconds 15-24. Only this redacted derivative is tracked."
+    },
+    {
+      "file": "captures/current-agent-envoy-surf-2026-09-26.mp4",
+      "recordedAt": "2026-09-27T03:41:29Z",
+      "sha256": "c06a8f97dc17d82abcf9006276ecca350cfeb081d9d48508efdc487e6e9c5fc7",
+      "observed": "After the duplicate-check fix, the production guest bench prompt returned a pending editable feedback proposal. Approval remained unchecked and Confirm disabled; no report was submitted. A separate failed recapture was excluded."
+    },
+    {
+      "file": "captures/current-agent-pending-envoy-surf-2026-09-26.png",
+      "sourceVideoSecond": 25,
+      "sha256": "71be8f3bb1638f7ab4e68176eb8bcdd47cb9a573e9a58a4fda0ac303ea44779a",
+      "observed": "Still extracted from the same successful guest conversation, showing the Envoy-only pending proposal."
+    },
+    {
+      "file": "captures/current-chat-jobs-envoy-surf-2026-09-27.mp4",
+      "recordedAt": "2026-09-27T04:11:56Z",
+      "sha256": "dfaa559a09e33b12130bf0d018ca7fc9334770c2e92b61a919bf8b1c34144d7e",
+      "observed": "Guest chat on envoy.surf returned 10 individual City of Ottawa job postings with closing dates and a ten-source panel. The question asked for official posting links; the visible answer lists roles and dates, while official URLs are represented in the source panel. No application was submitted."
+    },
+    {
+      "file": "music-your-breath-mixkit.mp3",
+      "sha256": "8b837348a9c5b61f359fa458af832bfe957f3da461039af3ba0ba6c6f467ed0e",
+      "observed": "Mixkit Your Breath by Eugenio Mininni, used under Mixkit Stock Music Free License."
+    }
+  ]
+}

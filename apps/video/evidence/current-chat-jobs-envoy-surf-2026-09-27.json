@@ -1,0 +1,24 @@
+{
+  "mode": "chat-jobs",
+  "origin": "https://envoy.surf/",
+  "route": "/",
+  "recordedAt": "2026-09-27T04:11:56.532Z",
+  "viewport": {
+    "width": 1600,
+    "height": 812
+  },
+  "fps": 8,
+  "seconds": 50,
+  "file": "/var/folders/fh/v9s7s7zx0svb3wp8dl0nnl4w0000gn/T/envoy-video-candidates/production-chat-jobs-20260927T041156Z.mp4",
+  "frameDir": "/var/folders/fh/v9s7s7zx0svb3wp8dl0nnl4w0000gn/T/envoy-video-chat-jobs-frames-ozIHWQ",
+  "sha256": "dfaa559a09e33b12130bf0d018ca7fc9334770c2e92b61a919bf8b1c34144d7e",
+  "actions": [
+    {
+      "frame": 80,
+      "seconds": 10,
+      "label": "send",
+      "ok": true
+    }
+  ],
+  "note": "Isolated headless Chrome captured the deployed product. Review frames and claims before selecting this clip for the video."
+}

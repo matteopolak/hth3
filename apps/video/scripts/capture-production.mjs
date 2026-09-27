@@ -20,7 +20,14 @@ const specs = {
   sources: { seconds: 41, route: "/explore/jobs" },
   agent: { seconds: 50, route: "/" },
   "chat-sources": { seconds: 35, route: "/" },
+  "chat-jobs": { seconds: 50, route: "/" },
+  "chat-nearby": { seconds: 50, route: "/" },
+  "chat-issue": { seconds: 50, route: "/" },
   feedback: { seconds: 40, route: "/feedback" },
+  "job-flow": { seconds: 18, route: "/explore/jobs" },
+  "feedback-submit": { seconds: 24, route: "/feedback" },
+  "still-home": { seconds: 0, route: "/" },
+  "still-nearby": { seconds: 0, route: "/explore/nearby" },
   "gallery-assistant": { seconds: 0, route: "/" },
   "gallery-jobs": { seconds: 0, route: "/explore/jobs" },
   "gallery-nearby": { seconds: 0, route: "/explore/nearby" },
@@ -30,7 +37,7 @@ if (!Object.hasOwn(specs, mode))
   throw new Error(`Choose one capture mode: ${Object.keys(specs).join(", ")}`);
 
 const origin = new URL(
-  process.env.ENVOY_CAPTURE_ORIGIN ?? "https://envoy.matteopolak.workers.dev",
+  process.env.ENVOY_CAPTURE_ORIGIN ?? "https://envoy.surf",
 );
 if (origin.protocol !== "https:" || origin.pathname !== "/")
   throw new Error("ENVOY_CAPTURE_ORIGIN must be an HTTPS site origin");
@@ -42,6 +49,7 @@ const chromePath =
   process.env.ENVOY_CHROME_PATH ??
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const isGallery = mode.startsWith("gallery-");
+const isStill = mode.startsWith("still-");
 const viewport = isGallery
   ? { width: 1200, height: 800 }
   : { width: 1600, height: 812 };
@@ -164,8 +172,9 @@ try {
   await delay(1200);
   const stamp = recordedAt.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
 
-  if (isGallery) {
-    if (mode === "gallery-nearby") await delay(2600);
+  if (isGallery || isStill) {
+    if (mode === "gallery-nearby" || mode === "still-nearby")
+      await delay(mode === "still-nearby" ? 6500 : 2600);
     if (mode === "gallery-feedback") {
       const filled = await typeText(
         "textarea",
@@ -209,6 +218,16 @@ try {
       "How can I report a damaged bench at Nathan Phillips Square in Toronto? Prepare a report for me to review, but do not submit it.";
     const sourcePrompt =
       "Where can I find a Service BC office in Victoria? Show the official source.";
+    const chatPrompts = {
+      agent: issuePrompt,
+      "chat-sources": sourcePrompt,
+      "chat-jobs":
+        "Which City of Ottawa jobs are open now? Include closing dates and direct official posting links.",
+      "chat-nearby":
+        "Where can I find a public service office near Ottawa, Ontario? Show official sources and how to check the location.",
+      "chat-issue":
+        "How can I report a damaged bench in Confederation Park in Ottawa? Check for similar reports, then prepare a report for my review. Do not submit it.",
+    };
     const feedbackText =
       "The pedestrian signal near Queen Street and University Avenue in Toronto may be dark. Please review this concern.";
     const frameCount = specs[mode].seconds * fps;
@@ -248,8 +267,8 @@ try {
         if (frame === 39 * fps)
           await act(frame, "list", () => clickText(["List"]));
       }
-      if (mode === "agent" || mode === "chat-sources") {
-        const prompt = mode === "agent" ? issuePrompt : sourcePrompt;
+      if (Object.hasOwn(chatPrompts, mode)) {
+        const prompt = chatPrompts[mode];
         const typeStart = 3 * fps;
         const typeEnd = 9 * fps;
         if (frame >= typeStart && frame <= typeEnd) {
@@ -265,26 +284,54 @@ try {
         if (frame === 10 * fps)
           await act(frame, "send", () => clickText(["Send", "Send message"]));
       }
-      if (mode === "feedback") {
+      if (mode === "job-flow") {
+        if (frame === 2 * fps)
+          await act(frame, "select-official-job", () =>
+            clickSelector(".discovery-results .discovery-row"),
+          );
+        if (frame === 6 * fps)
+          await act(frame, "prepare-application", () =>
+            clickText(["Prepare application"]),
+          );
+        if (frame === 14 * fps)
+          await act(frame, "open-official-posting", () =>
+            clickText(["Continue on official site"]),
+          );
+      }
+      if (mode === "feedback" || mode === "feedback-submit") {
+        const entry =
+          mode === "feedback-submit"
+            ? "The Envoy feedback form could make keyboard guidance clearer on smaller screens."
+            : feedbackText;
         const typeStart = 2 * fps;
-        const typeEnd = 13 * fps;
+        const typeEnd = (mode === "feedback-submit" ? 7 : 13) * fps;
         if (frame >= typeStart && frame <= typeEnd) {
           const portion = Math.min(
-            feedbackText.length,
+            entry.length,
             Math.ceil(
               ((frame - typeStart + 1) / (typeEnd - typeStart + 1)) *
-                feedbackText.length,
+                entry.length,
             ),
           );
-          await typeText("textarea", feedbackText.slice(0, portion));
+          await typeText("textarea", entry.slice(0, portion));
         }
-        if (frame === 16 * fps)
+        if (frame === (mode === "feedback-submit" ? 9 : 16) * fps)
           await act(frame, "review", () =>
             clickText([
               "Review before sending",
               "Review report",
               "Review and send",
             ]),
+          );
+        if (mode === "feedback-submit" && frame === 13 * fps)
+          await act(frame, "acknowledge-envoy-destination", () =>
+            clickSelector(
+              ".feedback-review .checkbox-row input[type='checkbox']",
+            ),
+          );
+        if (mode === "feedback-submit" && frame === 15 * fps)
+          await act(frame, "submit-to-envoy", () =>
+            clickSelector(".feedback-review [data-send-feedback]"),
           );
       }
       const shot = await command("Page.captureScreenshot", {
