@@ -1,5 +1,6 @@
 import type { Locale } from "@civicresolve/contracts/v1";
 import {
+  ArrowUpRight,
   Building2,
   BusFront,
   ChevronDown,
@@ -51,6 +52,9 @@ interface DiscoveryItem {
   id: string;
   origin: "official_external" | "participating_org" | "sample";
   type:
+    | "job_posting"
+    | "support_program"
+    | "funding_opportunity"
     | "jobs_finder"
     | "benefits_finder"
     | "funding_finder"
@@ -78,6 +82,13 @@ interface DiscoveryItem {
     publisher: string;
     verifyOnPublisherSite: true;
     externalSubmissionRecorded: false;
+  } | null;
+  listing?: {
+    category: "job" | "support" | "funding";
+    postedDate: string | null;
+    closingDate: string | null;
+    locationText: string | null;
+    applicationStatus: "open" | "closed" | "unknown";
   } | null;
   service?: PublicService;
 }
@@ -117,6 +128,22 @@ const copy = {
     filters: "Filters",
     results: "Results",
     finder: "Official finder",
+    jobPosting: "Official job posting",
+    jobBoards: "Official job boards",
+    jobBoardsNote: "Browse more openings on the publisher’s site.",
+    noJobPostings:
+      "Try another role or city, or browse an official job board below.",
+    jobEmployer: "Employer",
+    jobLocation: "Location",
+    jobClosing: "Closing date",
+    jobPosted: "Posted",
+    jobStatus: "Application status",
+    jobOpen: "Open per source",
+    jobClosed: "Closed per source",
+    jobUnknown: "Check on official site",
+    jobDateNote: "Confirm the closing time on the official posting.",
+    jobOfficial: "View official posting",
+    jobNoDeadline: "Check official posting",
     verifiedListing: "Verified listing",
     locationRecord: "Service location",
     serviceCategory: "Service type",
@@ -157,7 +184,7 @@ const copy = {
     practice: "Show practice records",
     noResults: "No matching records from reviewed sources yet.",
     noSaved: "Nothing saved yet.",
-    emptyJobs: "No reviewed job sources match",
+    emptyJobs: "No individual job postings match",
     emptySupport: "No matching support sources",
     emptyFunding: "No matching funding sources",
     emptyNearby: "No matching public services",
@@ -166,8 +193,6 @@ const copy = {
     emptyFiltered: "Try another keyword or city, or clear your search.",
     emptyUnfiltered: "Reviewed sources will appear here when available.",
     emptySaved: "Save a source to keep it here with your checklist.",
-    jobBankIntro:
-      "Search current openings directly on the Government of Canada’s Job Bank.",
     jobBankAction: "Search Job Bank",
     jobBankSource: "Government of Canada · jobbank.gc.ca",
     clearSearch: "Clear search",
@@ -227,6 +252,22 @@ const copy = {
     filters: "Filtres",
     results: "Résultats",
     finder: "Moteur de recherche officiel",
+    jobPosting: "Offre d’emploi officielle",
+    jobBoards: "Sites officiels d’emploi",
+    jobBoardsNote: "Consultez d’autres postes sur le site de l’éditeur.",
+    noJobPostings:
+      "Essayez un autre poste ou une autre ville, ou consultez un site d’emploi officiel ci-dessous.",
+    jobEmployer: "Employeur",
+    jobLocation: "Lieu",
+    jobClosing: "Date limite",
+    jobPosted: "Publiée",
+    jobStatus: "État de la candidature",
+    jobOpen: "Ouverte selon la source",
+    jobClosed: "Fermée selon la source",
+    jobUnknown: "Vérifiez sur le site officiel",
+    jobDateNote: "Confirmez l’heure limite dans l’offre officielle.",
+    jobOfficial: "Voir l’offre officielle",
+    jobNoDeadline: "Vérifiez l’offre officielle",
     verifiedListing: "Annonce vérifiée",
     locationRecord: "Point de service",
     serviceCategory: "Type de service",
@@ -268,7 +309,7 @@ const copy = {
     noResults:
       "Aucun dossier correspondant des sources examinées pour le moment.",
     noSaved: "Aucun élément enregistré.",
-    emptyJobs: "Aucune source d’emplois examinée ne correspond",
+    emptyJobs: "Aucune offre d’emploi individuelle ne correspond",
     emptySupport: "Aucune source d’aide correspondante",
     emptyFunding: "Aucune source de financement correspondante",
     emptyNearby: "Aucun service public correspondant",
@@ -280,8 +321,6 @@ const copy = {
       "Les sources examinées apparaîtront ici lorsqu’elles seront disponibles.",
     emptySaved:
       "Enregistrez une source pour la retrouver ici avec votre liste.",
-    jobBankIntro:
-      "Cherchez les offres actuelles directement sur le Guichet-Emplois du gouvernement du Canada.",
     jobBankAction: "Chercher sur le Guichet-Emplois",
     jobBankSource: "Gouvernement du Canada · jobbank.gc.ca",
     clearSearch: "Effacer la recherche",
@@ -356,6 +395,7 @@ export function createDiscoveryPage({
   let offset = 0;
   let total = 0;
   let records: DiscoveryItem[] = [];
+  let jobBoards: DiscoveryItem[] = [];
   let saved: SavedItem[] = [];
   let selected: DiscoveryItem | null = null;
   let loading = false;
@@ -389,11 +429,26 @@ export function createDiscoveryPage({
         if (location) params.set("location", location);
         if (currentOnly) params.set("freshness", "current");
         if (includeSamples) params.set("includeSamples", "true");
-        const result = await request<{ items: DiscoveryItem[]; total: number }>(
-          `/${area === "nearby" ? "nearby" : "discovery"}?${params}`,
-        );
+        const [result, boardsResult] = await Promise.all([
+          request<{ items: DiscoveryItem[]; total: number }>(
+            `/${area === "nearby" ? "nearby" : "discovery"}?${params}`,
+          ),
+          area === "jobs"
+            ? request<{ items: DiscoveryItem[] }>(
+                "/discovery?area=jobs&type=jobs_finder&includeFinders=true&limit=30",
+              ).catch(() => null)
+            : Promise.resolve(null),
+        ]);
         records = append ? records.concat(result.items) : result.items;
         total = result.total;
+        if (area === "jobs")
+          jobBoards =
+            boardsResult?.items.filter(
+              (item) =>
+                item.type === "jobs_finder" &&
+                item.origin === "official_external" &&
+                isHttps(item.sourceUrl),
+            ) ?? [];
         if (!append && !records.some((item) => item.id === selected?.id)) {
           selected =
             area === "support" || area === "funding"
@@ -450,6 +505,7 @@ export function createDiscoveryPage({
   }
 
   function render(): void {
+    root.classList.toggle("is-detail-open", mobileDetail);
     root.replaceChildren();
     if (area !== "saved") root.append(filters());
     if (area === "nearby" && !location) {
@@ -514,7 +570,10 @@ export function createDiscoveryPage({
     }
     if (!displayed.length) {
       if (loading) root.append(node("p", "discovery-loading", text.loading));
-      else if (!error) root.append(emptyState());
+      else if (!error) {
+        root.append(emptyState());
+        if (area === "jobs") root.append(jobBoardSection());
+      }
       return;
     }
     const workspace = node(
@@ -542,6 +601,49 @@ export function createDiscoveryPage({
     );
     workspace.append(results, panel);
     root.append(workspace);
+    if (area === "jobs" && total <= 3 && !loading)
+      root.append(jobBoardSection());
+  }
+
+  function jobBoardSection(): HTMLElement {
+    const section = node("section", "discovery-job-boards");
+    section.append(
+      node("h2", "", text.jobBoards),
+      node("p", "", text.jobBoardsNote),
+    );
+    const links = node("div", "discovery-job-board-links");
+    for (const board of jobBoards.slice(0, 4)) {
+      const link = node("a", "discovery-job-board");
+      link.href = board.sourceUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.append(
+        node("strong", "", board.title),
+        node("span", "", board.publisher),
+      );
+      const arrow = node("span", "discovery-job-board-arrow");
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.innerHTML = ArrowUpRight;
+      link.append(arrow);
+      links.append(link);
+    }
+    if (!links.childElementCount) {
+      const link = node("a", "discovery-job-board");
+      link.href = "https://www.jobbank.gc.ca/jobsearch/jobsearch";
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.append(
+        node("strong", "", text.jobBankAction),
+        node("span", "", text.jobBankSource),
+      );
+      const arrow = node("span", "discovery-job-board-arrow");
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.innerHTML = ArrowUpRight;
+      link.append(arrow);
+      links.append(link);
+    }
+    section.append(links);
+    return section;
   }
 
   function emptyState(): HTMLElement {
@@ -564,21 +666,17 @@ export function createDiscoveryPage({
       query || location || currentOnly || serviceCategory !== "all",
     );
     section.append(
-      node("p", "", hasFilters ? text.emptyFiltered : text.emptyUnfiltered),
+      node(
+        "p",
+        "",
+        area === "jobs"
+          ? text.noJobPostings
+          : hasFilters
+            ? text.emptyFiltered
+            : text.emptyUnfiltered,
+      ),
     );
     const actions = node("div", "discovery-no-results-actions");
-    if (area === "jobs") {
-      section.append(node("p", "", text.jobBankIntro));
-      const jobBank = node(
-        "a",
-        "discovery-button discovery-button-primary",
-        text.jobBankAction,
-      );
-      jobBank.href = "https://www.jobbank.gc.ca/jobsearch/jobsearch";
-      jobBank.target = "_blank";
-      jobBank.rel = "noopener noreferrer";
-      actions.append(jobBank);
-    }
     if (hasFilters) {
       actions.append(
         action(text.clearSearch, "discovery-button", () => {
@@ -594,10 +692,6 @@ export function createDiscoveryPage({
       );
     }
     if (actions.childElementCount) section.append(actions);
-    if (area === "jobs")
-      section.append(
-        node("small", "discovery-no-results-source", text.jobBankSource),
-      );
     return section;
   }
 
@@ -778,12 +872,30 @@ export function createDiscoveryPage({
       heading.append(serviceIcon(item.service.category), title);
       entry.append(heading);
     } else entry.append(title);
-    entry.append(node("span", "discovery-summary", compactSummary));
-    const meta = node("span", "discovery-meta");
-    meta.append(
-      node("span", "", item.publisher),
-      node("span", "", item.jurisdiction.name),
+    if (area !== "jobs" || item.type !== "job_posting")
+      entry.append(node("span", "discovery-summary", compactSummary));
+    const meta = node(
+      "span",
+      `discovery-meta ${area === "jobs" && item.type === "job_posting" ? "discovery-job-meta" : ""}`,
     );
+    if (area === "jobs" && item.type === "job_posting") {
+      meta.append(node("span", "", item.publisher));
+      meta.append(
+        node("span", "", item.listing?.locationText ?? item.jurisdiction.name),
+      );
+      meta.append(
+        node(
+          "span",
+          "",
+          `${text.jobClosing}: ${item.listing?.closingDate ? formatDateOnly(item.listing.closingDate, locale) : text.jobNoDeadline}`,
+        ),
+      );
+      meta.append(node("span", "", jobStatus(item)));
+    } else
+      meta.append(
+        node("span", "", item.publisher),
+        node("span", "", item.jurisdiction.name),
+      );
     if (area === "nearby" && item.service?.address)
       meta.append(node("span", "", item.service.address));
     if (item.origin === "sample")
@@ -906,6 +1018,7 @@ export function createDiscoveryPage({
 
   function itemType(item: DiscoveryItem): string {
     if (item.origin === "sample") return text.practiceLabel;
+    if (item.type === "job_posting") return text.jobPosting;
     if (area === "nearby" && item.service)
       return serviceCategoryName(item.service.category);
     if (item.origin === "participating_org") return text.verifiedListing;
@@ -942,6 +1055,7 @@ export function createDiscoveryPage({
     );
     if (item.origin === "sample")
       view.append(node("p", "discovery-notice", text.practiceNote));
+    if (item.type === "job_posting") view.append(jobFacts(item));
     if (item.freshness !== "current")
       view.append(node("p", "discovery-muted", text.staleNote));
     const actions = node("div", "discovery-actions");
@@ -963,7 +1077,7 @@ export function createDiscoveryPage({
       }
       actions.append(
         action(
-          text.official,
+          item.type === "job_posting" ? text.jobOfficial : text.official,
           `discovery-button ${onPrepare && item.origin === "official_external" ? "" : "discovery-button-primary"}`,
           () => void openOfficial(item),
         ),
@@ -1020,6 +1134,41 @@ export function createDiscoveryPage({
     const savedEntry = saved.find((entry) => entry.item.id === item.id);
     if (savedEntry) view.append(checklist(item, savedEntry.checklist));
     return view;
+  }
+
+  function jobStatus(item: DiscoveryItem): string {
+    if (item.listing?.applicationStatus === "open") return text.jobOpen;
+    if (item.listing?.applicationStatus === "closed") return text.jobClosed;
+    return text.jobUnknown;
+  }
+
+  function jobFacts(item: DiscoveryItem): HTMLElement {
+    const facts = node("dl", "discovery-job-facts");
+    for (const [label, value] of [
+      [text.jobEmployer, item.publisher],
+      [text.jobLocation, item.listing?.locationText ?? item.jurisdiction.name],
+      [
+        text.jobClosing,
+        item.listing?.closingDate
+          ? formatDateOnly(item.listing.closingDate, locale)
+          : text.jobNoDeadline,
+      ],
+      [text.jobStatus, jobStatus(item)],
+      [
+        text.jobPosted,
+        item.listing?.postedDate
+          ? formatDateOnly(item.listing.postedDate, locale)
+          : null,
+      ],
+    ] as Array<[string, string | null]>) {
+      if (!value) continue;
+      facts.append(node("dt", "", label), node("dd", "", value));
+    }
+    const section = node("section", "discovery-job-details");
+    section.append(facts);
+    if (item.listing?.closingDate)
+      section.append(node("p", "discovery-muted", text.jobDateNote));
+    return section;
   }
 
   function serviceDetails(service: PublicService): HTMLElement {
@@ -1282,4 +1431,16 @@ function isHttps(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+function formatDateOnly(value: string, locale: Locale): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(`${value}T12:00:00Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(locale === "fr" ? "fr-CA" : "en-CA", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(date);
 }
