@@ -12,13 +12,13 @@ The closed mobile rail is hidden from keyboard and screen-reader navigation. The
 
 The staff workspace uses a darker muted-text token for readable supporting copy and stacks page actions below headings on very narrow screens so French titles retain their full width.
 
-The shell maps `@civicresolve/design-tokens` monochrome values into CSS variables; `CivicTheme` carries the same neutral design intent in SwiftUI. Status labels carry the meaning even where semantic token colors are identical.
+The shell maps `@civicresolve/design-tokens` colors into CSS variables; `CivicTheme` carries the same light design foundation in SwiftUI. Status labels carry the meaning independently of color.
 
 Native iOS uses SwiftUI controls and `CivicTheme` in `apps/mobile/ios/CivicResolve/Design/`. This web pass does not establish full VoiceOver or native touch-target acceptance.
 
 ## How to change it
 
-Keep each icon-only control's accessible name in `apps/web/src/platform/main.ts`. When adding a modal or drawer, focus its first action, handle `Escape`, keep `Tab` within it, and restore focus to its trigger. Use real buttons, links, labels, and summaries so keyboard and screen-reader behavior follows the platform. Add feature-specific hover and focus styles without suppressing the shared `:focus-visible` outline. Check the corresponding French route at 320 and 390 pixels; avoid hiding long labels to make them fit.
+Keep each icon-only control's accessible name in `apps/web/src/platform/main.ts`. When adding a modal or drawer, focus its first action, handle `Escape`, keep `Tab` within it, and restore focus to its trigger. Use real buttons, links, labels, and summaries so keyboard and screen-reader behavior follows the platform. Preserve the shared rounded `:focus-visible` halo when adding feature styles; forced-colors mode still needs its system outline. Check the corresponding French route at 320 and 390 pixels; avoid hiding long labels to make them fit.
 
 When adding a map interaction, keep a list or key with the same records. The map currently shows source-backed coordinates in a schematic view and may space close pins; do not imply street-level precision or "open now" status.
 
