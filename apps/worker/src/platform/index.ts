@@ -215,7 +215,11 @@ const worker = {
         );
       }
       if (error instanceof Auth0JwksUnavailableError) {
-        console.warn("auth0_jwks_unavailable", { requestId });
+        console.log("auth0_jwks_unavailable", {
+          requestId,
+          source: error.source,
+          ...(error.status === undefined ? {} : { status: error.status }),
+        });
         return jsonError(
           "AUTHENTICATION_UNAVAILABLE",
           "Sign-in verification is temporarily unavailable. Please try again.",
@@ -237,7 +241,7 @@ const worker = {
         error instanceof Error && /^[A-Za-z][A-Za-z0-9]{0,63}$/.test(error.name)
           ? error.name
           : "UnknownError";
-      console.error("worker_request_failed", { requestId, errorName });
+      console.log("worker_request_failed", { requestId, errorName });
       return jsonError(
         "INTERNAL_ERROR",
         "The request could not be completed.",

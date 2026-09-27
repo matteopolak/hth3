@@ -58,7 +58,10 @@ export class Auth0TokenError extends Error {
 }
 
 export class Auth0JwksUnavailableError extends Error {
-  constructor() {
+  constructor(
+    readonly source: "network" | "http",
+    readonly status?: number,
+  ) {
     super("The identity signing keys are temporarily unavailable.");
     this.name = "Auth0JwksUnavailableError";
   }
@@ -83,9 +86,10 @@ export class Auth0JwksClient {
         headers: { Accept: "application/json" },
       });
     } catch {
-      throw new Auth0JwksUnavailableError();
+      throw new Auth0JwksUnavailableError("network");
     }
-    if (!response.ok) throw new Auth0JwksUnavailableError();
+    if (!response.ok)
+      throw new Auth0JwksUnavailableError("http", response.status);
 
     const document = (await response
       .json()
