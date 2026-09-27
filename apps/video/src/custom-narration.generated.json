@@ -1,0 +1,83 @@
+[
+  {
+    "sceneId": "open",
+    "text": "Meet envoy. Find civic services, ask a question, and send feedback to Envoy’s review team from one place.",
+    "file": "narration-custom/open-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 5.897868,
+    "voiceId": "R5rU293t7xe8dI1rhLd0",
+    "voiceName": "robert"
+  },
+  {
+    "sceneId": "sources",
+    "text": "The jobs board lists current official vacancies and closing dates. Choose a role, prepare for the official site, then open the publisher’s application page. Nearby maps seventy-eight service locations. Consultations also link to official sources.",
+    "file": "narration-custom/sources-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 13.839093,
+    "voiceId": "R5rU293t7xe8dI1rhLd0",
+    "voiceName": "robert"
+  },
+  {
+    "sceneId": "agent",
+    "text": "Describe a local concern in plain language. The assistant can find context and prepare an editable report proposal. Nothing is sent until the resident reviews it and chooses to submit.",
+    "file": "narration-custom/agent-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 10.26322,
+    "voiceId": "yFCTR9LkeDbOvtFI8axB",
+    "voiceName": "asdf"
+  },
+  {
+    "sceneId": "feedback",
+    "text": "The feedback form makes the destination clear before submission. Reports enter Envoy’s own review queue, not a government office. The resident receives a private receipt for follow-up.",
+    "file": "narration-custom/feedback-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 10.3561,
+    "voiceId": "yFCTR9LkeDbOvtFI8axB",
+    "voiceName": "asdf"
+  },
+  {
+    "sceneId": "voice",
+    "text": "For voice, the Worker signs a short-lived ElevenLabs session. In a verified call, a fictional streetlight concern was transcribed and the agent asked for the nearest intersection. A report still requires resident review; web microphone handoff remains unverified.",
+    "file": "narration-custom/voice-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 12.631655,
+    "voiceId": "TLEJS9fLZJSgXY7WJMYV",
+    "voiceName": "mp"
+  },
+  {
+    "sceneId": "tiger",
+    "text": "D1 retains report bodies. An outbox sends only event metadata to Tiger for trends. A read-only query on September twenty-sixth found four delivered events and four aggregated events. That is historical delivery evidence, not a live staff dashboard.",
+    "file": "narration-custom/tiger-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 13.885533,
+    "voiceId": "TLEJS9fLZJSgXY7WJMYV",
+    "voiceName": "mp"
+  },
+  {
+    "sceneId": "presage",
+    "text": "The native SwiftUI app wires Presage SmartSpectra to an optional breathing check. It asks for camera consent and can offer a quieter layout. The simulator build works; a live reading still needs verification on a physical iPhone.",
+    "file": "narration-custom/presage-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 17.507846,
+    "voiceId": "0n46A9P3HCcODBgAM8WN",
+    "voiceName": "yo"
+  },
+  {
+    "sceneId": "auth",
+    "text": "Auth0 hosts organization sign-in. The Worker validates token signature, issuer, and audience, then checks D1 membership and scopes. Staff tools can triage reports, assign them, and respond inside Envoy. Hosted login is configured; a real scoped staff action remains unverified.",
+    "file": "narration-custom/auth-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 21.362358,
+    "voiceId": "0n46A9P3HCcODBgAM8WN",
+    "voiceName": "yo"
+  },
+  {
+    "sceneId": "closing",
+    "text": "Official sources remain linked. Feedback stays with Envoy until a participating organization is onboarded. Find the next step at envoy dot surf.",
+    "file": "narration-custom/closing-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 8.126984,
+    "voiceId": "R5rU293t7xe8dI1rhLd0",
+    "voiceName": "robert"
+  }
+]
