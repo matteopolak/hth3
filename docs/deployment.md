@@ -10,6 +10,14 @@ Envoy is one Cloudflare Worker application. The Worker serves the built Vite sit
 
 Production bindings attach D1, private R2, Workers AI, Vectorize, and Hyperdrive to that Worker. The five-minute cron delivers feedback events and refreshes due official sources. The production CORS allowlist contains the Worker origin. The former `envoy-web` Pages project has been deleted after the combined Worker was verified.
 
+## Live verification
+
+On 2026-09-27 UTC, Wrangler reported production Worker version `378cf242-42cf-48f6-8f67-ba1a97408317` at 100% traffic. `GET /`, `/callback`, `/api/healthz`, `/api/v1/sources`, and `/api/v1/nearby?limit=1` returned HTTP 200. A same-origin `/api/v1/sources` preflight returned 204 with the Envoy origin. Remote D1 reported no pending migrations. The iOS Release API setting points at the same Worker; this is configuration evidence, not a physical-device run.
+
+The private R2 guest evidence upload and token-protected download passed with a 68-byte synthetic image, as recorded in [Guest civic feedback](guest-feedback.md). A read-only Tiger query reported 15 `feedback_events` rows, with the latest event at `2026-09-27 00:16:06 UTC`. A deployed Workers AI classification of a fictional report is recorded in [Taxonomy and classification](feedback/taxonomy.md). Both existing Worker secret names were present; their values were not read.
+
+Provider acceptance remains incomplete. The Auth0 verifier rejects a deliberately invalid signature, but an authorized staff token with allowed and denied organization actions has not passed live review. ElevenLabs issued a signed session and handled a fictional spoken exchange, while no post-call webhook is registered and browser-to-feedback submission remains unverified. Presage compiled and launched in the simulator; no consented physical-iPhone reading is available. Jev was explicitly deferred in favor of a no-charge Workers AI model. See [Web sign-in](auth/web-sign-in.md), [ElevenLabs voice intake](voice/elevenlabs-intake.md), and [Native Presage accessibility](native-presage.md).
+
 ## How to change it
 
 Apply pending D1 migrations before deploying code that reads new tables: from `apps/worker`, run `./node_modules/.bin/wrangler d1 migrations apply civicresolve-prod --remote --env production`. Run `pnpm deploy:production` at the repo root. Check `/`, a deep SPA route such as `/callback`, `/api/healthz`, a representative `/api/v1/` read, and an asset URL on the Worker origin. Confirm the Auth0 SPA's callback, logout, and web-origin allowlists contain this Worker origin before using login there. Update the native iOS Release API URL to the same origin when publishing a new build.
