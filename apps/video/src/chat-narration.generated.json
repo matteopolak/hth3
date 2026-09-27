@@ -108,5 +108,35 @@
     "durationSeconds": 3.993832,
     "voiceId": "R5rU293t7xe8dI1rhLd0",
     "voiceName": "robert"
+  },
+  {
+    "sceneId": "account-profile",
+    "text": "Applicants enter through Auth0, then save a profile and a private résumé.",
+    "ttsText": "Applicants enter through Auth0, then save a profile and a private résumé.",
+    "file": "narration-chat/account-profile-01.mp3",
+    "startSeconds": 0.35,
+    "durationSeconds": 6.037188,
+    "voiceId": "0n46A9P3HCcODBgAM8WN",
+    "voiceName": "yo"
+  },
+  {
+    "sceneId": "application",
+    "text": "For Envoy-hosted jobs, submit answers, choose résumé sharing, and track the decision.",
+    "ttsText": "For Onvoy-hosted jobs, submit answers, choose résumé sharing, and track the decision.",
+    "file": "narration-chat/application-01.mp3",
+    "startSeconds": 0.35,
+    "durationSeconds": 5.06195,
+    "voiceId": "R5rU293t7xe8dI1rhLd0",
+    "voiceName": "robert"
+  },
+  {
+    "sceneId": "staff-workflow",
+    "text": "Staff review reports, request details, and see trends within their own organization.",
+    "ttsText": "Staff review reports, request details, and see trends within their own organization.",
+    "file": "narration-chat/staff-workflow-01.mp3",
+    "startSeconds": 0.35,
+    "durationSeconds": 5.01551,
+    "voiceId": "yFCTR9LkeDbOvtFI8axB",
+    "voiceName": "asdf"
   }
 ]

@@ -1,0 +1,29 @@
+{
+  "capturedAtUtc": "2026-09-27T13:44:49Z",
+  "origin": "http://localhost:5173/",
+  "environment": "combined local Vite and Cloudflare Worker development server",
+  "captures": [
+    {
+      "file": "public/captures/current-auth0-signup-envoy-surf-2026-09-27.png",
+      "sha256": "1fe6cc9a7cfaa11ae8c784d17b1a9d9261bee96269798b57466c4ed363228ad3",
+      "action": "Opened the deployed resident Auth0 sign-up form without entering information or creating an account",
+      "origin": "https://envoy.surf/"
+    },
+    {
+      "file": "public/captures/current-profile-local-2026-09-27.png",
+      "sha256": "a7d6af16a219da77727da4f41f53d8c4c1134a12a3e074f9c442f940fde1aa24",
+      "action": "Selected the local applicant identity and saved a nonpersonal profile"
+    },
+    {
+      "file": "public/captures/current-applications-local-2026-09-27.png",
+      "sha256": "d6b33a1e72f3cf350f00ffaa21a8a133dc3646db44002efff2f86541486288d0",
+      "action": "Viewed the local applicant's Envoy-hosted practice application and status"
+    },
+    {
+      "file": "public/captures/current-staff-inbox-local-2026-09-27.png",
+      "sha256": "07b4aeb0e8c3a19ea2cc4c1b8826256fbe28693afb4a70a3cce52b665321a580",
+      "action": "Selected the local civic staff identity and viewed its sandbox inbox"
+    }
+  ],
+  "limits": "Local identities do not prove production Auth0 sign-up or scoped staff acceptance. The application and feedback records shown are practice records, not outside-employer or government submissions."
+}

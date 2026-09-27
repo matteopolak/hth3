@@ -29,8 +29,13 @@ const specs = {
   "still-home": { seconds: 0, route: "/" },
   "still-jobs": { seconds: 0, route: "/explore/jobs" },
   "still-signin": { seconds: 0, route: "/signin" },
+  "still-auth0-entry": { seconds: 0, route: "/signin" },
+  "still-auth0-signup": { seconds: 0, route: "/signin" },
   "still-nearby": { seconds: 0, route: "/explore/nearby" },
   "still-nearby-ottawa": { seconds: 0, route: "/explore/nearby" },
+  "still-profile-local": { seconds: 0, route: "/signin" },
+  "still-applications-local": { seconds: 0, route: "/signin" },
+  "still-staff-local": { seconds: 0, route: "/signin" },
   "gallery-assistant": { seconds: 0, route: "/" },
   "gallery-jobs": { seconds: 0, route: "/explore/jobs" },
   "gallery-nearby": { seconds: 0, route: "/explore/nearby" },
@@ -42,8 +47,8 @@ if (!Object.hasOwn(specs, mode))
 const origin = new URL(
   process.env.ENVOY_CAPTURE_ORIGIN ?? "https://envoy.surf",
 );
-if (origin.protocol !== "https:" || origin.pathname !== "/")
-  throw new Error("ENVOY_CAPTURE_ORIGIN must be an HTTPS site origin");
+if ((origin.protocol !== "https:" && !(origin.protocol === "http:" && ["localhost", "127.0.0.1"].includes(origin.hostname))) || origin.pathname !== "/")
+  throw new Error("ENVOY_CAPTURE_ORIGIN must be HTTPS or local HTTP");
 const outputDir = resolve(
   process.env.ENVOY_CAPTURE_OUTPUT_DIR ??
     join(tmpdir(), "envoy-video-candidates"),
@@ -186,6 +191,41 @@ try {
   const stamp = recordedAt.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
 
   if (isGallery || isStill) {
+    if (mode === "still-auth0-entry" || mode === "still-auth0-signup") {
+      const opened = await clickText(["Continue as a resident"]);
+      actions.push({ label: "open-applicant-auth0-login", ok: opened });
+      if (!opened) throw new Error("Resident Auth0 entry unavailable");
+      await delay(3000);
+      if (mode === "still-auth0-signup") {
+        const signup = await clickText(["Sign up"]);
+        actions.push({ label: "open-auth0-signup-form", ok: signup });
+        if (!signup) throw new Error("Auth0 signup link unavailable");
+        await delay(1400);
+      }
+    }
+    if (mode.endsWith("-local")) {
+      const identity = mode === "still-staff-local" ? "dev-civic-staff" : "dev-applicant";
+      const selected = await evaluate(`(() => {
+        const select = document.querySelector('.identity-select');
+        if (!(select instanceof HTMLSelectElement)) return false;
+        select.value = ${JSON.stringify(identity)};
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+      })()`);
+      actions.push({ label: "select-local-role", ok: selected });
+      if (!selected) throw new Error("Local identity selector unavailable");
+      await delay(1200);
+      if (mode === "still-applications-local") await clickText(["Applications"]);
+      if (mode === "still-profile-local") {
+        await typeInput('input[name="name"]', "Alex Morgan");
+        await typeInput('input[name="email"]', "alex.morgan@example.org");
+        await typeInput('input[name="location"]', "Ottawa, Ontario");
+        await typeText('textarea[name="summary"]', "Public service experience and community support.");
+        await clickText(["Save profile"]);
+      }
+      if (mode === "still-staff-local") await clickText(["Inbox"]);
+      await delay(2000);
+    }
     if (mode === "still-jobs") await delay(4000);
     if (mode === "gallery-nearby" || mode === "still-nearby")
       await delay(mode === "still-nearby" ? 6500 : 2600);

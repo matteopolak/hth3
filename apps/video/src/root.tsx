@@ -14,11 +14,20 @@ import {
   stageFallbackFps,
 } from "./stage-fallback";
 import { durationInFrames, FPS } from "./story";
+import { EnvoyFullTour, fullTourDurationFrames } from "./full-tour";
 
 const Review = () => <EnvoyEvidence review />;
 
 export const Root = () => (
   <>
+    <Composition
+      id="EnvoyFullTour"
+      component={EnvoyFullTour}
+      durationInFrames={fullTourDurationFrames}
+      fps={chatFilmFps}
+      width={1920}
+      height={1080}
+    />
     <Composition
       id="EnvoyChatFilmMotion"
       component={EnvoyChatFilmMotion}
