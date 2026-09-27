@@ -12,6 +12,11 @@ import {
   attachFeedbackEvidence,
   uploadFeedbackEvidence,
 } from "./feedback-evidence.js";
+import {
+  capabilityAnswer,
+  isCapabilityQuestion,
+  relevantToolForMessage,
+} from "./guidance.js";
 import { proposalChanges, type ProposalChange } from "./proposal-changes.js";
 import {
   executeTool,
@@ -292,6 +297,16 @@ async function sendMessage(
       400,
     );
   const safeMessage = redactSecrets(message.trim());
+  if (isCapabilityQuestion(safeMessage)) {
+    const answer = capabilityAnswer(
+      conversation.mode,
+      conversation.locale,
+      conversation.organization_id,
+    );
+    await storeMessage(conversation.id, "user", safeMessage, context);
+    await storeMessage(conversation.id, "assistant", answer, context);
+    return featureJson(context, { apiVersion: API_VERSION, message: answer });
+  }
   if (!context.env.AI)
     return featureError(
       context,
@@ -379,12 +394,14 @@ async function sendMessage(
           : null
       : null;
   const residentServiceIssue = !!residentIssueText;
-  if (instruction.tool && !residentServiceIssue) {
+  const selectedTool = relevantToolForMessage(safeMessage, instruction.tool);
+  const narrowedJobSearch = selectedTool !== instruction.tool;
+  if (selectedTool && !residentServiceIssue) {
     const outcome = await callTool(
       request,
       conversation,
-      instruction.tool.name,
-      instruction.tool.args,
+      selectedTool.name,
+      selectedTool.args,
       context,
     );
     if (outcome instanceof Response) {
@@ -398,10 +415,24 @@ async function sendMessage(
     }
   }
   if (
+    narrowedJobSearch &&
+    (toolResult as { status?: number })?.status === 200
+  ) {
+    const result = (toolResult as { data?: { items?: unknown[] } }).data;
+    assistantText =
+      result?.items?.length === 0
+        ? conversation.locale === "fr"
+          ? "Je n'ai trouvé aucune offre d'emploi correspondante parmi les sources publiées."
+          : "I found no matching jobs among the published sources."
+        : conversation.locale === "fr"
+          ? "Voici les résultats d'emploi correspondant à votre recherche et leurs sources officielles."
+          : "Here are matching jobs and their official sources.";
+  }
+  if (
     toolResult &&
     !proposal &&
     !feedbackDuplicateStatus(toolResult) &&
-    instruction.tool?.name !== "prepare_feedback_evidence_upload"
+    selectedTool?.name !== "prepare_feedback_evidence_upload"
   ) {
     const result = toolResult as { status?: number; data?: unknown };
     if (result.status && result.status < 400 && context.env.AI) {
@@ -431,7 +462,7 @@ async function sendMessage(
     }
   }
   if (
-    instruction.tool?.name === "prepare_feedback_evidence_upload" &&
+    selectedTool?.name === "prepare_feedback_evidence_upload" &&
     (toolResult as { status?: number } | undefined)?.status === 200
   )
     assistantText =
@@ -1444,7 +1475,7 @@ function systemPrompt(conversation: ConversationRow): string {
   const tools = visibleTools(conversation.mode, conversation.organization_id)
     .map((tool) => `${tool.name} (${tool.access}): ${tool.description}`)
     .join("\n");
-  return `You are Envoy's ${conversation.mode} assistant. Reply in ${conversation.locale === "fr" ? "French" : "English"} with at most two short, natural sentences. No emoji. Never invent URLs, menu names, click paths, official processes, source records, eligibility, locations, case status, or tool results. Do not claim an external application or report was submitted. Envoy is unaffiliated with government; the action preview discloses the queue destination. Do not include practice records unless the person asks for them, and disclose their status when recommending one. Never ask for or print access tokens. Direct emergencies to 911. Offer to prepare feedback when a resident describes an unresolved service problem. Before proposing feedback, check for a matching report; if found, say its status and only offer a separate report when the resident confirms a distinct issue or recurrence. Do not execute writes without the approval card. Employee tools access only the current role and organization.\nAvailable tools:\n${tools}\nRespond as compact JSON: {"message":"plain answer","tool":{"name":"one exact tool name","args":{}}}. Omit tool if none is needed. Use at most one tool per turn. Ask for missing details. For write tools, the server creates a proposal card.`;
+  return `You are Envoy's ${conversation.mode} assistant. Reply in ${conversation.locale === "fr" ? "French" : "English"} with at most two short, natural sentences. No emoji. Never invent URLs, menu names, click paths, official processes, source records, eligibility, locations, case status, or tool results. Do not claim an external application or report was submitted. Envoy is unaffiliated with government; the action preview discloses the queue destination. Do not include practice records unless the person asks for them, and disclose their status when recommending one. Never ask for or print access tokens. Direct emergencies to 911. Offer to prepare feedback when a resident describes an unresolved service problem. Before proposing feedback, check for a matching report; if found, say its status and only offer a separate report when the resident confirms a distinct issue or recurrence. Do not execute writes without the approval card. Employee tools access only the current role and organization. Describe your capabilities in natural language, never as raw tool identifiers. Your role's capabilities: ${capabilityAnswer(conversation.mode, conversation.locale, conversation.organization_id)} For specific jobs, services, funding, or support queries use filtered search_discovery, not the full list_source_records catalogue. Use list_source_records only when the person explicitly requests the source catalogue.\nAvailable tools:\n${tools}\nRespond as compact JSON: {"message":"plain answer","tool":{"name":"one exact tool name","args":{}}}. Omit tool if none is needed. Use at most one tool per turn. Ask for missing details. For write tools, the server creates a proposal card.`;
 }
 
 function parseInstruction(raw: string | undefined): {

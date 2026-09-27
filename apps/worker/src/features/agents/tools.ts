@@ -368,7 +368,8 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
   list_source_records: {
     mode: "both",
     access: "read",
-    description: "Search imported public source records.",
+    description:
+      "List the complete imported source-record catalogue only when explicitly requested; use filtered discovery for jobs, services, funding, or support.",
     method: "GET",
     path: (args) =>
       `/api/v1/source-records${args.includeSamples === true ? "?includeSamples=true" : ""}`,
