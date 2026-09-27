@@ -29,6 +29,8 @@ pnpm --filter @envoy/video render:draft
 pnpm --filter @envoy/video render:final
 ```
 
+For a fresh production capture, run `node apps/video/scripts/capture-production.mjs MODE` with `MODE` set to `home`, `jobs`, `participation`, `sources`, `agent`, `chat-sources`, or `feedback`. The script launches a separate headless Chrome profile, records the live `https://envoy.matteopolak.workers.dev/` at 1600×812, and writes a candidate MP4 plus origin, timestamp, action log, and SHA-256 sidecar under the system temporary directory's `envoy-video-candidates/` folder. It never confirms a report submission. Set `ENVOY_CAPTURE_ORIGIN`, `ENVOY_CAPTURE_OUTPUT_DIR`, or `ENVOY_CHROME_PATH` only when the deployment or local browser path differs. Inspect every candidate's visible action, labels, data, and source claims before copying selected clips into `apps/video/public/captures/` and updating `src/draft-clips.ts` or `src/draft-stills.ts`.
+
 The review export is `apps/video/out/envoy-review.mp4`; it includes real interactions, the native simulator screen, dated Tiger query evidence, synchronized provisional narration and captions, and a clearly pending staff-authorization scene. `render:final` exits before Remotion if required clips are missing. Have the team approve narration and verify footage before hosting a submission video. For a single-frame layout check, use `pnpm --filter @envoy/video still`. Remotion may need a local Chrome or its own headless-shell download to render. On this Mac, a direct local render command is:
 
 ```sh
