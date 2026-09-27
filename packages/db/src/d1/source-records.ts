@@ -14,7 +14,12 @@ const SOURCE_RECORD_COLUMNS = `
 
 const PUBLIC_SOURCE_RECORD_PREDICATE = `
   ((origin = 'sample' AND ? = 1)
-   OR (origin <> 'sample' AND terms_status = 'permitted'))`;
+   OR (origin <> 'sample' AND terms_status = 'permitted'
+       AND EXISTS (
+         SELECT 1 FROM source_registry
+         WHERE source_registry.id = source_records.source_id
+           AND source_registry.terms_status = 'permitted'
+       )))`;
 
 export async function listSourceRecords(
   database: D1Database,

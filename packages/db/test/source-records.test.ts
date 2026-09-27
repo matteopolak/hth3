@@ -71,14 +71,18 @@ const unreviewedRecord: SourceRecordRow = {
   terms_status: "unreviewed",
 };
 
-function databaseWithRows(rows: SourceRecordRow[]) {
+function databaseWithRows(
+  rows: SourceRecordRow[],
+  sourceTerms: Record<string, string> = {},
+) {
   let query = "";
   let bound: unknown[] = [];
   const visibleRows = () =>
     rows.filter((row) =>
       row.origin === "sample"
         ? bound.at(-1) === 1
-        : row.terms_status === "permitted",
+        : row.terms_status === "permitted" &&
+          (sourceTerms[row.source_id] ?? "permitted") === "permitted",
     );
   const statement = {
     bind(...values: unknown[]) {
@@ -141,6 +145,15 @@ describe("public source record reads", () => {
     expect(result.query).toContain("terms_status = 'permitted'");
     expect(records.map((record) => record.id)).toEqual([officialRecord.id]);
     expect(records[0]?.verified).toBe(true);
+  });
+
+  it("hides a record when its source registry terms are restricted", async () => {
+    const result = databaseWithRows([officialRecord], {
+      [officialRecord.source_id]: "restricted",
+    });
+    expect(await listSourceRecords(result.database)).toEqual([]);
+    expect(result.query).toContain("source_registry.terms_status = 'permitted'");
+    expect(await getSourceRecord(result.database, officialRecord.id)).toBeNull();
   });
 
   it("includes opt-in samples with explicit provenance and false verification", async () => {
