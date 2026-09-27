@@ -1,6 +1,5 @@
 import {
   ArrowRight,
-  Check,
   ChevronRight,
   CircleHelp,
   FileText,
@@ -10,6 +9,7 @@ import {
   Send,
   X,
 } from "lucide-static";
+import { filledCheckIcon, playPaintSplash } from "../paint/index.js";
 import { programsApi } from "./api.js";
 import type {
   Program,
@@ -281,7 +281,7 @@ export function createProgramIntakePage(
       options.view === "sponsor"
         ? `<div class="pi-tabs"><button data-action="forms" class="${sponsorTab === "forms" ? "active" : ""}">${h(text.forms)}</button><button data-action="inbox" class="${sponsorTab === "inbox" ? "active" : ""}">${h(text.inbox)} <span>${applications.length}</span></button></div>`
         : "";
-    return `<div class="pi-top"><div class="pi-title-row"><h1>${h(options.view === "sponsor" ? text.sponsor : options.view === "mine" ? text.mine : text.find)}</h1>${options.view === "sponsor" && sponsorTab === "forms" ? `<button class="pi-btn primary" data-action="new">${icon(Plus)}${h(text.create)}</button>` : ""}</div>${tabs}</div>${error ? `<div role="alert" class="pi-alert">${h(error)} <button data-action="retry">${h(text.retry)}</button></div>` : ""}${notice ? `<div role="status" class="pi-notice">${icon(Check)}${h(notice)}</div>` : ""}${content}</div>`;
+    return `<div class="pi-top"><div class="pi-title-row"><h1>${h(options.view === "sponsor" ? text.sponsor : options.view === "mine" ? text.mine : text.find)}</h1>${options.view === "sponsor" && sponsorTab === "forms" ? `<button class="pi-btn primary" data-action="new">${icon(Plus)}${h(text.create)}</button>` : ""}</div>${tabs}</div>${error ? `<div role="alert" class="pi-alert">${h(error)} <button data-action="retry">${h(text.retry)}</button></div>` : ""}${notice ? `<div role="status" class="pi-notice"><span class="pi-icon">${filledCheckIcon}</span>${h(notice)}</div>` : ""}${content}</div>`;
   }
 
   function programList(): string {
@@ -520,6 +520,7 @@ export function createProgramIntakePage(
       render();
     }
     if (action === "submit" && options.token && selectedProgram) {
+      const actionBounds = target.getBoundingClientRect();
       const confirmed =
         root.querySelector<HTMLInputElement>("#pi-confirm")?.checked;
       const sandbox =
@@ -541,6 +542,7 @@ export function createProgramIntakePage(
         answers = {};
         selectedApplication = result.application.id;
         notice = text.submitted;
+        playPaintSplash(actionBounds, "green");
       });
     }
     if (action === "send-message" && options.token && selectedApplication) {
@@ -633,6 +635,7 @@ export function createProgramIntakePage(
       options.organizationId &&
       selectedProgram
     ) {
+      const actionBounds = target.getBoundingClientRect();
       void perform(async () => {
         const result = await programsApi.staffState(
           options.token!,
@@ -642,6 +645,10 @@ export function createProgramIntakePage(
         );
         programs = programs.map((item) =>
           item.id === result.program.id ? result.program : item,
+        );
+        playPaintSplash(
+          actionBounds,
+          action === "publish-program" ? "green" : "coral",
         );
       });
     }

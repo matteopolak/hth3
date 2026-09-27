@@ -282,3 +282,39 @@
     font-size: 24px;
   }
 }
+
+/* Official program discovery has its own green and yellow paint accents. */
+.pg-tabs button.active {
+  border-color: #25816a;
+}
+.pg-segments button.active,
+.pg-button.primary {
+  background: #24735f;
+  border-color: #24735f;
+}
+.pg-row.selected {
+  background: #edf7f2;
+  border-color: #c9e7d9;
+}
+.pg-row > span:first-child::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 42% 57% 41% 60%;
+  background: #efb84c;
+  transform: rotate(24deg);
+}
+.pg-detail h2 {
+  position: relative;
+}
+.pg-detail h2::after {
+  content: "";
+  display: block;
+  width: 74px;
+  height: 7px;
+  margin-top: 11px;
+  background: #efb84c;
+  clip-path: polygon(0 27%, 94% 0, 100% 62%, 8% 100%);
+}

@@ -4,7 +4,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   BriefcaseBusiness,
-  Check,
   ChevronRight,
   FileText,
   MessageSquare,
@@ -12,6 +11,7 @@ import {
   Send,
   Upload,
 } from "lucide-static";
+import { filledCheckIcon, playPaintSplash } from "../paint/index.js";
 import {
   applicationsApi,
   type ApplicationMessage,
@@ -423,7 +423,7 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
     if (step === "detail")
       return `<article class="ja-detail">${introduction}${practice}<section class="ja-section"><h3>${h(text.about)}</h3><p>${h(posting.description)}</p></section><div class="ja-actions"><button class="ja-btn primary" data-action="start">${h(options.token ? text.apply : text.signIn)}${icon(ArrowRight)}</button></div></article>`;
     if (step === "submitted")
-      return `<article class="ja-detail">${introduction}<div class="ja-success">${icon(Check)}<h3>${h(text.submitted)}</h3><p>${h(notice)}</p><button class="ja-btn primary" data-action="mine">${h(text.mine)}${icon(ArrowRight)}</button></div></article>`;
+      return `<article class="ja-detail">${introduction}<div class="ja-success"><span class="ja-icon">${filledCheckIcon}</span><h3>${h(text.submitted)}</h3><p>${h(notice)}</p><button class="ja-btn primary" data-action="mine">${h(text.mine)}${icon(ArrowRight)}</button></div></article>`;
     if (step === "review")
       return `<article class="ja-detail">${introduction}${practice}<section class="ja-section"><h3>${h(text.review)}</h3><div class="ja-answer"><span>${h(text.experience)}</span><strong>${h(experience)}</strong></div><div class="ja-answer"><span>${h(text.availability)}</span><strong>${h(availability)}</strong></div><div class="ja-answer"><span>${h(text.resume)}</span><strong>${h(resumes.find((r) => r.id === selectedResume)?.filename ?? text.noResume)}</strong></div><label class="ja-check"><input id="ja-confirm" type="checkbox" />${h(text.confirm)}</label>${posting.sample ? `<label class="ja-check"><input id="ja-practice" type="checkbox" />${h(text.practiceAgree)}</label>` : ""}${selectedResume ? `<label class="ja-check"><input id="ja-share" type="checkbox" />${h(text.share)}</label>` : ""}<div class="ja-actions"><button class="ja-btn" data-action="back-form">${h(text.back)}</button><button class="ja-btn primary" data-action="submit" ${busy ? "disabled" : ""}>${h(text.submit)}${icon(Send)}</button></div></section></article>`;
     return `<article class="ja-detail">${introduction}${practice}<section class="ja-section"><h3>${h(text.about)}</h3><p>${h(posting.description)}</p></section><section class="ja-section"><h3>${h(text.apply)}</h3><label class="ja-field">${h(text.experience)}<textarea id="ja-experience" rows="4" placeholder="${h(text.experienceHint)}">${h(experience)}</textarea></label><label class="ja-field">${h(text.availability)}<textarea id="ja-availability" rows="2" placeholder="${h(text.availabilityHint)}">${h(availability)}</textarea></label><div class="ja-resume"><div><strong>${h(text.resume)}</strong><small>${h(text.noAutomaticShare)}</small></div><select id="ja-resume" aria-label="${h(text.chooseResume)}"><option value="">${h(text.chooseResume)}</option>${resumes.map((resume) => `<option value="${h(resume.id)}" ${resume.id === selectedResume ? "selected" : ""}>${h(resume.filename)}</option>`).join("")}</select><label class="ja-upload">${icon(Upload)}${h(text.upload)}<input id="ja-file" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" /></label>${selectedResume ? `<button class="ja-text-button" data-action="extract">${h(text.extract)}</button>` : `<button class="ja-text-button" data-action="profile">${h(text.profile)}</button>`}</div>${suggestion ? `<div class="ja-suggestion"><strong>${h(text.suggestionTitle)}</strong><p>${h(suggestion.value)}</p><small>${h(text.sourceText)}</small><blockquote>${h(suggestion.source)}</blockquote><button class="ja-btn" data-action="use-suggestion">${h(text.use)}</button></div>` : ""}<div class="ja-actions"><button class="ja-btn" data-action="back-detail">${h(text.back)}</button><button class="ja-btn primary" data-action="review">${h(text.continue)}${icon(ArrowRight)}</button></div></section></article>`;
@@ -582,6 +582,7 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
       render();
     }
     if (action === "submit" && options.token) {
+      const actionBounds = target.getBoundingClientRect();
       const current = active();
       if (!current || current.kind !== "inApp") return;
       const confirmed =
@@ -605,6 +606,7 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
         applications.unshift(application);
         notice = text.submitted;
         step = "submitted";
+        playPaintSplash(actionBounds, "blue");
         if (sharing && selectedResume) {
           try {
             await applicationsApi.shareResume(

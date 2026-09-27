@@ -614,3 +614,46 @@
     font-size: 24px;
   }
 }
+
+/* Participating intake keeps its action color distinct from external finders. */
+.pi-tabs button.active {
+  border-color: #25816a;
+}
+.pi-title-row h1::after {
+  content: "";
+  display: block;
+  width: 66px;
+  height: 6px;
+  margin-top: 7px;
+  background: #50ae91;
+  clip-path: polygon(0 15%, 100% 0, 94% 69%, 4% 100%);
+}
+.pi-btn.primary {
+  background: #24735f;
+  border-color: #24735f;
+}
+.pi-btn.primary:hover {
+  background: #195b49;
+  border-color: #195b49;
+}
+.pi-list-row.selected {
+  background: #edf7f2;
+  border-color: #c9e7d9;
+}
+.pi-row-category::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 52% 36% 55% 43%;
+  background: #ef7b68;
+  transform: rotate(-19deg);
+}
+.pi-notice {
+  background: #edf7f2;
+  border-color: #c9e7d9;
+}
+.pi-notice .pi-icon {
+  color: #19765f;
+}

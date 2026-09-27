@@ -551,3 +551,50 @@
     font-size: 24px;
   }
 }
+
+/* The jobs workspace uses a restrained cobalt and coral paint mark. */
+.ja-intro h1 {
+  display: inline-block;
+  position: relative;
+}
+.ja-intro h1::after {
+  content: "";
+  position: absolute;
+  left: 1px;
+  bottom: -9px;
+  width: 103px;
+  height: 7px;
+  background: #ef7b68;
+  clip-path: polygon(0 24%, 90% 0, 100% 54%, 9% 100%);
+}
+.ja-btn.primary {
+  background: #3555cb;
+  border-color: #3555cb;
+}
+.ja-btn.primary:hover {
+  background: #243fa6;
+  border-color: #243fa6;
+}
+.ja-result.selected {
+  background: #eef2ff;
+  border-color: #ccd6fb;
+}
+.ja-result-badge::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  vertical-align: 1px;
+  border-radius: 55% 40% 58% 45%;
+  background: #ef7b68;
+  transform: rotate(-18deg);
+}
+.ja-success > .ja-icon {
+  background: none;
+  color: #19765f;
+}
+.ja-success > .ja-icon svg {
+  width: 32px;
+  height: 32px;
+}
