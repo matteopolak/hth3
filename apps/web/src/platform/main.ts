@@ -6,8 +6,17 @@ import {
 } from "@civicresolve/contracts/v1";
 import { tokens } from "@civicresolve/design-tokens";
 import { translate, type MessageKey } from "@civicresolve/i18n";
-import { uiButton, uiCard, uiField, uiStatus, type ButtonVariant } from "@civicresolve/ui";
-import { createDiscoveryPage, type DiscoveryArea } from "../features/discovery/index.js";
+import {
+  uiButton,
+  uiCard,
+  uiField,
+  uiStatus,
+  type ButtonVariant,
+} from "@civicresolve/ui";
+import {
+  createDiscoveryPage,
+  type DiscoveryArea,
+} from "../features/discovery/index.js";
 import { createProfilePage } from "../features/profile/index.js";
 import { createProgramIntakePage } from "../features/program-intake/index.js";
 import { createParticipationPage } from "../features/participation/index.js";
@@ -16,15 +25,52 @@ import { createPublicProgramsPage } from "../features/programs/index.js";
 import { createExternalPreparationPage } from "../features/external-preparation/index.js";
 import { createResidentFeedbackCase } from "../features/feedback/resident-case.js";
 import { reopenResidentFeedback } from "../features/feedback/api.js";
-import { agentApprovalIntro, agentApprovalState, agentResult } from "../features/agent-results/index.js";
-import { loadStaffWorkspaceSummary, staffFeedbackOperations, staffWorkspace, viewAllowed } from "../features/staff/index.js";
-import { webAuth } from "./auth0.js";
 import {
-  Activity, ArrowUp, Blocks, BriefcaseBusiness, ChartNoAxesColumn,
-  ChevronDown, ChevronRight, FileText, Inbox, ListTree, LogIn, LogOut,
-  MapPin, Menu, MessageSquare, Mic, PanelLeftClose, Plus, Search,
-  Tags, UserRound, Users, Building2, BookOpen, Bookmark, ClipboardList,
-  Coins, HeartHandshake, Landmark, MessagesSquare, LayoutDashboard, Check,
+  agentApprovalIntro,
+  agentApprovalState,
+  agentResult,
+} from "../features/agent-results/index.js";
+import {
+  loadStaffWorkspaceSummary,
+  staffFeedbackOperations,
+  staffWorkspace,
+  viewAllowed,
+} from "../features/staff/index.js";
+import { webAuth } from "./auth0.js";
+import { listenForRoutes, routeState, syncRoute } from "./router.js";
+import {
+  Activity,
+  ArrowUp,
+  Blocks,
+  BriefcaseBusiness,
+  ChartNoAxesColumn,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Inbox,
+  ListTree,
+  LogIn,
+  LogOut,
+  MapPin,
+  Menu,
+  MessageSquare,
+  Mic,
+  PanelLeftClose,
+  Plus,
+  Search,
+  Tags,
+  UserRound,
+  Users,
+  Building2,
+  BookOpen,
+  Bookmark,
+  ClipboardList,
+  Coins,
+  HeartHandshake,
+  Landmark,
+  MessagesSquare,
+  LayoutDashboard,
+  Check,
 } from "lucide-static";
 import {
   api,
@@ -40,9 +86,31 @@ import "@civicresolve/ui/styles.css";
 import "./styles.css";
 import "../features/feedback/feedback.css";
 
-type Page = "assistant" | "feedback" | "applications" | "employee" | "discovery" | "profile" | "signin" | "programs" | "external-preparation";
+type Page =
+  | "assistant"
+  | "feedback"
+  | "applications"
+  | "employee"
+  | "discovery"
+  | "profile"
+  | "signin"
+  | "programs"
+  | "external-preparation"
+  | "not-found";
 type EmployeePage = "assistant" | "feedback" | "applications";
-type StaffView = "issues" | "overview" | "themes" | "taxonomy" | "hiring" | "applicants" | "analytics" | "audit" | "views" | "reports" | "settings" | "sources";
+type StaffView =
+  | "issues"
+  | "overview"
+  | "themes"
+  | "taxonomy"
+  | "hiring"
+  | "applicants"
+  | "analytics"
+  | "audit"
+  | "views"
+  | "reports"
+  | "settings"
+  | "sources";
 type ChatMode = "resident" | "employee";
 
 interface ChatMessage {
@@ -77,7 +145,7 @@ interface ChatState {
   contextArea: string | null;
   savedResume: string | null;
   modelOpen: boolean;
-  thinkingOpen: boolean;
+  thinkingLevel: 0 | 1 | 2;
   modelChoice: "fast" | "balanced";
 }
 
@@ -101,7 +169,7 @@ function newChatState(): ChatState {
     contextArea: null,
     savedResume: null,
     modelOpen: false,
-    thinkingOpen: false,
+    thinkingLevel: 1,
     modelChoice: "balanced",
   };
 }
@@ -164,11 +232,20 @@ interface AppState {
   historyOpen: boolean;
   historySearch: string;
   searchOpen: boolean;
-  signInIntent: "resume" | "applications" | "profile" | "saved" | "staff" | "programs" | "external" | null;
+  signInIntent:
+    | "resume"
+    | "applications"
+    | "profile"
+    | "saved"
+    | "staff"
+    | "programs"
+    | "external"
+    | null;
 }
 
 const RECEIPT_KEY = "civicresolve.private-receipt.v1";
 const SIGNIN_INTENT_KEY = "civicresolve.signin.intent.v1";
+const RETURN_ROUTE_KEY = "civicresolve.signin.return-route.v1";
 const EXTERNAL_RECORD_KEY = "civicresolve.external-record.v1";
 const LOCAL_IDENTITIES = [
   ["", "local.identityNone"],
@@ -244,7 +321,37 @@ let lastAuthIdentity = "";
 let staffSummary: StaffWorkspaceSummary | null = null;
 let staffSummaryFor = "";
 let staffSummaryError = "";
+let staffDefaultRequested = window.location.pathname === "/staff";
 
+function applyRoute(route: Partial<AppState>): void {
+  const caseChanged = Boolean(
+    route.selectedFeedbackId &&
+      route.selectedFeedbackId !== state.selectedFeedbackId,
+  );
+  Object.assign(state, route);
+  if (route.page === "external-preparation" && route.externalRecordId) {
+    sessionStorage.setItem(EXTERNAL_RECORD_KEY, route.externalRecordId);
+  }
+  if (route.page === "employee" && route.selectedFeedbackId && caseChanged) {
+    state.selectedFeedback = null;
+    void refreshStaffCase(route.selectedFeedbackId);
+  }
+}
+
+const initialRoute = routeState();
+if (initialRoute) applyRoute(initialRoute);
+listenForRoutes((route) => {
+  if (window.location.pathname === "/staff") staffDefaultRequested = true;
+  applyRoute(route);
+  render();
+  if (state.page === "employee" && currentToken()) {
+    if (state.employeePage === "assistant") void restoreChat("employee");
+    else if (state.staffView === "issues" && !state.selectedFeedbackId)
+      void loadEmployeeQueue();
+  }
+  if (state.page === "applications" && state.applicationView === "mine")
+    void loadMyApplications();
+});
 applyTokens();
 render();
 webAuth.subscribe((snapshot) => {
@@ -274,11 +381,25 @@ if (state.receiptCredentials) void refreshReceipt();
 
 function readSignInIntent(): AppState["signInIntent"] {
   const value = sessionStorage.getItem(SIGNIN_INTENT_KEY);
-  return value === "resume" || value === "applications" || value === "profile" || value === "saved" || value === "staff" || value === "programs" || value === "external"
-    ? value : null;
+  return value === "resume" ||
+    value === "applications" ||
+    value === "profile" ||
+    value === "saved" ||
+    value === "staff" ||
+    value === "programs" ||
+    value === "external"
+    ? value
+    : null;
 }
 
 function openSignIn(intent: AppState["signInIntent"] = null): void {
+  if (
+    !intent &&
+    state.page !== "signin" &&
+    window.location.pathname !== "/callback"
+  ) {
+    sessionStorage.setItem(RETURN_ROUTE_KEY, window.location.pathname);
+  } else if (intent) sessionStorage.removeItem(RETURN_ROUTE_KEY);
   state.signInIntent = intent;
   if (intent) sessionStorage.setItem(SIGNIN_INTENT_KEY, intent);
   else sessionStorage.removeItem(SIGNIN_INTENT_KEY);
@@ -289,15 +410,30 @@ function openSignIn(intent: AppState["signInIntent"] = null): void {
 
 function continueAfterSignIn(): void {
   const intent = state.signInIntent;
-  if (!intent || !currentToken()) return;
+  if (!currentToken()) return;
+  const returnPath = sessionStorage.getItem(RETURN_ROUTE_KEY);
+  sessionStorage.removeItem(RETURN_ROUTE_KEY);
+  if (!intent && returnPath) {
+    const destination = routeState(returnPath);
+    if (
+      destination &&
+      destination.page !== "not-found" &&
+      destination.page !== "signin"
+    ) {
+      applyRoute(destination);
+      state.signInIntent = null;
+      sessionStorage.removeItem(SIGNIN_INTENT_KEY);
+      return;
+    }
+  }
+  if (!intent && state.page !== "signin") return;
   if (intent === "staff") {
     state.page = "employee";
     state.employeePage = "assistant";
   } else if (intent === "applications") {
     state.page = "applications";
     state.applicationView = "mine";
-  }
-  else if (intent === "saved") {
+  } else if (intent === "saved") {
     state.page = "discovery";
     state.discoveryArea = "saved";
   } else if (intent === "resume") {
@@ -314,6 +450,7 @@ function continueAfterSignIn(): void {
 }
 
 function render(): void {
+  syncRoute(state);
   if (state.page === "employee" && currentToken()) void ensureStaffSummary();
   document.documentElement.lang = state.locale;
   root!.replaceChildren();
@@ -344,7 +481,9 @@ function header(): HTMLElement {
   const menu = button(t("app.openMenu"), "mobile-menu-button", () => {
     state.sidebarOpen = true;
     render();
-    document.querySelector<HTMLButtonElement>(".sidebar-search-button")?.focus();
+    document
+      .querySelector<HTMLButtonElement>(".sidebar-search-button")
+      ?.focus();
   });
   menu.setAttribute("aria-label", t("app.openMenu"));
   menu.setAttribute("aria-expanded", String(state.sidebarOpen));
@@ -417,12 +556,16 @@ function navigation(): HTMLElement {
   });
   collapse.replaceChildren(iconNode("panel"));
   collapse.setAttribute("aria-label", t("app.collapseMenu"));
-  const searchButton = button(t("assistant.searchChats"), "sidebar-search-button", () => {
-    state.searchOpen = true;
-    state.sidebarOpen = false;
-    render();
-    document.querySelector<HTMLInputElement>(".search-dialog-input")?.focus();
-  });
+  const searchButton = button(
+    t("assistant.searchChats"),
+    "sidebar-search-button",
+    () => {
+      state.searchOpen = true;
+      state.sidebarOpen = false;
+      render();
+      document.querySelector<HTMLInputElement>(".search-dialog-input")?.focus();
+    },
+  );
   searchButton.replaceChildren(iconNode("search"));
   searchButton.setAttribute("aria-label", t("assistant.searchChats"));
   head.append(brand(), searchButton, collapse);
@@ -447,25 +590,59 @@ function navigation(): HTMLElement {
   const nav = el("nav", "primary-nav");
   nav.setAttribute("aria-label", t("app.name"));
   if (state.page === "employee") {
-    nav.append(sidebarHeading(t("sidebar.workspace")), staffSidebarAction("assistant", "chat", "nav.assistant"));
+    nav.append(
+      sidebarHeading(t("sidebar.workspace")),
+      staffSidebarAction("assistant", "chat", "nav.assistant"),
+    );
     const capabilities = staffSummary?.capabilities;
-    if (capabilities?.feedbackRead) nav.append(
-      staffViewAction("issues", "inbox", "sidebar.inbox"),
-      staffViewAction("overview", "dashboard", "sidebar.overview"),
-      staffViewAction("themes", "tags", "sidebar.themes"),
-      staffViewAction("analytics", "chart", "sidebar.analytics"),
-      staffViewAction("views", "bookmark", "sidebar.overview", state.locale === "fr" ? "Vues enregistrées" : "Saved views"),
-      staffViewAction("reports", "clipboard", "sidebar.analytics", state.locale === "fr" ? "Rapports" : "Reports"),
-    );
-    if (capabilities?.postingManage) nav.append(
-      staffViewAction("hiring", "briefcase", "sidebar.hiring"),
-      programButton("sponsor", "sidebar.programSponsor", "landmark"),
-    );
-    if (capabilities?.applicantReview) nav.append(staffViewAction("applicants", "users", "sidebar.applicants"));
-    if (capabilities?.sourceManage) nav.append(staffViewAction("sources", "files", "sidebar.sources"));
-    if (capabilities?.taxonomyManage) nav.append(staffViewAction("taxonomy", "taxonomy", "sidebar.taxonomy"));
-    if (capabilities?.auditRead) nav.append(staffViewAction("audit", "activity", "sidebar.analytics", state.locale === "fr" ? "Journal d’activité" : "Activity log"));
-    if (capabilities) nav.append(staffViewAction("settings", "user", "sidebar.profile", state.locale === "fr" ? "Paramètres" : "Settings"));
+    if (capabilities?.feedbackRead)
+      nav.append(
+        staffViewAction("issues", "inbox", "sidebar.inbox"),
+        staffViewAction("overview", "dashboard", "sidebar.overview"),
+        staffViewAction("themes", "tags", "sidebar.themes"),
+        staffViewAction("analytics", "chart", "sidebar.analytics"),
+        staffViewAction(
+          "views",
+          "bookmark",
+          "sidebar.overview",
+          state.locale === "fr" ? "Vues enregistrées" : "Saved views",
+        ),
+        staffViewAction(
+          "reports",
+          "clipboard",
+          "sidebar.analytics",
+          state.locale === "fr" ? "Rapports" : "Reports",
+        ),
+      );
+    if (capabilities?.postingManage)
+      nav.append(
+        staffViewAction("hiring", "briefcase", "sidebar.hiring"),
+        programButton("sponsor", "sidebar.programSponsor", "landmark"),
+      );
+    if (capabilities?.applicantReview)
+      nav.append(staffViewAction("applicants", "users", "sidebar.applicants"));
+    if (capabilities?.sourceManage)
+      nav.append(staffViewAction("sources", "files", "sidebar.sources"));
+    if (capabilities?.taxonomyManage)
+      nav.append(staffViewAction("taxonomy", "taxonomy", "sidebar.taxonomy"));
+    if (capabilities?.auditRead)
+      nav.append(
+        staffViewAction(
+          "audit",
+          "activity",
+          "sidebar.analytics",
+          state.locale === "fr" ? "Journal d’activité" : "Activity log",
+        ),
+      );
+    if (capabilities)
+      nav.append(
+        staffViewAction(
+          "settings",
+          "user",
+          "sidebar.profile",
+          state.locale === "fr" ? "Paramètres" : "Settings",
+        ),
+      );
   } else {
     nav.append(
       sidebarHeading(t("sidebar.agent")),
@@ -485,23 +662,34 @@ function navigation(): HTMLElement {
       programButton("mine", "sidebar.programRequests", "files"),
       navButton("profile", "sidebar.profile", "user"),
     );
-    if (state.receiptCredentials) nav.append(navButton("feedback", "sidebar.myFeedback", "feedback"));
+    if (state.receiptCredentials)
+      nav.append(navButton("feedback", "sidebar.myFeedback", "feedback"));
   }
   sidebar.append(nav);
 
   const history = el("section", "sidebar-history");
-  const historyToggle = button(t("sidebar.recent"), "sidebar-section-label history-toggle", () => {
-    state.historyOpen = !state.historyOpen;
-    render();
-  });
+  const historyToggle = button(
+    t("sidebar.recent"),
+    "sidebar-section-label history-toggle",
+    () => {
+      state.historyOpen = !state.historyOpen;
+      render();
+    },
+  );
   historyToggle.setAttribute("aria-expanded", String(state.historyOpen));
   history.append(historyToggle);
   if (state.historyOpen) {
     const mode = activeChatMode();
     for (const item of state.chats[mode].history) {
-      const row = button(item.label, "history-item", () => void openConversation(mode, item.id));
+      const row = button(
+        item.label,
+        "history-item",
+        () => void openConversation(mode, item.id),
+      );
       row.dataset.historyLabel = item.label.toLowerCase();
-      row.hidden = !row.dataset.historyLabel.includes(state.historySearch.toLowerCase());
+      row.hidden = !row.dataset.historyLabel.includes(
+        state.historySearch.toLowerCase(),
+      );
       if (item.id === state.chats[mode].id) row.classList.add("is-active");
       history.append(row);
     }
@@ -511,10 +699,22 @@ function navigation(): HTMLElement {
   const footer = el("div", "sidebar-footer");
   const auth = webAuth.snapshot();
   if (auth.status === "authenticated") {
-    footer.append(el("p", "sidebar-account", auth.displayName ?? t("auth.account")));
-    footer.append(sidebarAction("logout", t("auth.signOut"), () => void webAuth.logout()));
-  } else footer.append(sidebarAction("login", t(state.localIdentity ? "auth.changeAccount" : "auth.signIn"), () => openSignIn()));
-  if (state.page === "employee") footer.append(navButton("assistant", "sidebar.residentView", "chat"));
+    footer.append(
+      el("p", "sidebar-account", auth.displayName ?? t("auth.account")),
+    );
+    footer.append(
+      sidebarAction("logout", t("auth.signOut"), () => void webAuth.logout()),
+    );
+  } else
+    footer.append(
+      sidebarAction(
+        "login",
+        t(state.localIdentity ? "auth.changeAccount" : "auth.signIn"),
+        () => openSignIn(),
+      ),
+    );
+  if (state.page === "employee")
+    footer.append(navButton("assistant", "sidebar.residentView", "chat"));
   else {
     const staff = navButton("employee", "sidebar.staffView", "building");
     if (!currentToken()) disableGuestNavigation(staff);
@@ -529,9 +729,13 @@ function searchOverlay(): HTMLElement {
   const close = () => {
     state.searchOpen = false;
     render();
-    document.querySelector<HTMLButtonElement>(
-      window.matchMedia("(max-width: 620px)").matches ? ".mobile-menu-button" : ".sidebar-search-button",
-    )?.focus();
+    document
+      .querySelector<HTMLButtonElement>(
+        window.matchMedia("(max-width: 620px)").matches
+          ? ".mobile-menu-button"
+          : ".sidebar-search-button",
+      )
+      ?.focus();
   };
   overlay.append(button(t("app.closeMenu"), "search-backdrop", close));
   const dialog = el("section", "search-dialog");
@@ -553,12 +757,17 @@ function searchOverlay(): HTMLElement {
     row.dataset.historyLabel = item.label.toLowerCase();
     list.append(row);
   }
-  if (!entries.length) list.append(el("p", "search-empty", t("assistant.noRecentChats")));
+  if (!entries.length)
+    list.append(el("p", "search-empty", t("assistant.noRecentChats")));
   input.addEventListener("input", () => {
     state.historySearch = input.value;
     let visible = 0;
-    for (const row of list.querySelectorAll<HTMLElement>("[data-history-label]")) {
-      row.hidden = !row.dataset.historyLabel?.includes(input.value.toLowerCase());
+    for (const row of list.querySelectorAll<HTMLElement>(
+      "[data-history-label]",
+    )) {
+      row.hidden = !row.dataset.historyLabel?.includes(
+        input.value.toLowerCase(),
+      );
       if (!row.hidden) visible++;
     }
     let empty = list.querySelector<HTMLElement>(".search-empty");
@@ -580,9 +789,13 @@ function searchOverlay(): HTMLElement {
 }
 
 function trapTab(event: KeyboardEvent, container: HTMLElement): void {
-  const focusable = [...container.querySelectorAll<HTMLElement>(
-    'a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])',
-  )].filter((item) => !item.hidden && getComputedStyle(item).visibility !== "hidden");
+  const focusable = [
+    ...container.querySelectorAll<HTMLElement>(
+      'a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])',
+    ),
+  ].filter(
+    (item) => !item.hidden && getComputedStyle(item).visibility !== "hidden",
+  );
   if (!focusable.length) return;
   const first = focusable[0]!;
   const last = focusable[focusable.length - 1]!;
@@ -605,14 +818,22 @@ function sidebarHeading(label: string): HTMLElement {
   return el("span", "sidebar-section-label", label);
 }
 
-function sidebarAction(icon: string, label: string, action: () => void): HTMLButtonElement {
+function sidebarAction(
+  icon: string,
+  label: string,
+  action: () => void,
+): HTMLButtonElement {
   const result = button(label, "nav-item", action);
   result.setAttribute("aria-label", label);
   result.replaceChildren(iconNode(icon), el("span", "nav-label", label));
   return result;
 }
 
-function staffSidebarAction(page: EmployeePage, icon: string, key: MessageKey): HTMLButtonElement {
+function staffSidebarAction(
+  page: EmployeePage,
+  icon: string,
+  key: MessageKey,
+): HTMLButtonElement {
   const result = sidebarAction(icon, t(key), () => {
     state.employeePage = page;
     state.sidebarOpen = false;
@@ -625,7 +846,12 @@ function staffSidebarAction(page: EmployeePage, icon: string, key: MessageKey): 
   return result;
 }
 
-function staffViewAction(view: StaffView, icon: string, key: MessageKey, label = t(key)): HTMLButtonElement {
+function staffViewAction(
+  view: StaffView,
+  icon: string,
+  key: MessageKey,
+  label = t(key),
+): HTMLButtonElement {
   const result = sidebarAction(icon, label, () => {
     state.page = "employee";
     state.employeePage = "feedback";
@@ -636,14 +862,28 @@ function staffViewAction(view: StaffView, icon: string, key: MessageKey, label =
     render();
     if (view === "issues" && currentToken()) void loadEmployeeQueue();
   });
-  if (state.page === "employee" && state.employeePage !== "assistant" && state.staffView === view && !state.selectedFeedbackId) result.classList.add("is-active");
+  if (
+    state.page === "employee" &&
+    state.employeePage !== "assistant" &&
+    state.staffView === view &&
+    !state.selectedFeedbackId
+  )
+    result.classList.add("is-active");
   return result;
 }
 
-function discoveryButton(area: DiscoveryArea, labelKey: MessageKey): HTMLButtonElement {
+function discoveryButton(
+  area: DiscoveryArea,
+  labelKey: MessageKey,
+): HTMLButtonElement {
   const icons: Record<DiscoveryArea, string> = {
-    all: "search", jobs: "briefcase", support: "support", funding: "funding",
-    nearby: "map", participation: "participation", saved: "bookmark",
+    all: "search",
+    jobs: "briefcase",
+    support: "support",
+    funding: "funding",
+    nearby: "map",
+    participation: "participation",
+    saved: "bookmark",
   };
   const result = sidebarAction(icons[area], t(labelKey), () => {
     state.page = "discovery";
@@ -651,31 +891,42 @@ function discoveryButton(area: DiscoveryArea, labelKey: MessageKey): HTMLButtonE
     state.sidebarOpen = false;
     render();
   });
-  if (state.page === "discovery" && state.discoveryArea === area) result.classList.add("is-active");
+  if (state.page === "discovery" && state.discoveryArea === area)
+    result.classList.add("is-active");
   if (area === "saved" && !currentToken()) disableGuestNavigation(result);
   return result;
 }
 
-function programButton(view: AppState["programView"], labelKey: MessageKey, icon: string): HTMLButtonElement {
+function programButton(
+  view: AppState["programView"],
+  labelKey: MessageKey,
+  icon: string,
+): HTMLButtonElement {
   const item = sidebarAction(icon, t(labelKey), () => {
     state.page = "programs";
     state.programView = view;
     state.sidebarOpen = false;
     render();
   });
-  if (state.page === "programs" && state.programView === view) item.classList.add("is-active");
+  if (state.page === "programs" && state.programView === view)
+    item.classList.add("is-active");
   if (view !== "discover" && !currentToken()) disableGuestNavigation(item);
   return item;
 }
 
-function applicationButton(view: AppState["applicationView"], labelKey: MessageKey, icon: string): HTMLButtonElement {
+function applicationButton(
+  view: AppState["applicationView"],
+  labelKey: MessageKey,
+  icon: string,
+): HTMLButtonElement {
   const item = sidebarAction(icon, t(labelKey), () => {
     state.page = "applications";
     state.applicationView = view;
     state.sidebarOpen = false;
     render();
   });
-  if (state.page === "applications" && state.applicationView === view) item.classList.add("is-active");
+  if (state.page === "applications" && state.applicationView === view)
+    item.classList.add("is-active");
   if (view === "mine" && !currentToken()) disableGuestNavigation(item);
   return item;
 }
@@ -692,7 +943,11 @@ function navButton(
   button.type = "button";
   button.setAttribute("aria-current", state.page === page ? "page" : "false");
   button.append(iconNode(icon), el("span", "", t(key)));
-  if ((page === "applications" || page === "profile" || page === "employee") && !currentToken()) disableGuestNavigation(button);
+  if (
+    (page === "applications" || page === "profile" || page === "employee") &&
+    !currentToken()
+  )
+    disableGuestNavigation(button);
   button.addEventListener("click", () => {
     if (state.page === "feedback" && page !== "feedback") void stopVoice();
     state.page = page;
@@ -763,40 +1018,74 @@ function mainPage(): HTMLElement {
   if (state.page === "assistant") main.append(chatPage("resident"));
   else if (state.page === "signin") main.append(signInPage());
   else if (state.page === "feedback") main.append(feedbackPage());
-  else if (state.page === "applications") main.append(createPublicApplicationsPage({
-    view: state.applicationView,
-    locale: state.locale,
-    token: currentToken() || null,
-    onSignIn: () => openSignIn("applications"),
-    onProfile: () => { state.page = "profile"; render(); },
-    onPrepareExternal: openExternalPreparation,
-  }));
-  else if (state.page === "discovery" && state.discoveryArea === "participation") main.append(createParticipationPage({
-    locale: state.locale,
-    token: currentToken() || null,
-  }));
-  else if (state.page === "discovery") main.append(createDiscoveryPage({
-    area: state.discoveryArea,
-    locale: state.locale,
-    token: currentToken() || null,
-    onPrepare: openExternalPreparation,
-  }));
-  else if (state.page === "programs") main.append(createPublicProgramsPage({
-    view: state.programView,
-    locale: state.locale,
-    token: currentToken() || null,
-    organizationId: state.programView === "sponsor" ? currentOrgId() : null,
-    onSignIn: () => openSignIn("programs"),
-    onPrepareExternal: openExternalPreparation,
-  }));
-  else if (state.page === "external-preparation") main.append(createExternalPreparationPage({
-    recordId: state.externalRecordId,
-    locale: state.locale,
-    token: currentToken() || null,
-    onBack: () => { state.page = "discovery"; render(); },
-    onSignIn: () => openSignIn("external"),
-  }));
-  else if (state.page === "profile") main.append(createProfilePage({ locale: state.locale, token: currentToken() || null }));
+  else if (state.page === "applications")
+    main.append(
+      createPublicApplicationsPage({
+        view: state.applicationView,
+        locale: state.locale,
+        token: currentToken() || null,
+        onSignIn: () => openSignIn("applications"),
+        onProfile: () => {
+          state.page = "profile";
+          render();
+        },
+        onPrepareExternal: openExternalPreparation,
+      }),
+    );
+  else if (
+    state.page === "discovery" &&
+    state.discoveryArea === "participation"
+  )
+    main.append(
+      createParticipationPage({
+        locale: state.locale,
+        token: currentToken() || null,
+      }),
+    );
+  else if (state.page === "discovery")
+    main.append(
+      createDiscoveryPage({
+        area: state.discoveryArea,
+        locale: state.locale,
+        token: currentToken() || null,
+        onPrepare: openExternalPreparation,
+      }),
+    );
+  else if (state.page === "programs")
+    main.append(
+      createPublicProgramsPage({
+        view: state.programView,
+        locale: state.locale,
+        token: currentToken() || null,
+        organizationId: state.programView === "sponsor" ? currentOrgId() : null,
+        onSignIn: () => openSignIn("programs"),
+        onPrepareExternal: openExternalPreparation,
+      }),
+    );
+  else if (state.page === "external-preparation")
+    main.append(
+      createExternalPreparationPage({
+        recordId: state.externalRecordId,
+        locale: state.locale,
+        token: currentToken() || null,
+        onBack: () => {
+          state.page = "discovery";
+          render();
+        },
+        onSignIn: () => openSignIn("external"),
+      }),
+    );
+  else if (state.page === "profile")
+    main.append(
+      createProfilePage({
+        locale: state.locale,
+        token: currentToken() || null,
+      }),
+    );
+  else if (state.page === "not-found")
+    main.append(
+      el("section", "empty-state", el("h2", "", t("app.pageNotFound"))),
+    );
   else main.append(employeePage());
   return main;
 }
@@ -812,7 +1101,8 @@ function signInPage(): HTMLElement {
   const page = el("section", "signin-page");
   const intro = el("div", "signin-intro");
   intro.append(el("h2", "", t("auth.welcome")), el("p", "", t("auth.intro")));
-  if (state.signInIntent === "resume") intro.append(el("p", "signin-intent", t("auth.resumeIntent")));
+  if (state.signInIntent === "resume")
+    intro.append(el("p", "signin-intent", t("auth.resumeIntent")));
   page.append(intro);
   const choices = el("div", "signin-choices");
   const personal = uiCard([], { className: "signin-choice" });
@@ -820,17 +1110,26 @@ function signInPage(): HTMLElement {
     iconNode("user"),
     el("h3", "", t("auth.personal")),
     el("p", "", t("auth.personalDetail")),
-    button(t("auth.continuePersonal"), "button-primary", () => void beginAuth("applicant")),
+    button(
+      t("auth.continuePersonal"),
+      "button-primary",
+      () => void beginAuth("applicant"),
+    ),
   );
   const staff = uiCard([], { className: "signin-choice" });
   staff.append(
     iconNode("building"),
     el("h3", "", t("auth.staff")),
     el("p", "", t("auth.staffDetail")),
-    button(t("auth.continueStaff"), "button-secondary", () => void beginAuth("employee")),
+    button(
+      t("auth.continueStaff"),
+      "button-secondary",
+      () => void beginAuth("employee"),
+    ),
   );
   if (webAuth.snapshot().status === "unconfigured") {
-    for (const item of [personal, staff]) item.querySelector("button")!.disabled = true;
+    for (const item of [personal, staff])
+      item.querySelector("button")!.disabled = true;
     page.append(el("p", "signin-unavailable", t("auth.unconfigured")));
   }
   choices.append(personal, staff);
@@ -845,13 +1144,20 @@ function signInPage(): HTMLElement {
 }
 
 async function beginAuth(mode: "applicant" | "employee"): Promise<void> {
-  state.signInIntent = mode === "employee" ? "staff"
-    : state.signInIntent && state.signInIntent !== "staff" ? state.signInIntent : "profile";
+  state.signInIntent =
+    mode === "employee"
+      ? "staff"
+      : state.signInIntent && state.signInIntent !== "staff"
+        ? state.signInIntent
+        : "profile";
   sessionStorage.setItem(SIGNIN_INTENT_KEY, state.signInIntent);
   try {
     await webAuth.login(mode);
   } catch (error) {
-    state.error = { message: error instanceof Error ? error.message : t("error.generic"), requestId: "" };
+    state.error = {
+      message: error instanceof Error ? error.message : t("error.generic"),
+      requestId: "",
+    };
     render();
   }
 }
@@ -859,7 +1165,10 @@ async function beginAuth(mode: "applicant" | "employee"): Promise<void> {
 function chatPage(mode: ChatMode): HTMLElement {
   const chat = state.chats[mode];
   const hasContent = chat.messages.length > 0 || chat.proposals.length > 0;
-  const page = el("section", `chat-shell ${hasContent ? "has-messages" : "is-empty"}`);
+  const page = el(
+    "section",
+    `chat-shell ${hasContent ? "has-messages" : "is-empty"}`,
+  );
 
   const thread = el("div", "chat-thread");
   thread.setAttribute("aria-live", "polite");
@@ -870,7 +1179,9 @@ function chatPage(mode: ChatMode): HTMLElement {
   }
   for (const message of chat.messages) {
     if (message.role === "tool") {
-      thread.append(agentResult(message.result ?? message.content, state.locale));
+      thread.append(
+        agentResult(message.result ?? message.content, state.locale),
+      );
       continue;
     }
     const entry = el("article", `chat-message chat-${message.role}`);
@@ -885,8 +1196,15 @@ function chatPage(mode: ChatMode): HTMLElement {
     thread.append(entry);
   }
   for (const proposal of chat.proposals) {
-    if (proposal.status === "pending") thread.append(proposalCard(mode, proposal));
-    else thread.append(agentApprovalState({ status: proposal.status, preview: proposal.preview }, state.locale));
+    if (proposal.status === "pending")
+      thread.append(proposalCard(mode, proposal));
+    else
+      thread.append(
+        agentApprovalState(
+          { status: proposal.status, preview: proposal.preview },
+          state.locale,
+        ),
+      );
   }
   if (chat.pending) thread.append(loadingState());
   page.append(thread);
@@ -897,11 +1215,20 @@ function chatPage(mode: ChatMode): HTMLElement {
   const input = el("textarea", "chat-input") as HTMLTextAreaElement;
   input.rows = 3;
   input.maxLength = 4000;
-  input.placeholder = t(mode === "resident" ? "assistant.placeholder"
-    : staffSummary?.capabilities.sourceManage && !staffSummary.capabilities.feedbackRead ? "assistant.staffCuratorPlaceholder"
-      : staffSummary?.capabilities.applicantReview && !staffSummary.capabilities.feedbackRead ? "assistant.staffHiringPlaceholder"
-        : staffSummary?.capabilities.feedbackRead && !staffSummary.capabilities.applicantReview ? "assistant.staffFeedbackPlaceholder"
-          : "assistant.staffPlaceholder");
+  input.placeholder = t(
+    mode === "resident"
+      ? "assistant.placeholder"
+      : staffSummary?.capabilities.sourceManage &&
+          !staffSummary.capabilities.feedbackRead
+        ? "assistant.staffCuratorPlaceholder"
+        : staffSummary?.capabilities.applicantReview &&
+            !staffSummary.capabilities.feedbackRead
+          ? "assistant.staffHiringPlaceholder"
+          : staffSummary?.capabilities.feedbackRead &&
+              !staffSummary.capabilities.applicantReview
+            ? "assistant.staffFeedbackPlaceholder"
+            : "assistant.staffPlaceholder",
+  );
   input.setAttribute("aria-label", input.placeholder);
   input.value = chat.draft;
   input.addEventListener("input", () => (chat.draft = input.value));
@@ -912,20 +1239,37 @@ function chatPage(mode: ChatMode): HTMLElement {
     }
   });
   const controls = el("div", "chat-composer-controls");
-  const add = button("", "chat-round-button chat-add-button", () => void openChatTray(mode, "actions"));
+  const add = button(
+    "",
+    "chat-round-button chat-add-button",
+    () => void openChatTray(mode, "actions"),
+  );
   add.append(iconNode("plus"));
   add.setAttribute("aria-label", t("assistant.addToChat"));
   add.setAttribute("aria-expanded", String(chat.tray === "actions"));
   add.setAttribute("aria-haspopup", "true");
   const model = button("", "chat-model-button", () => {
     chat.modelOpen = !chat.modelOpen;
-    if (!chat.modelOpen) chat.thinkingOpen = false;
     chat.tray = null;
     render();
-    if (chat.modelOpen) document.querySelector<HTMLButtonElement>(".chat-model-option")?.focus();
-    else document.querySelector<HTMLButtonElement>(".chat-model-button")?.focus();
+    if (chat.modelOpen)
+      document.querySelector<HTMLButtonElement>(".chat-model-option")?.focus();
+    else
+      document.querySelector<HTMLButtonElement>(".chat-model-button")?.focus();
   });
-  model.append(el("span", "", t(chat.modelChoice === "fast" ? "assistant.modelFast" : "assistant.modelBalanced")), iconNode("chevron-down"));
+  model.append(
+    el("span", "chat-model-name", t("app.name")),
+    el(
+      "span",
+      "chat-model-effort",
+      t(
+        chat.modelChoice === "fast"
+          ? "assistant.effortFast"
+          : "assistant.effortBalanced",
+      ),
+    ),
+    iconNode("chevron-down"),
+  );
   model.setAttribute("aria-haspopup", "dialog");
   model.setAttribute("aria-expanded", String(chat.modelOpen));
   const mic = button("", "chat-round-button chat-mic-button", () => {
@@ -933,9 +1277,16 @@ function chatPage(mode: ChatMode): HTMLElement {
     else void stopVoice();
   });
   mic.append(iconNode("mic"));
-  mic.setAttribute("aria-label", t(state.voiceStatus === "idle" ? "voice.start" : "voice.stop"));
+  mic.setAttribute(
+    "aria-label",
+    t(state.voiceStatus === "idle" ? "voice.start" : "voice.stop"),
+  );
   if (state.voiceStatus !== "idle") mic.classList.add("is-listening");
-  const send = button("", "chat-round-button chat-send-button", () => void sendChat(mode));
+  const send = button(
+    "",
+    "chat-round-button chat-send-button",
+    () => void sendChat(mode),
+  );
   send.append(iconNode("arrow-up"));
   send.setAttribute("aria-label", t("assistant.send"));
   send.disabled = chat.pending;
@@ -949,14 +1300,18 @@ function chatPage(mode: ChatMode): HTMLElement {
       composer.classList.add("is-dragging");
     }
   });
-  composer.addEventListener("dragleave", () => composer.classList.remove("is-dragging"));
+  composer.addEventListener("dragleave", () =>
+    composer.classList.remove("is-dragging"),
+  );
   composer.addEventListener("drop", (event) => {
     composer.classList.remove("is-dragging");
     const files = Array.from(event.dataTransfer?.files ?? []);
     if (!files.length) return;
     event.preventDefault();
-    const feedbackProposal = mode === "resident" ? pendingFeedbackProposal(mode) : null;
-    if (feedbackProposal) void uploadFeedbackEvidenceFiles(mode, feedbackProposal, files);
+    const feedbackProposal =
+      mode === "resident" ? pendingFeedbackProposal(mode) : null;
+    if (feedbackProposal)
+      void uploadFeedbackEvidenceFiles(mode, feedbackProposal, files);
     else void handleResumeFile(mode, files[0]!);
   });
   composer.addEventListener("submit", (event) => {
@@ -964,20 +1319,32 @@ function chatPage(mode: ChatMode): HTMLElement {
     void sendChat(mode);
   });
   composeArea.append(composer);
-  if (!hasContent && (mode === "resident" || staffSummary)) composeArea.append(chatPromptCards(mode));
-  if (chat.contextArea) composeArea.append(el("span", "chat-context-area", chat.contextArea));
+  if (!hasContent && (mode === "resident" || staffSummary))
+    composeArea.append(chatPromptCards(mode));
+  if (chat.contextArea)
+    composeArea.append(el("span", "chat-context-area", chat.contextArea));
   if (chat.savedResume) {
     const chip = el("div", "chat-resume-chip");
-    chip.append(el("span", "", t("assistant.resumeSaved", { filename: chat.savedResume })));
-    chip.append(button(t("assistant.openProfile"), "button-link", () => {
-      state.page = "profile";
-      render();
-    }));
+    chip.append(
+      el(
+        "span",
+        "",
+        t("assistant.resumeSaved", { filename: chat.savedResume }),
+      ),
+    );
+    chip.append(
+      button(t("assistant.openProfile"), "button-link", () => {
+        state.page = "profile";
+        render();
+      }),
+    );
     composeArea.append(chip);
   }
   if (chat.tray && chat.tray !== "actions") composeArea.append(chatTray(mode));
-  if (state.voiceError) composeArea.append(el("p", "voice-error", state.voiceError));
-  if (state.voicePrompt && state.voiceStatus !== "idle") composeArea.append(el("p", "voice-prompt", state.voicePrompt));
+  if (state.voiceError)
+    composeArea.append(el("p", "voice-error", state.voiceError));
+  if (state.voicePrompt && state.voiceStatus !== "idle")
+    composeArea.append(el("p", "voice-prompt", state.voicePrompt));
   page.append(composeArea);
   return page;
 }
@@ -989,46 +1356,115 @@ function chatPromptCards(mode: ChatMode): HTMLElement {
     title: MessageKey;
     detail: MessageKey;
     prompt: MessageKey;
-  }> = mode === "resident"
-    ? [
-        { icon: "briefcase", color: "blue", title: "assistant.cardJobsTitle", detail: "assistant.cardJobsDetail", prompt: "assistant.cardJobsPrompt" },
-        { icon: "map", color: "green", title: "assistant.cardSupportTitle", detail: "assistant.cardSupportDetail", prompt: "assistant.cardSupportPrompt" },
-        { icon: "feedback", color: "orange", title: "assistant.cardIssueTitle", detail: "assistant.cardIssueDetail", prompt: "assistant.cardIssuePrompt" },
-      ]
-    : [
-        ...(staffSummary?.capabilities.feedbackRead ? [
-          { icon: "inbox", color: "blue", title: "assistant.cardInboxTitle", detail: "assistant.cardInboxDetail", prompt: "assistant.cardInboxPrompt" },
-          { icon: "tags", color: "violet", title: "assistant.cardThemesTitle", detail: "assistant.cardThemesDetail", prompt: "assistant.cardThemesPrompt" },
-        ] as const : []),
-        ...(staffSummary?.capabilities.applicantReview ? [
-          { icon: "users", color: "orange", title: "assistant.cardApplicantsTitle", detail: "assistant.cardApplicantsDetail", prompt: "assistant.cardApplicantsPrompt" },
-        ] as const : []),
-        ...(staffSummary?.capabilities.sourceManage ? [
-          { icon: "files", color: "blue", title: "assistant.cardSourcesTitle", detail: "assistant.cardSourcesDetail", prompt: "assistant.cardSourcesPrompt" },
-        ] as const : []),
-        ...(staffSummary?.capabilities.taxonomyManage ? [
-          { icon: "taxonomy", color: "violet", title: "assistant.cardTaxonomyTitle", detail: "assistant.cardTaxonomyDetail", prompt: "assistant.cardTaxonomyPrompt" },
-        ] as const : []),
-      ];
+  }> =
+    mode === "resident"
+      ? [
+          {
+            icon: "briefcase",
+            color: "blue",
+            title: "assistant.cardJobsTitle",
+            detail: "assistant.cardJobsDetail",
+            prompt: "assistant.cardJobsPrompt",
+          },
+          {
+            icon: "map",
+            color: "green",
+            title: "assistant.cardSupportTitle",
+            detail: "assistant.cardSupportDetail",
+            prompt: "assistant.cardSupportPrompt",
+          },
+          {
+            icon: "feedback",
+            color: "orange",
+            title: "assistant.cardIssueTitle",
+            detail: "assistant.cardIssueDetail",
+            prompt: "assistant.cardIssuePrompt",
+          },
+        ]
+      : [
+          ...(staffSummary?.capabilities.feedbackRead
+            ? ([
+                {
+                  icon: "inbox",
+                  color: "blue",
+                  title: "assistant.cardInboxTitle",
+                  detail: "assistant.cardInboxDetail",
+                  prompt: "assistant.cardInboxPrompt",
+                },
+                {
+                  icon: "tags",
+                  color: "violet",
+                  title: "assistant.cardThemesTitle",
+                  detail: "assistant.cardThemesDetail",
+                  prompt: "assistant.cardThemesPrompt",
+                },
+              ] as const)
+            : []),
+          ...(staffSummary?.capabilities.applicantReview
+            ? ([
+                {
+                  icon: "users",
+                  color: "orange",
+                  title: "assistant.cardApplicantsTitle",
+                  detail: "assistant.cardApplicantsDetail",
+                  prompt: "assistant.cardApplicantsPrompt",
+                },
+              ] as const)
+            : []),
+          ...(staffSummary?.capabilities.sourceManage
+            ? ([
+                {
+                  icon: "files",
+                  color: "blue",
+                  title: "assistant.cardSourcesTitle",
+                  detail: "assistant.cardSourcesDetail",
+                  prompt: "assistant.cardSourcesPrompt",
+                },
+              ] as const)
+            : []),
+          ...(staffSummary?.capabilities.taxonomyManage
+            ? ([
+                {
+                  icon: "taxonomy",
+                  color: "violet",
+                  title: "assistant.cardTaxonomyTitle",
+                  detail: "assistant.cardTaxonomyDetail",
+                  prompt: "assistant.cardTaxonomyPrompt",
+                },
+              ] as const)
+            : []),
+        ];
   const section = el("section", "chat-prompt-section");
   section.append(el("h3", "", t("assistant.suggestionsHeading")));
   const grid = el("div", "chat-prompt-cards");
   for (const suggestion of suggestions) {
-    const card = button("", `chat-prompt-card accent-${suggestion.color}`, () => {
-      state.chats[mode].draft = t(suggestion.prompt);
-      state.chats[mode].tray = null;
-      render();
-      const input = document.querySelector<HTMLTextAreaElement>(".chat-input");
-      input?.focus();
-      input?.setSelectionRange(input.value.length, input.value.length);
-    });
-    card.setAttribute("aria-label", `${t("assistant.tryPrompt")}: ${t(suggestion.title)}`);
+    const card = button(
+      "",
+      `chat-prompt-card accent-${suggestion.color}`,
+      () => {
+        state.chats[mode].draft = t(suggestion.prompt);
+        state.chats[mode].tray = null;
+        render();
+        const input =
+          document.querySelector<HTMLTextAreaElement>(".chat-input");
+        input?.focus();
+        input?.setSelectionRange(input.value.length, input.value.length);
+      },
+    );
+    card.setAttribute(
+      "aria-label",
+      `${t("assistant.tryPrompt")}: ${t(suggestion.title)}`,
+    );
     card.append(
-      el("span", "chat-prompt-top",
+      el(
+        "span",
+        "chat-prompt-top",
         el("span", "chat-prompt-icon", iconNode(suggestion.icon)),
         el("span", "chat-prompt-try", t("assistant.tryPrompt")),
       ),
-      el("span", "chat-prompt-copy",
+      el(
+        "span",
+        "chat-prompt-copy",
         el("strong", "", t(suggestion.title)),
         el("small", "", t(suggestion.detail)),
       ),
@@ -1050,24 +1486,48 @@ function chatActionMenu(mode: ChatMode): HTMLElement {
     render();
     document.querySelector<HTMLButtonElement>(".chat-add-button")?.focus();
   });
-  if (canUploadResume()) menu.append(resumeUploadControl(mode, "chat-action-item action-upload"));
+  if (canUploadResume())
+    menu.append(resumeUploadControl(mode, "chat-action-item action-upload"));
   else {
-    const upload = button(t("assistant.uploadResume"), "chat-action-item action-upload", () => openSignIn("resume"));
+    const upload = button(
+      t("assistant.uploadResume"),
+      "chat-action-item action-upload",
+      () => openSignIn("resume"),
+    );
     upload.prepend(iconNode("files"));
     menu.append(upload);
   }
-  const feedbackProposal = mode === "resident" ? pendingFeedbackProposal(mode) : null;
+  const feedbackProposal =
+    mode === "resident" ? pendingFeedbackProposal(mode) : null;
   if (feedbackProposal)
-    menu.append(feedbackEvidenceControl(mode, feedbackProposal, "chat-action-item action-upload"));
-  const area = button(t("assistant.chooseArea"), "chat-action-item action-area", () => void openChatTray(mode, "area"));
+    menu.append(
+      feedbackEvidenceControl(
+        mode,
+        feedbackProposal,
+        "chat-action-item action-upload",
+      ),
+    );
+  const area = button(
+    t("assistant.chooseArea"),
+    "chat-action-item action-area",
+    () => void openChatTray(mode, "area"),
+  );
   area.prepend(iconNode("map"));
-  const plugins = button(t("assistant.plugins"), "chat-action-item action-tools", () => void openChatTray(mode, "plugins"));
+  const plugins = button(
+    t("assistant.plugins"),
+    "chat-action-item action-tools",
+    () => void openChatTray(mode, "plugins"),
+  );
   plugins.prepend(iconNode("plugins"));
-  const feedback = button(t("nav.feedback"), "chat-action-item action-feedback", () => {
-    state.page = "feedback";
-    state.chats[mode].tray = null;
-    render();
-  });
+  const feedback = button(
+    t("nav.feedback"),
+    "chat-action-item action-feedback",
+    () => {
+      state.page = "feedback";
+      state.chats[mode].tray = null;
+      render();
+    },
+  );
   feedback.prepend(iconNode("feedback"));
   menu.append(area, plugins, feedback);
   return menu;
@@ -1082,64 +1542,108 @@ function chatModelMenu(mode: ChatMode): HTMLElement {
     if (event.key !== "Escape") return;
     event.preventDefault();
     chat.modelOpen = false;
-    chat.thinkingOpen = false;
     render();
     document.querySelector<HTMLButtonElement>(".chat-model-button")?.focus();
   });
-  menu.append(el("span", "chat-model-menu-label", t("assistant.modelSettings")));
+  menu.append(
+    el("span", "chat-model-menu-label", t("assistant.modelSettings")),
+  );
   for (const choice of ["balanced", "fast"] as const) {
     const selected = chat.modelChoice === choice;
-    const option = button("", `chat-model-option ${selected ? "is-selected" : ""}`, () => {
-      chat.modelChoice = choice;
-      chat.modelOpen = false;
-      chat.thinkingOpen = false;
-      render();
-      document.querySelector<HTMLButtonElement>(".chat-model-button")?.focus();
-    });
+    const option = button(
+      "",
+      `chat-model-option ${selected ? "is-selected" : ""}`,
+      () => {
+        chat.modelChoice = choice;
+        chat.modelOpen = false;
+        render();
+        document
+          .querySelector<HTMLButtonElement>(".chat-model-button")
+          ?.focus();
+      },
+    );
     option.append(
-      el("span", "chat-model-option-copy",
-        el("strong", "", t(choice === "fast" ? "assistant.modelFast" : "assistant.modelBalanced")),
-        el("small", "", t(choice === "fast" ? "assistant.modelFastDetail" : "assistant.modelBalancedDetail")),
+      el(
+        "span",
+        "chat-model-option-copy",
+        el(
+          "strong",
+          "",
+          t(
+            choice === "fast"
+              ? "assistant.modelFast"
+              : "assistant.modelBalanced",
+          ),
+        ),
+        el(
+          "small",
+          "",
+          t(
+            choice === "fast"
+              ? "assistant.modelFastDetail"
+              : "assistant.modelBalancedDetail",
+          ),
+        ),
       ),
     );
     if (selected) option.append(iconNode("check"));
     menu.append(option);
   }
   menu.append(el("p", "chat-model-note", t("assistant.modelDisplayOnly")));
-  const thinking = button("", "chat-thinking-trigger", () => {
-    chat.thinkingOpen = !chat.thinkingOpen;
-    render();
-  });
-  thinking.append(
-    el("span", "", t("assistant.thinking")),
-    el("span", "chat-thinking-value", t("assistant.thinkingStandard")),
-    iconNode("chevron-right"),
+  const levels = [
+    "assistant.thinkingLight",
+    "assistant.thinkingStandard",
+    "assistant.thinkingDeep",
+  ] as const;
+  const panel = el("div", "chat-thinking-panel");
+  const label = el(
+    "label",
+    "chat-thinking-label",
+    t("assistant.thinkingDisplay"),
+  ) as HTMLLabelElement;
+  const setting = el(
+    "span",
+    "chat-thinking-setting",
+    t(levels[chat.thinkingLevel]),
   );
-  thinking.setAttribute("aria-expanded", String(chat.thinkingOpen));
-  menu.append(thinking);
-  if (chat.thinkingOpen) {
-    const panel = el("div", "chat-thinking-panel");
-    const track = el("div", "chat-thinking-track",
-      el("span", "chat-thinking-dot"),
-      el("span", "chat-thinking-dot is-current"),
-      el("span", "chat-thinking-dot"),
+  const track = el("div", "chat-thinking-track");
+  track.style.setProperty("--thinking-progress", `${chat.thinkingLevel * 50}%`);
+  const slider = el("input", "chat-thinking-range") as HTMLInputElement;
+  slider.id = `chat-thinking-${mode}`;
+  slider.type = "range";
+  slider.min = "0";
+  slider.max = "2";
+  slider.step = "1";
+  slider.value = String(chat.thinkingLevel);
+  slider.setAttribute("aria-valuetext", t(levels[chat.thinkingLevel]));
+  const note = el("p", "chat-thinking-note", t("assistant.thinkingFixed"));
+  note.id = `chat-thinking-note-${mode}`;
+  slider.setAttribute("aria-describedby", note.id);
+  slider.addEventListener("input", () => {
+    chat.thinkingLevel = Number(slider.value) as ChatState["thinkingLevel"];
+    const value = t(levels[chat.thinkingLevel]);
+    slider.setAttribute("aria-valuetext", value);
+    setting.textContent = value;
+    track.style.setProperty(
+      "--thinking-progress",
+      `${chat.thinkingLevel * 50}%`,
     );
-    const slider = el("input", "chat-thinking-range") as HTMLInputElement;
-    slider.type = "range";
-    slider.min = "0";
-    slider.max = "2";
-    slider.value = "1";
-    slider.disabled = true;
-    slider.setAttribute("aria-label", t("assistant.thinking"));
-    track.append(slider);
-    panel.append(
-      el("strong", "", t("assistant.thinking")),
-      track,
-      el("span", "chat-thinking-setting", t("assistant.thinkingStandard")),
-      el("p", "", t("assistant.thinkingFixed")),
-    );
-    menu.append(panel);
-  }
+  });
+  label.htmlFor = slider.id;
+  track.append(slider);
+  panel.append(
+    el("div", "chat-thinking-heading", label, setting),
+    track,
+    el(
+      "div",
+      "chat-thinking-scale",
+      el("span", "", t(levels[0])),
+      el("span", "", t(levels[1])),
+      el("span", "", t(levels[2])),
+    ),
+    note,
+  );
+  menu.append(panel);
   return menu;
 }
 
@@ -1154,7 +1658,8 @@ function resumeUploadControl(mode: ChatMode, className: string): HTMLElement {
   label.append(iconNode("files"), el("span", "", t("assistant.uploadResume")));
   const file = el("input") as HTMLInputElement;
   file.type = "file";
-  file.accept = ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  file.accept =
+    ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   file.setAttribute("aria-label", t("assistant.uploadResume"));
   file.addEventListener("change", () => {
     const selected = file.files?.[0];
@@ -1165,8 +1670,15 @@ function resumeUploadControl(mode: ChatMode, className: string): HTMLElement {
 }
 
 function pendingFeedbackProposal(mode: ChatMode): AgentProposal | null {
-  return [...state.chats[mode].proposals].reverse().find((proposal) =>
-    proposal.status === "pending" && proposal.preview.name === "create_feedback") ?? null;
+  return (
+    [...state.chats[mode].proposals]
+      .reverse()
+      .find(
+        (proposal) =>
+          proposal.status === "pending" &&
+          proposal.preview.name === "create_feedback",
+      ) ?? null
+  );
 }
 
 function feedbackEvidenceControl(
@@ -1175,7 +1687,10 @@ function feedbackEvidenceControl(
   className: string,
 ): HTMLElement {
   const label = el("label", className);
-  label.append(iconNode("files"), el("span", "", t("assistant.attachEvidence")));
+  label.append(
+    iconNode("files"),
+    el("span", "", t("assistant.attachEvidence")),
+  );
   const input = el("input") as HTMLInputElement;
   input.type = "file";
   input.multiple = true;
@@ -1205,14 +1720,23 @@ function chatTray(mode: ChatMode): HTMLElement {
     if (canUploadResume()) {
       tray.append(el("p", "chat-tray-note", t("assistant.resumeUploadReady")));
       tray.append(resumeUploadControl(mode, "chat-file-label"));
-    }
-    else tray.append(button(t("assistant.signInForResume"), "chat-tray-choice", () => openSignIn("resume")));
+    } else
+      tray.append(
+        button(t("assistant.signInForResume"), "chat-tray-choice", () =>
+          openSignIn("resume"),
+        ),
+      );
   } else if (chat.tray === "feedback-files") {
     const proposal = pendingFeedbackProposal(mode);
     if (proposal) {
-      tray.append(el("p", "chat-tray-note", t("assistant.feedbackEvidenceHint")));
+      tray.append(
+        el("p", "chat-tray-note", t("assistant.feedbackEvidenceHint")),
+      );
       tray.append(feedbackEvidenceControl(mode, proposal, "chat-file-label"));
-    } else tray.append(el("p", "chat-tray-note", t("assistant.feedbackEvidenceNeedsDraft")));
+    } else
+      tray.append(
+        el("p", "chat-tray-note", t("assistant.feedbackEvidenceNeedsDraft")),
+      );
   } else if (chat.tray === "plugins") {
     const search = el("input", "chat-tool-search") as HTMLInputElement;
     search.type = "search";
@@ -1221,17 +1745,39 @@ function chatTray(mode: ChatMode): HTMLElement {
     search.value = chat.toolSearch;
     search.addEventListener("input", () => {
       chat.toolSearch = search.value;
-      for (const item of tray.querySelectorAll<HTMLElement>("[data-tool-search]")) {
-        item.hidden = !item.dataset.toolSearch?.includes(search.value.toLowerCase());
+      for (const item of tray.querySelectorAll<HTMLElement>(
+        "[data-tool-search]",
+      )) {
+        item.hidden = !item.dataset.toolSearch?.includes(
+          search.value.toLowerCase(),
+        );
       }
     });
     tray.append(search);
-    if (!chat.tools.length && !chat.pending) tray.append(el("p", "chat-tray-note", t("assistant.noTools")));
+    if (!chat.tools.length && !chat.pending)
+      tray.append(el("p", "chat-tray-note", t("assistant.noTools")));
     for (const tool of chat.tools) {
-      const item = button(tool.description, "chat-tool-choice", () => void openPluginTool(mode, tool.name));
-      item.dataset.toolSearch = `${tool.name} ${tool.description}`.toLowerCase();
-      item.append(el("span", "chat-tool-action", t(tool.access === "read" ? "assistant.readTool" : "assistant.writeTool")));
-      item.hidden = !item.dataset.toolSearch.includes(chat.toolSearch.toLowerCase());
+      const item = button(
+        tool.description,
+        "chat-tool-choice",
+        () => void openPluginTool(mode, tool.name),
+      );
+      item.dataset.toolSearch =
+        `${tool.name} ${tool.description}`.toLowerCase();
+      item.append(
+        el(
+          "span",
+          "chat-tool-action",
+          t(
+            tool.access === "read"
+              ? "assistant.readTool"
+              : "assistant.writeTool",
+          ),
+        ),
+      );
+      item.hidden = !item.dataset.toolSearch.includes(
+        chat.toolSearch.toLowerCase(),
+      );
       tray.append(item);
     }
   }
@@ -1276,10 +1822,21 @@ async function uploadFeedbackEvidenceFiles(
   files: File[],
 ): Promise<void> {
   const chat = state.chats[mode];
-  if (mode !== "resident" || !chat.id || chat.pending || proposal.status !== "pending") return;
-  if (files.some((file) =>
-    !["application/pdf", "image/png", "image/jpeg"].includes(file.type) ||
-    file.size === 0 || file.size > 5 * 1024 * 1024)) {
+  if (
+    mode !== "resident" ||
+    !chat.id ||
+    chat.pending ||
+    proposal.status !== "pending"
+  )
+    return;
+  if (
+    files.some(
+      (file) =>
+        !["application/pdf", "image/png", "image/jpeg"].includes(file.type) ||
+        file.size === 0 ||
+        file.size > 5 * 1024 * 1024,
+    )
+  ) {
     chat.error = t("assistant.invalidEvidence");
     render();
     return;
@@ -1289,7 +1846,11 @@ async function uploadFeedbackEvidenceFiles(
   render();
   try {
     for (const file of files) {
-      const uploaded = await api.uploadFeedbackEvidence(chat.id, chatCredentials(mode), file);
+      const uploaded = await api.uploadFeedbackEvidence(
+        chat.id,
+        chatCredentials(mode),
+        file,
+      );
       const attached = await api.attachFeedbackEvidence(
         chat.id,
         proposal.id,
@@ -1308,7 +1869,8 @@ async function uploadFeedbackEvidenceFiles(
 }
 
 function proposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
-  if (proposal.preview.name === "create_feedback") return feedbackProposalCard(mode, proposal);
+  if (proposal.preview.name === "create_feedback")
+    return feedbackProposalCard(mode, proposal);
   const card = el("section", "proposal-card");
   card.append(agentApprovalIntro(proposal.preview, state.locale));
   const changes = proposalChanges(proposal.preview.changes);
@@ -1329,7 +1891,10 @@ function proposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
       state.chats[mode].approvalChecked[proposal.id] = check.checked;
       approve.disabled = state.chats[mode].pending || !check.checked;
     });
-    acknowledgment.append(check, el("span", "", t("assistant.confirmPracticeDestination")));
+    acknowledgment.append(
+      check,
+      el("span", "", t("assistant.confirmPracticeDestination")),
+    );
     card.append(acknowledgment);
   }
   const actions = el("div", "form-actions");
@@ -1344,8 +1909,10 @@ function proposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
     () => void decideProposal(mode, proposal, true),
   );
   approve.dataset.proposalApprove = "true";
-  approve.disabled = state.chats[mode].pending ||
-    (proposal.preview.requiresSandboxAcknowledgment === true && !state.chats[mode].approvalChecked[proposal.id]);
+  approve.disabled =
+    state.chats[mode].pending ||
+    (proposal.preview.requiresSandboxAcknowledgment === true &&
+      !state.chats[mode].approvalChecked[proposal.id]);
   decline.disabled = state.chats[mode].pending;
   actions.append(decline, approve);
   card.append(actions);
@@ -1354,28 +1921,47 @@ function proposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
 
 function proposalChanges(value: unknown): HTMLElement | null {
   if (!Array.isArray(value) || value.length === 0) return null;
-  const rows = value.filter((item): item is Record<string, unknown> =>
-    item !== null && typeof item === "object" && !Array.isArray(item) &&
-    typeof item.field === "string" && item.field.trim().length > 0);
+  const rows = value.filter(
+    (item): item is Record<string, unknown> =>
+      item !== null &&
+      typeof item === "object" &&
+      !Array.isArray(item) &&
+      typeof item.field === "string" &&
+      item.field.trim().length > 0,
+  );
   if (rows.length === 0) return null;
 
   const section = el("div", "proposal-changes");
-  section.append(el("p", "proposal-changes-title", t("assistant.proposedChanges")));
+  section.append(
+    el("p", "proposal-changes-title", t("assistant.proposedChanges")),
+  );
   const table = el("table", "proposal-changes-table");
   const head = el("thead");
-  head.append(el("tr", "",
-    el("th", "", t("assistant.changeField")),
-    el("th", "", t("assistant.changeBefore")),
-    el("th", "", t("assistant.changeAfter")),
-  ));
+  head.append(
+    el(
+      "tr",
+      "",
+      el("th", "", t("assistant.changeField")),
+      el("th", "", t("assistant.changeBefore")),
+      el("th", "", t("assistant.changeAfter")),
+    ),
+  );
   const body = el("tbody");
   for (const change of rows) {
     const row = el("tr");
     const field = el("th", "proposal-change-field", change.field as string);
     field.scope = "row";
-    const before = el("td", "proposal-change-value", proposalChangeValue(change.before));
+    const before = el(
+      "td",
+      "proposal-change-value",
+      proposalChangeValue(change.before),
+    );
     before.dataset.label = t("assistant.changeBefore");
-    const after = el("td", "proposal-change-value", proposalChangeValue(change.after));
+    const after = el(
+      "td",
+      "proposal-change-value",
+      proposalChangeValue(change.after),
+    );
     after.dataset.label = t("assistant.changeAfter");
     row.append(field, before, after);
     body.append(row);
@@ -1386,36 +1972,65 @@ function proposalChanges(value: unknown): HTMLElement | null {
 }
 
 function proposalChangeValue(value: unknown): string {
-  if (value === null || value === undefined) return t("assistant.changeNoValue");
-  if (typeof value === "string") return value.length > 0 ? value : t("assistant.changeEmptyText");
-  if (typeof value === "boolean") return t(value ? "assistant.changeYes" : "assistant.changeNo");
+  if (value === null || value === undefined)
+    return t("assistant.changeNoValue");
+  if (typeof value === "string")
+    return value.length > 0 ? value : t("assistant.changeEmptyText");
+  if (typeof value === "boolean")
+    return t(value ? "assistant.changeYes" : "assistant.changeNo");
   if (typeof value === "number") return String(value);
-  if (Array.isArray(value) && value.length === 0) return t("assistant.changeEmptyList");
-  if (typeof value === "object" && Object.keys(value).length === 0) return t("assistant.changeEmptyObject");
-  try { return JSON.stringify(value, null, 2) ?? t("assistant.changeNoValue"); }
-  catch { return t("assistant.changeNoValue"); }
+  if (Array.isArray(value) && value.length === 0)
+    return t("assistant.changeEmptyList");
+  if (typeof value === "object" && Object.keys(value).length === 0)
+    return t("assistant.changeEmptyObject");
+  try {
+    return JSON.stringify(value, null, 2) ?? t("assistant.changeNoValue");
+  } catch {
+    return t("assistant.changeNoValue");
+  }
 }
 
 function proposalFields(value: unknown): HTMLElement | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const fields = el("div", "proposal-fields");
   for (const [key, item] of Object.entries(value)) {
-    if (["locale", "sandboxAcknowledged", "organizationId", "requiresApproval", "expiresAt"].includes(key) || item === null || item === undefined) continue;
+    if (
+      [
+        "locale",
+        "sandboxAcknowledged",
+        "organizationId",
+        "requiresApproval",
+        "expiresAt",
+      ].includes(key) ||
+      item === null ||
+      item === undefined
+    )
+      continue;
     const label = key.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
     const title = label.charAt(0).toUpperCase() + label.slice(1);
-    const text = typeof item === "object" && !Array.isArray(item)
-      ? Object.entries(item).map(([name, answer]) => `${name}: ${String(answer)}`).join("\n")
-      : Array.isArray(item) ? item.map(String).join(", ") : String(item);
+    const text =
+      typeof item === "object" && !Array.isArray(item)
+        ? Object.entries(item)
+            .map(([name, answer]) => `${name}: ${String(answer)}`)
+            .join("\n")
+        : Array.isArray(item)
+          ? item.map(String).join(", ")
+          : String(item);
     fields.append(labeledValue(title, text));
   }
   return fields.childElementCount ? fields : null;
 }
 
-function feedbackProposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElement {
+function feedbackProposalCard(
+  mode: ChatMode,
+  proposal: AgentProposal,
+): HTMLElement {
   const chat = state.chats[mode];
   const raw = proposal.preview.body;
-  const body = raw && typeof raw === "object" && !Array.isArray(raw)
-    ? raw as Record<string, unknown> : {};
+  const body =
+    raw && typeof raw === "object" && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {};
   const original = typeof body.message === "string" ? body.message : "";
   const card = el("section", "proposal-card feedback-proposal");
   card.append(agentApprovalIntro(proposal.preview, state.locale));
@@ -1424,27 +2039,38 @@ function feedbackProposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElem
     t("feedback.messageLabel"),
     t("feedback.messagePlaceholder"),
     chat.reportEdits[proposal.id] ?? original,
-    (value) => { chat.reportEdits[proposal.id] = value; },
+    (value) => {
+      chat.reportEdits[proposal.id] = value;
+    },
     4,
   );
   const input = editor.querySelector("textarea")!;
   input.maxLength = 4000;
   card.append(editor);
-  if (typeof body.whatWouldImprove === "string" && body.whatWouldImprove.trim()) {
-    card.append(labeledValue(t("feedback.improvementLabel"), body.whatWouldImprove));
+  if (
+    typeof body.whatWouldImprove === "string" &&
+    body.whatWouldImprove.trim()
+  ) {
+    card.append(
+      labeledValue(t("feedback.improvementLabel"), body.whatWouldImprove),
+    );
   }
   if (proposal.status === "pending") {
     const evidence = el("div", "feedback-proposal-evidence");
     evidence.append(feedbackEvidenceControl(mode, proposal, "chat-file-label"));
-    evidence.append(el("p", "chat-tray-note", t("assistant.feedbackEvidenceHint")));
+    evidence.append(
+      el("p", "chat-tray-note", t("assistant.feedbackEvidenceHint")),
+    );
     const attached = Array.isArray(proposal.preview.feedbackEvidence)
-      ? proposal.preview.feedbackEvidence : [];
+      ? proposal.preview.feedbackEvidence
+      : [];
     if (attached.length) {
       const list = el("ul", "feedback-evidence-list");
       for (const item of attached) {
         if (!item || typeof item !== "object") continue;
         const file = item as { fileName?: unknown };
-        if (typeof file.fileName === "string") list.append(el("li", "", file.fileName));
+        if (typeof file.fileName === "string")
+          list.append(el("li", "", file.fileName));
       }
       evidence.append(list);
     }
@@ -1452,15 +2078,19 @@ function feedbackProposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElem
   }
   card.append(el("p", "proposal-notice", t("assistant.reportDestination")));
 
-  const duplicateStatus = typeof proposal.preview.duplicateStatus === "string"
-    ? proposal.preview.duplicateStatus : null;
+  const duplicateStatus =
+    typeof proposal.preview.duplicateStatus === "string"
+      ? proposal.preview.duplicateStatus
+      : null;
   let duplicateMatch: HTMLElement | null = null;
   if (proposal.preview.requiresDuplicateOverride === true && duplicateStatus) {
     duplicateMatch = el("section", "feedback-duplicate");
     duplicateMatch.append(
       el("h4", "", t("feedback.duplicateTitle")),
       el("p", "", t("feedback.duplicateExplanation")),
-      el("div", "feedback-duplicate-status",
+      el(
+        "div",
+        "feedback-duplicate-status",
         el("span", "", t("feedback.duplicateStatus")),
         statusPill(duplicateStatus),
       ),
@@ -1486,11 +2116,18 @@ function feedbackProposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElem
     chat.approvalChecked[proposal.id] = check.checked;
     updateButton();
   });
-  acknowledgment.append(check, el("span", "", t("assistant.confirmDestination")));
+  acknowledgment.append(
+    check,
+    el("span", "", t("assistant.confirmDestination")),
+  );
   card.append(acknowledgment);
 
   const actions = el("div", "form-actions");
-  const decline = button(t("assistant.decline"), "button-quiet", () => void decideProposal(mode, proposal, false));
+  const decline = button(
+    t("assistant.decline"),
+    "button-quiet",
+    () => void decideProposal(mode, proposal, false),
+  );
   const approve = button("", "button-primary", () => {
     const edited = input.value.trim() !== original.trim();
     if (edited) void prepareEditedFeedback(mode, proposal, input.value.trim());
@@ -1501,11 +2138,21 @@ function feedbackProposalCard(mode: ChatMode, proposal: AgentProposal): HTMLElem
     const edited = input.value.trim() !== original.trim();
     acknowledgment.hidden = edited;
     if (duplicateMatch) duplicateMatch.hidden = edited;
-    approve.textContent = t(edited ? "assistant.reviewUpdatedReport"
-      : duplicateMatch ? "feedback.submitSeparate" : "assistant.confirmReport");
-    approve.disabled = chat.pending || !input.value.trim() ||
-      (!edited && (!chat.approvalChecked[proposal.id] ||
-        Boolean(duplicateMatch && !chat.duplicateOverrideChecked[proposal.id])));
+    approve.textContent = t(
+      edited
+        ? "assistant.reviewUpdatedReport"
+        : duplicateMatch
+          ? "feedback.submitSeparate"
+          : "assistant.confirmReport",
+    );
+    approve.disabled =
+      chat.pending ||
+      !input.value.trim() ||
+      (!edited &&
+        (!chat.approvalChecked[proposal.id] ||
+          Boolean(
+            duplicateMatch && !chat.duplicateOverrideChecked[proposal.id],
+          )));
   }
   input.addEventListener("input", updateButton);
   updateButton();
@@ -1546,16 +2193,22 @@ function activeChatMode(): ChatMode {
 
 function readLocalHistory(mode: ChatMode): ChatHistoryEntry[] {
   try {
-    const parsed = JSON.parse(sessionStorage.getItem(historyStorageKey(mode)) ?? "[]") as unknown;
+    const parsed = JSON.parse(
+      sessionStorage.getItem(historyStorageKey(mode)) ?? "[]",
+    ) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((entry): entry is ChatHistoryEntry => {
-      if (!entry || typeof entry !== "object") return false;
-      const item = entry as Record<string, unknown>;
-      return typeof item.id === "string" &&
-        /^conv_[a-f0-9]{32}$/.test(item.id) &&
-        typeof item.label === "string" &&
-        typeof item.updatedAt === "string";
-    }).slice(0, 30);
+    return parsed
+      .filter((entry): entry is ChatHistoryEntry => {
+        if (!entry || typeof entry !== "object") return false;
+        const item = entry as Record<string, unknown>;
+        return (
+          typeof item.id === "string" &&
+          /^conv_[a-f0-9]{32}$/.test(item.id) &&
+          typeof item.label === "string" &&
+          typeof item.updatedAt === "string"
+        );
+      })
+      .slice(0, 30);
   } catch {
     return [];
   }
@@ -1567,13 +2220,17 @@ function rememberConversation(mode: ChatMode, label: string): void {
   const existing = chat.history.find((item) => item.id === chat.id);
   const entry: ChatHistoryEntry = {
     id: chat.id,
-    label: existing?.label && existing.label !== t("assistant.conversation")
-      ? existing.label
-      : label.slice(0, 54),
+    label:
+      existing?.label && existing.label !== t("assistant.conversation")
+        ? existing.label
+        : label.slice(0, 54),
     updatedAt: new Date().toISOString(),
     ...(chat.token ? { token: chat.token } : {}),
   };
-  chat.history = [entry, ...chat.history.filter((item) => item.id !== chat.id)].slice(0, 30);
+  chat.history = [
+    entry,
+    ...chat.history.filter((item) => item.id !== chat.id),
+  ].slice(0, 30);
   sessionStorage.setItem(historyStorageKey(mode), JSON.stringify(chat.history));
 }
 
@@ -1586,10 +2243,18 @@ async function loadRecent(mode: ChatMode): Promise<void> {
   if (currentToken()) {
     try {
       const response = await api.listConversations(currentToken());
-      const server = response.conversations.filter((item) => item.mode === mode && item.locale === state.locale);
+      const server = response.conversations.filter(
+        (item) => item.mode === mode && item.locale === state.locale,
+      );
       chat.history = server.map((item) => {
         const stored = local.find((entry) => entry.id === item.id);
-        return stored ?? { id: item.id, label: `${t("assistant.conversation")} · ${formatDate(item.updatedAt)}`, updatedAt: item.updatedAt };
+        return (
+          stored ?? {
+            id: item.id,
+            label: `${t("assistant.conversation")} · ${formatDate(item.updatedAt)}`,
+            updatedAt: item.updatedAt,
+          }
+        );
       });
     } catch {
       chat.history = local;
@@ -1601,11 +2266,18 @@ async function loadRecent(mode: ChatMode): Promise<void> {
 async function ensureConversation(mode: ChatMode): Promise<void> {
   const chat = state.chats[mode];
   if (chat.id) return;
-  const created = await api.createConversation(mode, state.locale, chatCredentials(mode));
+  const created = await api.createConversation(
+    mode,
+    state.locale,
+    chatCredentials(mode),
+  );
   chat.id = created.conversation.id;
   chat.token = created.conversationToken ?? "";
   chat.tools = created.tools;
-  sessionStorage.setItem(chatStorageKey(mode), JSON.stringify({ id: chat.id, token: chat.token }));
+  sessionStorage.setItem(
+    chatStorageKey(mode),
+    JSON.stringify({ id: chat.id, token: chat.token }),
+  );
   rememberConversation(mode, t("assistant.conversation"));
 }
 
@@ -1620,11 +2292,17 @@ async function openConversation(mode: ChatMode, id: string): Promise<void> {
   chat.error = "";
   chat.tray = null;
   state.sidebarOpen = false;
-  sessionStorage.setItem(chatStorageKey(mode), JSON.stringify({ id, token: chat.token }));
+  sessionStorage.setItem(
+    chatStorageKey(mode),
+    JSON.stringify({ id, token: chat.token }),
+  );
   render();
   try {
     const response = await api.getConversation(id, chatCredentials(mode));
-    chat.messages = response.messages.map(({ role, content }) => ({ role, content }));
+    chat.messages = response.messages.map(({ role, content }) => ({
+      role,
+      content,
+    }));
     chat.proposals = response.proposals;
     chat.tools = response.tools;
   } catch (error) {
@@ -1635,7 +2313,10 @@ async function openConversation(mode: ChatMode, id: string): Promise<void> {
   }
 }
 
-async function openChatTray(mode: ChatMode, tray: ChatState["tray"]): Promise<void> {
+async function openChatTray(
+  mode: ChatMode,
+  tray: ChatState["tray"],
+): Promise<void> {
   if (mode === "employee" && !currentToken()) {
     state.page = "employee";
     state.employeePage = "assistant";
@@ -1651,11 +2332,15 @@ async function openChatTray(mode: ChatMode, tray: ChatState["tray"]): Promise<vo
   const chat = state.chats[mode];
   chat.tray = chat.tray === tray ? null : tray;
   chat.modelOpen = false;
-  chat.thinkingOpen = false;
   state.sidebarOpen = false;
   render();
   if (tray === "actions") {
-    if (chat.tray) document.querySelector<HTMLElement>(".chat-action-menu input[type=file],.chat-action-menu button")?.focus();
+    if (chat.tray)
+      document
+        .querySelector<HTMLElement>(
+          ".chat-action-menu input[type=file],.chat-action-menu button",
+        )
+        ?.focus();
     else document.querySelector<HTMLButtonElement>(".chat-add-button")?.focus();
   }
   if (chat.tray === "plugins" && chat.tools.length === 0) {
@@ -1673,9 +2358,18 @@ async function openChatTray(mode: ChatMode, tray: ChatState["tray"]): Promise<vo
 }
 
 const DIRECT_READ_TOOLS = new Set([
-  "list_postings", "list_sources", "list_source_records", "read_profile", "list_resumes",
-  "list_my_applications", "list_staff_feedback", "read_feedback_analytics",
-  "list_staff_applications", "read_taxonomy", "list_taxonomy_versions", "prepare_resume_upload",
+  "list_postings",
+  "list_sources",
+  "list_source_records",
+  "read_profile",
+  "list_resumes",
+  "list_my_applications",
+  "list_staff_feedback",
+  "read_feedback_analytics",
+  "list_staff_applications",
+  "read_taxonomy",
+  "list_taxonomy_versions",
+  "prepare_resume_upload",
   "prepare_feedback_evidence_upload",
 ]);
 
@@ -1701,15 +2395,30 @@ async function openPluginTool(mode: ChatMode, name: string): Promise<void> {
   render();
   try {
     await ensureConversation(mode);
-    const response = await api.invokeConversationTool(chat.id, chatCredentials(mode), name);
+    const response = await api.invokeConversationTool(
+      chat.id,
+      chatCredentials(mode),
+      name,
+    );
     if (response.result !== undefined) {
       if (isResumeUploadHandoff(response.result)) {
-        chat.messages.push({ role: "assistant", content: t("assistant.resumeUploadReady") });
+        chat.messages.push({
+          role: "assistant",
+          content: t("assistant.resumeUploadReady"),
+        });
         chat.tray = "files";
       } else if (isFeedbackEvidenceUploadHandoff(response.result)) {
-        chat.messages.push({ role: "assistant", content: t("assistant.feedbackEvidenceHint") });
+        chat.messages.push({
+          role: "assistant",
+          content: t("assistant.feedbackEvidenceHint"),
+        });
         chat.tray = "feedback-files";
-      } else chat.messages.push({ role: "tool", content: visibleToolResult(response.result), result: response.result });
+      } else
+        chat.messages.push({
+          role: "tool",
+          content: visibleToolResult(response.result),
+          result: response.result,
+        });
     }
     if (response.proposal) chat.proposals.push(response.proposal);
   } catch (error) {
@@ -1771,7 +2480,9 @@ async function restoreChat(mode: ChatMode): Promise<void> {
 async function sendChat(mode: ChatMode): Promise<void> {
   const chat = state.chats[mode];
   const draft = chat.draft.trim();
-  const message = chat.contextArea ? `For ${chat.contextArea}: ${draft}` : draft;
+  const message = chat.contextArea
+    ? `For ${chat.contextArea}: ${draft}`
+    : draft;
   if (!draft || chat.pending) return;
   if (mode === "employee" && !currentToken()) {
     chat.error = t("error.unauthenticated");
@@ -1791,10 +2502,15 @@ async function sendChat(mode: ChatMode): Promise<void> {
       message,
     );
     chat.messages.push({ role: "assistant", content: response.message });
-    if (response.toolResult !== undefined && !feedbackDuplicateStatusFromResult(response.toolResult)) {
+    if (
+      response.toolResult !== undefined &&
+      !feedbackDuplicateStatusFromResult(response.toolResult)
+    ) {
       if (isResumeUploadHandoff(response.toolResult)) chat.tray = "files";
-      else if (isFeedbackEvidenceUploadHandoff(response.toolResult)) chat.tray = "feedback-files";
-      else chat.messages.push({
+      else if (isFeedbackEvidenceUploadHandoff(response.toolResult))
+        chat.tray = "feedback-files";
+      else
+        chat.messages.push({
           role: "tool",
           content: visibleToolResult(response.toolResult),
           result: response.toolResult,
@@ -1823,25 +2539,29 @@ async function decideProposal(
   if (!chat.id || chat.pending) return;
   if (approved && proposal.preview.name === "create_feedback") {
     const body = proposal.preview.body;
-    const original = body && typeof body === "object" && "message" in body
-      ? String(body.message) : "";
+    const original =
+      body && typeof body === "object" && "message" in body
+        ? String(body.message)
+        : "";
     const edit = chat.reportEdits[proposal.id];
     if (edit !== undefined && edit.trim() !== original.trim()) return;
   }
-  const needsSandboxAcknowledgment = proposal.preview.requiresSandboxAcknowledgment === true ||
+  const needsSandboxAcknowledgment =
+    proposal.preview.requiresSandboxAcknowledgment === true ||
     proposal.preview.name === "create_feedback";
-  const sandboxAcknowledged = needsSandboxAcknowledgment &&
-    chat.approvalChecked[proposal.id] === true;
-  if (
+  const sandboxAcknowledged =
+    needsSandboxAcknowledgment && chat.approvalChecked[proposal.id] === true;
+  if (approved && needsSandboxAcknowledgment && !sandboxAcknowledged) return;
+  const duplicateOverride =
     approved &&
-    needsSandboxAcknowledgment &&
-    !sandboxAcknowledged
-  )
-    return;
-  const duplicateOverride = approved && proposal.preview.name === "create_feedback" &&
+    proposal.preview.name === "create_feedback" &&
     proposal.preview.requiresDuplicateOverride === true &&
     chat.duplicateOverrideChecked[proposal.id] === true;
-  if (approved && proposal.preview.requiresDuplicateOverride === true && !duplicateOverride)
+  if (
+    approved &&
+    proposal.preview.requiresDuplicateOverride === true &&
+    !duplicateOverride
+  )
     return;
   chat.pending = true;
   chat.error = "";
@@ -1855,8 +2575,10 @@ async function decideProposal(
       sandboxAcknowledged,
       duplicateOverride,
     );
-    const duplicateStatus = approved && proposal.preview.name === "create_feedback"
-      ? feedbackDuplicateStatusFromResult(response.result) : null;
+    const duplicateStatus =
+      approved && proposal.preview.name === "create_feedback"
+        ? feedbackDuplicateStatusFromResult(response.result)
+        : null;
     if (duplicateStatus) {
       proposal.status = "pending";
       proposal.preview = {
@@ -1892,25 +2614,45 @@ async function decideProposal(
   }
 }
 
-function feedbackDuplicateStatusFromResult(result: unknown): FeedbackStatus | null {
+function feedbackDuplicateStatusFromResult(
+  result: unknown,
+): FeedbackStatus | null {
   if (!result || typeof result !== "object") return null;
   const data = (result as { data?: unknown }).data;
   if (!data || typeof data !== "object") return null;
-  const outcome = data as { result?: unknown; created?: unknown; duplicate?: { status?: unknown } };
+  const outcome = data as {
+    result?: unknown;
+    created?: unknown;
+    duplicate?: { status?: unknown };
+  };
   if (outcome.result !== "duplicate" || outcome.created !== false) return null;
   const status = outcome.duplicate?.status;
-  return typeof status === "string" && [
-    "submitted", "acknowledged", "in_review", "waiting_on_resident",
-    "outcome_recorded", "closed", "reopened",
-  ].includes(status) ? status as FeedbackStatus : null;
+  return typeof status === "string" &&
+    [
+      "submitted",
+      "acknowledged",
+      "in_review",
+      "waiting_on_resident",
+      "outcome_recorded",
+      "closed",
+      "reopened",
+    ].includes(status)
+    ? (status as FeedbackStatus)
+    : null;
 }
 
-async function prepareEditedFeedback(mode: ChatMode, previous: AgentProposal, message: string): Promise<void> {
+async function prepareEditedFeedback(
+  mode: ChatMode,
+  previous: AgentProposal,
+  message: string,
+): Promise<void> {
   const chat = state.chats[mode];
   if (!chat.id || chat.pending || !message) return;
   const raw = previous.preview.body;
-  const body = raw && typeof raw === "object" && !Array.isArray(raw)
-    ? raw as Record<string, unknown> : {};
+  const body =
+    raw && typeof raw === "object" && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {};
   if (typeof body.municipalityId !== "string") {
     chat.error = t("error.invalidRequest");
     render();
@@ -1922,16 +2664,27 @@ async function prepareEditedFeedback(mode: ChatMode, previous: AgentProposal, me
     locale: state.locale,
     sandboxAcknowledged: false,
   };
-  if (typeof body.whatWouldImprove === "string") args.whatWouldImprove = body.whatWouldImprove;
+  if (typeof body.whatWouldImprove === "string")
+    args.whatWouldImprove = body.whatWouldImprove;
   if (typeof body.category === "string") args.category = body.category;
   chat.pending = true;
   chat.error = "";
   render();
   try {
-    const next = await api.invokeConversationTool(chat.id, chatCredentials(mode), "create_feedback", args);
+    const next = await api.invokeConversationTool(
+      chat.id,
+      chatCredentials(mode),
+      "create_feedback",
+      args,
+    );
     if (!next.proposal) throw new Error(t("assistant.unavailable"));
     chat.proposals.push(next.proposal);
-    await api.decideConversationProposal(chat.id, previous.id, "reject", chatCredentials(mode));
+    await api.decideConversationProposal(
+      chat.id,
+      previous.id,
+      "reject",
+      chatCredentials(mode),
+    );
     previous.status = "rejected";
   } catch (error) {
     chat.error = formatError(error).message;
@@ -1965,31 +2718,45 @@ function saveApprovedChatReceipt(result: unknown): void {
 function isResumeUploadHandoff(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
   const result = value as { status?: unknown; data?: unknown };
-  if (result.status !== 200 || !result.data || typeof result.data !== "object") return false;
+  if (result.status !== 200 || !result.data || typeof result.data !== "object")
+    return false;
   const upload = (result.data as { upload?: unknown }).upload;
   if (!upload || typeof upload !== "object") return false;
   const details = upload as Record<string, unknown>;
-  return details.path === "/api/v1/profile/resumes" &&
-    details.method === "POST" && details.field === "file" &&
-    details.requiresFileChooser === true && details.submitted === false;
+  return (
+    details.path === "/api/v1/profile/resumes" &&
+    details.method === "POST" &&
+    details.field === "file" &&
+    details.requiresFileChooser === true &&
+    details.submitted === false
+  );
 }
 
 function isFeedbackEvidenceUploadHandoff(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
   const result = value as { status?: unknown; data?: unknown };
-  if (result.status !== 200 || !result.data || typeof result.data !== "object") return false;
+  if (result.status !== 200 || !result.data || typeof result.data !== "object")
+    return false;
   const upload = (result.data as { upload?: unknown }).upload;
   if (!upload || typeof upload !== "object") return false;
   const details = upload as Record<string, unknown>;
-  return typeof details.path === "string" &&
-    /^\/api\/v1\/agent\/conversations\/conv_[a-f0-9]{32}\/feedback-evidence$/.test(details.path) &&
-    details.method === "POST" && details.field === "file" &&
-    details.requiresFileChooser === true && details.submitted === false;
+  return (
+    typeof details.path === "string" &&
+    /^\/api\/v1\/agent\/conversations\/conv_[a-f0-9]{32}\/feedback-evidence$/.test(
+      details.path,
+    ) &&
+    details.method === "POST" &&
+    details.field === "file" &&
+    details.requiresFileChooser === true &&
+    details.submitted === false
+  );
 }
 
 function focusResumeUpload(): void {
   requestAnimationFrame(() => {
-    const input = document.querySelector<HTMLInputElement>(".chat-file-label input[type=file]");
+    const input = document.querySelector<HTMLInputElement>(
+      ".chat-file-label input[type=file]",
+    );
     input?.focus();
     input?.closest(".chat-tray")?.scrollIntoView({ block: "nearest" });
   });
@@ -1997,7 +2764,9 @@ function focusResumeUpload(): void {
 
 function focusFeedbackEvidenceUpload(): void {
   requestAnimationFrame(() => {
-    const input = document.querySelector<HTMLInputElement>(".chat-tray .chat-file-label input[type=file]");
+    const input = document.querySelector<HTMLInputElement>(
+      ".chat-tray .chat-file-label input[type=file]",
+    );
     input?.focus();
     input?.closest(".chat-tray")?.scrollIntoView({ block: "nearest" });
   });
@@ -2041,25 +2810,47 @@ function feedbackPage(): HTMLElement {
       }),
     );
   } else {
-    const intro = el("div", "feedback-intro",
+    const intro = el(
+      "div",
+      "feedback-intro",
       el("div", "feedback-intro-icon", iconNode("feedback")),
-      el("div", "", el("h2", "", t("feedback.heading")), el("p", "", t("feedback.shortIntro"))),
+      el(
+        "div",
+        "",
+        el("h2", "", t("feedback.heading")),
+        el("p", "", t("feedback.shortIntro")),
+      ),
     );
-    const steps = el("div", "feedback-steps",
-      el("span", state.feedbackReviewing ? "" : "is-current", t("feedback.stepWrite")),
+    const steps = el(
+      "div",
+      "feedback-steps",
+      el(
+        "span",
+        state.feedbackReviewing ? "" : "is-current",
+        t("feedback.stepWrite"),
+      ),
       el("span", "feedback-step-rule"),
-      el("span", state.feedbackReviewing ? "is-current" : "", t("feedback.stepReview")),
+      el(
+        "span",
+        state.feedbackReviewing ? "is-current" : "",
+        t("feedback.stepReview"),
+      ),
     );
-    steps.querySelectorAll("span:not(.feedback-step-rule)").forEach((step, index) => {
-      (step as HTMLElement).dataset.step = String(index + 1);
-    });
+    steps
+      .querySelectorAll("span:not(.feedback-step-rule)")
+      .forEach((step, index) => {
+        (step as HTMLElement).dataset.step = String(index + 1);
+      });
     left.append(intro, steps);
     if (state.feedbackReviewing) left.append(feedbackReview());
     else left.append(feedbackForm());
     if (state.receipt) left.append(receiptPanel());
   }
 
-  const aside = el("aside", "surface context-surface feedback-aside feedback-aside-card");
+  const aside = el(
+    "aside",
+    "surface context-surface feedback-aside feedback-aside-card",
+  );
   const emergency = el("div", "emergency-note");
   emergency.append(
     el("strong", "", t("feedback.emergencyTitle")),
@@ -2085,29 +2876,46 @@ function feedbackPage(): HTMLElement {
   return layout;
 }
 
-function feedbackCaseDetail(receipt: FeedbackClientReceipt, mode: "resident" | "staff"): HTMLElement {
+function feedbackCaseDetail(
+  receipt: FeedbackClientReceipt,
+  mode: "resident" | "staff",
+): HTMLElement {
   const layout = el("div", "case-layout");
   const main = el("section", "case-main");
   const heading = el("div", "case-heading");
-  const title = receipt.originalText.match(/^[^\n.!?]+[.!?]?/)?.[0]?.trim() || t("feedback.receiptTitle");
+  const title =
+    receipt.originalText.match(/^[^\n.!?]+[.!?]?/)?.[0]?.trim() ||
+    t("feedback.receiptTitle");
   heading.append(
     el("span", "case-key", receipt.id),
     el("h2", "case-title", title.slice(0, 120)),
   );
-  if (title !== receipt.originalText || title.length > 120) heading.append(el("p", "case-original", receipt.originalText));
+  if (title !== receipt.originalText || title.length > 120)
+    heading.append(el("p", "case-original", receipt.originalText));
   if (receipt.constructiveFollowUp) {
     heading.append(el("p", "case-improvement", receipt.constructiveFollowUp));
   }
   main.append(heading, el("h3", "case-section-title", t("feedback.activity")));
   const timeline = el("div", "case-timeline");
   for (const message of receipt.messages) {
-    if (message.author === "resident" && message.body === receipt.originalText) continue;
+    if (message.author === "resident" && message.body === receipt.originalText)
+      continue;
     const row = el("article", "case-event");
     row.append(
       el("span", "case-event-dot"),
-      el("div", "case-event-body",
-        el("div", "case-event-meta",
-          el("strong", "", message.author === "staff" ? t("feedback.staffReply") : t("assistant.you")),
+      el(
+        "div",
+        "case-event-body",
+        el(
+          "div",
+          "case-event-meta",
+          el(
+            "strong",
+            "",
+            message.author === "staff"
+              ? t("feedback.staffReply")
+              : t("assistant.you"),
+          ),
           el("time", "", formatDate(message.createdAt)),
         ),
         el("p", "", message.body),
@@ -2115,12 +2923,34 @@ function feedbackCaseDetail(receipt: FeedbackClientReceipt, mode: "resident" | "
     );
     timeline.append(row);
   }
-  if (!timeline.childElementCount) timeline.append(el("p", "quiet-note", t("feedback.noActivity")));
+  if (!timeline.childElementCount)
+    timeline.append(el("p", "quiet-note", t("feedback.noActivity")));
   main.append(timeline);
-  if (mode === "resident" && state.receiptCredentials && receipt.status !== "closed") {
-    const reply = textArea("resident-follow-up", t("feedback.followUpLabel"), t("feedback.replyPlaceholder"), "", () => {}, 2);
+  if (
+    mode === "resident" &&
+    state.receiptCredentials &&
+    receipt.status !== "closed"
+  ) {
+    const reply = textArea(
+      "resident-follow-up",
+      t("feedback.followUpLabel"),
+      t("feedback.replyPlaceholder"),
+      "",
+      () => {},
+      2,
+    );
     const form = el("form", "case-reply");
-    form.append(reply, button(t("feedback.replySend"), "button-primary", () => void submitResidentFollowUp(reply.querySelector("textarea")?.value ?? "")));
+    form.append(
+      reply,
+      button(
+        t("feedback.replySend"),
+        "button-primary",
+        () =>
+          void submitResidentFollowUp(
+            reply.querySelector("textarea")?.value ?? "",
+          ),
+      ),
+    );
     form.addEventListener("submit", (event) => event.preventDefault());
     main.append(form);
   }
@@ -2136,51 +2966,100 @@ function feedbackCaseDetail(receipt: FeedbackClientReceipt, mode: "resident" | "
     ["feedback.evidence", String(receipt.evidence.length)],
   ];
   for (const [key, value] of props) {
-    properties.append(el("div", "case-property", el("span", "", t(key)), el("strong", "", value)));
+    properties.append(
+      el(
+        "div",
+        "case-property",
+        el("span", "", t(key)),
+        el("strong", "", value),
+      ),
+    );
   }
-  if (receipt.outcome) properties.append(el("div", "case-property", el("span", "", t("feedback.outcome")), el("p", "", receipt.outcome)));
-  for (const evidence of receipt.evidence) properties.append(el("span", "case-evidence", evidence.fileName));
-  if (mode === "staff") properties.append(staffFeedbackOperations({
-    token: currentToken(),
-    organizationId: currentOrgId(),
-    locale: state.locale,
-    submission: {
-      id: receipt.id,
-      status: receipt.status,
-      assignment: (receipt as FeedbackClientReceipt & {
-        assignment?: { departmentId: string; departmentName: string; assigneeSubject: string | null } | null;
-      }).assignment,
-    },
-    onChanged: async () => {
-      await refreshStaffCase(receipt.id);
-      await loadEmployeeQueue();
-    },
-  }));
-  if (mode === "resident") properties.append(el("p", "quiet-note", t("feedback.receiptSecretHelp")));
+  if (receipt.outcome)
+    properties.append(
+      el(
+        "div",
+        "case-property",
+        el("span", "", t("feedback.outcome")),
+        el("p", "", receipt.outcome),
+      ),
+    );
+  for (const evidence of receipt.evidence)
+    properties.append(el("span", "case-evidence", evidence.fileName));
+  if (mode === "staff")
+    properties.append(
+      staffFeedbackOperations({
+        token: currentToken(),
+        organizationId: currentOrgId(),
+        locale: state.locale,
+        submission: {
+          id: receipt.id,
+          status: receipt.status,
+          assignment: (
+            receipt as FeedbackClientReceipt & {
+              assignment?: {
+                departmentId: string;
+                departmentName: string;
+                assigneeSubject: string | null;
+              } | null;
+            }
+          ).assignment,
+        },
+        onChanged: async () => {
+          await refreshStaffCase(receipt.id);
+          await loadEmployeeQueue();
+        },
+      }),
+    );
+  if (mode === "resident")
+    properties.append(el("p", "quiet-note", t("feedback.receiptSecretHelp")));
   layout.append(main, properties);
   return layout;
 }
 
 function staffCaseActions(receipt: FeedbackClientReceipt): HTMLElement {
   const actions = el("div", "case-staff-actions");
-  const reply = textArea(`staff-detail-reply-${receipt.id}`, t("feedback.reply"), t("feedback.replyPlaceholder"), "", () => {}, 2);
+  const reply = textArea(
+    `staff-detail-reply-${receipt.id}`,
+    t("feedback.reply"),
+    t("feedback.replyPlaceholder"),
+    "",
+    () => {},
+    2,
+  );
   const respond = button(t("feedback.replySend"), "button-primary", () => {
     const message = reply.querySelector("textarea")?.value.trim() ?? "";
     if (!message) return;
     void withPending(`detail-reply-${receipt.id}`, async () => {
-      await api.replyToFeedback(currentToken(), currentOrgId(), receipt.id, message);
+      await api.replyToFeedback(
+        currentToken(),
+        currentOrgId(),
+        receipt.id,
+        message,
+      );
       await refreshStaffCase(receipt.id);
     });
   });
   respond.disabled = state.pending === `detail-reply-${receipt.id}`;
   actions.append(reply, respond);
-  const remaining = nextFeedbackStatuses(receipt.status).filter((value) =>
-    value !== "waiting_on_resident" && value !== "outcome_recorded");
+  const remaining = nextFeedbackStatuses(receipt.status).filter(
+    (value) => value !== "waiting_on_resident" && value !== "outcome_recorded",
+  );
   if (!remaining.length) return actions;
-  const status = selectStatuses(remaining, receipt.status, "feedback.nextStatus");
+  const status = selectStatuses(
+    remaining,
+    receipt.status,
+    "feedback.nextStatus",
+  );
   const update = button(t("feedback.updateStatus"), "button-secondary", () => {
     void withPending(`detail-status-${receipt.id}`, async () => {
-      await api.changeFeedbackStatus(currentToken(), currentOrgId(), receipt.id, status.value as FeedbackStatus, "");
+      await api.changeFeedbackStatus(
+        currentToken(),
+        currentOrgId(),
+        receipt.id,
+        status.value as FeedbackStatus,
+        "",
+      );
       await refreshStaffCase(receipt.id);
       await loadEmployeeQueue();
     });
@@ -2195,8 +3074,13 @@ async function refreshStaffCase(id: string): Promise<void> {
   state.selectedFeedbackError = "";
   render();
   try {
-    const result = await api.getStaffFeedbackDetail(currentToken(), currentOrgId(), id);
-    if (state.selectedFeedbackId === id) state.selectedFeedback = result.submission;
+    const result = await api.getStaffFeedbackDetail(
+      currentToken(),
+      currentOrgId(),
+      id,
+    );
+    if (state.selectedFeedbackId === id)
+      state.selectedFeedback = result.submission;
   } catch (error) {
     state.selectedFeedbackError = formatError(error).message;
   } finally {
@@ -2250,28 +3134,47 @@ function feedbackForm(): HTMLElement {
     (value) => (state.feedbackImprovement = value),
     3,
   );
-  form.append(el("div", "feedback-panel-head",
-    el("h3", "", t("feedback.formHeading")),
-    el("p", "", t("feedback.formHint")),
-  ));
+  form.append(
+    el(
+      "div",
+      "feedback-panel-head",
+      el("h3", "", t("feedback.formHeading")),
+      el("p", "", t("feedback.formHint")),
+    ),
+  );
   form.append(message, el("div", "feedback-input-tools", voice));
   const extra = el("details", "feedback-extra");
   extra.open = Boolean(state.feedbackImprovement.trim());
-  extra.append(el("summary", "", t("feedback.addSuggestion")),
-    el("div", "feedback-extra-body", improvement));
+  extra.append(
+    el("summary", "", t("feedback.addSuggestion")),
+    el("div", "feedback-extra-body", improvement),
+  );
   form.append(extra);
   const actions = el("div", "form-actions");
-  const review = button(t("feedback.review"), "button-primary", () => void checkFeedbackBeforeReview());
-  review.disabled = state.pending === "feedback-check" || state.pending === "feedback";
+  const review = button(
+    t("feedback.review"),
+    "button-primary",
+    () => void checkFeedbackBeforeReview(),
+  );
+  review.disabled =
+    state.pending === "feedback-check" || state.pending === "feedback";
   if (state.pending === "feedback-check") review.prepend(spinner());
   actions.append(review);
-  form.append(el("div", "feedback-form-footer",
-    el("p", "", t("feedback.reviewHint")), actions));
+  form.append(
+    el(
+      "div",
+      "feedback-form-footer",
+      el("p", "", t("feedback.reviewHint")),
+      actions,
+    ),
+  );
   form.addEventListener("submit", (event) => event.preventDefault());
   return form;
 }
 
-async function startVoice(target: "feedback" | ChatMode = "feedback"): Promise<void> {
+async function startVoice(
+  target: "feedback" | ChatMode = "feedback",
+): Promise<void> {
   if (state.voiceStatus !== "idle") return;
   const serial = ++voiceStartSerial;
   state.voiceStatus = "connecting";
@@ -2292,15 +3195,24 @@ async function startVoice(target: "feedback" | ChatMode = "feedback"): Promise<v
       onMessage: ({ role, message }) => {
         if (serial !== voiceStartSerial) return;
         if (role === "user") {
-          if (/^(yes|oui)[,\s]*(please\s+)?(send|submit|envoyer|soumettre)(\s+(it|this|le|la|ça))?[.!\s]*$/i.test(message.trim())) return;
+          if (
+            /^(yes|oui)[,\s]*(please\s+)?(send|submit|envoyer|soumettre)(\s+(it|this|le|la|ça))?[.!\s]*$/i.test(
+              message.trim(),
+            )
+          )
+            return;
           if (target === "feedback") {
-            state.feedbackDraft = [state.feedbackDraft, message].filter(Boolean).join("\n");
-            const field = document.querySelector<HTMLTextAreaElement>("#feedback-message");
+            state.feedbackDraft = [state.feedbackDraft, message]
+              .filter(Boolean)
+              .join("\n");
+            const field =
+              document.querySelector<HTMLTextAreaElement>("#feedback-message");
             if (field) field.value = state.feedbackDraft;
           } else {
             const chat = state.chats[target];
             chat.draft = [chat.draft, message].filter(Boolean).join("\n");
-            const field = document.querySelector<HTMLTextAreaElement>(".chat-input");
+            const field =
+              document.querySelector<HTMLTextAreaElement>(".chat-input");
             if (field) field.value = chat.draft;
           }
         } else {
@@ -2362,7 +3274,10 @@ function finishVoiceSession(token: string): void {
   void resolveVoiceSession(token, voiceSessionTarget);
 }
 
-async function resolveVoiceSession(token: string, target: "feedback" | ChatMode): Promise<void> {
+async function resolveVoiceSession(
+  token: string,
+  target: "feedback" | ChatMode,
+): Promise<void> {
   state.voicePrompt = t("voice.checking");
   if (target !== "feedback") state.notice = state.voicePrompt;
   render();
@@ -2373,8 +3288,15 @@ async function resolveVoiceSession(token: string, target: "feedback" | ChatMode)
         await new Promise((resolve) => setTimeout(resolve, 1500));
         continue;
       }
-      if (outcome.status === "submitted" && outcome.submissionId && outcome.receiptToken) {
-        const credentials = { submissionId: outcome.submissionId, receiptToken: outcome.receiptToken };
+      if (
+        outcome.status === "submitted" &&
+        outcome.submissionId &&
+        outcome.receiptToken
+      ) {
+        const credentials = {
+          submissionId: outcome.submissionId,
+          receiptToken: outcome.receiptToken,
+        };
         const receipt = await api.getReceipt(credentials);
         state.receiptCredentials = credentials;
         state.receipt = receipt.submission;
@@ -2391,7 +3313,8 @@ async function resolveVoiceSession(token: string, target: "feedback" | ChatMode)
       } else {
         state.voicePrompt = t("voice.notSubmitted");
       }
-      if (target !== "feedback" && outcome.status !== "submitted") state.notice = state.voicePrompt;
+      if (target !== "feedback" && outcome.status !== "submitted")
+        state.notice = state.voicePrompt;
       render();
       return;
     }
@@ -2419,7 +3342,9 @@ function feedbackReview(): HTMLElement {
     match.append(
       el("h4", "", t("feedback.duplicateTitle")),
       el("p", "", t("feedback.duplicateExplanation")),
-      el("div", "feedback-duplicate-status",
+      el(
+        "div",
+        "feedback-duplicate-status",
         el("span", "", t("feedback.duplicateStatus")),
         statusPill(state.feedbackDuplicate.status),
       ),
@@ -2458,13 +3383,19 @@ function feedbackReview(): HTMLElement {
     }),
   );
   const send = button(
-    t(state.feedbackDuplicate ? "feedback.submitSeparate" : "feedback.sendToSample"),
+    t(
+      state.feedbackDuplicate
+        ? "feedback.submitSeparate"
+        : "feedback.sendToSample",
+    ),
     "button-primary",
     () => void submitFeedback(),
   );
   send.dataset.sendFeedback = "true";
   function updateSend(): void {
-    send.disabled = !state.sandboxAcknowledged || state.pending === "feedback" ||
+    send.disabled =
+      !state.sandboxAcknowledged ||
+      state.pending === "feedback" ||
       Boolean(state.feedbackDuplicate && !state.feedbackDuplicateOverride);
   }
   updateSend();
@@ -2656,52 +3587,79 @@ function applicationForm(postingId: string): HTMLElement {
 function employeePage(): HTMLElement {
   const main = el("section", "employee-content");
   const auth = webAuth.snapshot();
-  if (!currentToken() || (auth.status === "authenticated" && auth.mode !== "employee")) {
+  if (
+    !currentToken() ||
+    (auth.status === "authenticated" && auth.mode !== "employee")
+  ) {
     main.append(signInPrompt());
     return main;
   }
   if (state.employeePage === "assistant") {
     main.append(chatPage("employee"));
   } else if (!staffSummary) {
-    if (staffSummaryError) main.append(
-      alertBox(staffSummaryError, ""),
-      button(t("common.refresh"), "button-secondary", () => {
-        staffSummaryFor = "";
-        staffSummaryError = "";
+    if (staffSummaryError)
+      main.append(
+        alertBox(staffSummaryError, ""),
+        button(t("common.refresh"), "button-secondary", () => {
+          staffSummaryFor = "";
+          staffSummaryError = "";
+          render();
+        }),
+      );
+    else main.append(loadingState());
+  } else if (
+    state.staffView === "issues" &&
+    !staffSummary.capabilities.feedbackRead
+  ) {
+    main.append(
+      alertBox(
+        state.locale === "fr"
+          ? "Accès indisponible pour ce compte."
+          : "This account cannot open this workspace.",
+        "",
+      ),
+    );
+  } else if (state.selectedFeedbackId) {
+    main.append(
+      button(t("feedback.backToInbox"), "button-quiet", () => {
+        state.selectedFeedbackId = "";
+        state.selectedFeedback = null;
         render();
       }),
     );
-    else main.append(loadingState());
-  } else if (state.staffView === "issues" && !staffSummary.capabilities.feedbackRead) {
-    main.append(alertBox(state.locale === "fr" ? "Accès indisponible pour ce compte." : "This account cannot open this workspace.", ""));
-  } else if (state.selectedFeedbackId) {
-    main.append(button(t("feedback.backToInbox"), "button-quiet", () => {
-      state.selectedFeedbackId = "";
-      state.selectedFeedback = null;
-      render();
-    }));
     if (state.selectedFeedbackLoading) main.append(loadingState());
-    else if (state.selectedFeedbackError) main.append(alertBox(state.selectedFeedbackError, ""));
-    else if (state.selectedFeedback) main.append(feedbackCaseDetail(state.selectedFeedback, "staff"));
+    else if (state.selectedFeedbackError)
+      main.append(alertBox(state.selectedFeedbackError, ""));
+    else if (state.selectedFeedback)
+      main.append(feedbackCaseDetail(state.selectedFeedback, "staff"));
   } else if (state.staffView === "issues") {
     if (state.employeeLoading) main.append(loadingState());
     else if (state.feedbackQueueLoadedFor !== currentToken()) {
-      main.append(button(t("common.refresh"), "button-secondary", () => void loadEmployeeQueue()));
-    } else if (state.feedbackQueue.length === 0) main.append(emptyState(t("feedback.noFeedback")));
+      main.append(
+        button(
+          t("common.refresh"),
+          "button-secondary",
+          () => void loadEmployeeQueue(),
+        ),
+      );
+    } else if (state.feedbackQueue.length === 0)
+      main.append(emptyState(t("feedback.noFeedback")));
     else main.append(feedbackQueueList());
   } else {
-    main.append(staffWorkspace({
-      view: state.staffView,
-      token: currentToken(),
-      organizationId: currentOrgId(),
-      locale: state.locale,
-      summary: staffSummary,
-      onOpenFeedback: (id) => {
-        state.selectedFeedbackId = id;
-        state.selectedFeedback = null;
-        void refreshStaffCase(id);
-      },
-    }));
+    main.append(
+      staffWorkspace({
+        view: state.staffView,
+        token: currentToken(),
+        organizationId: currentOrgId(),
+        locale: state.locale,
+        summary: staffSummary,
+        onOpenFeedback: (id) => {
+          state.selectedFeedbackId = id;
+          state.selectedFeedback = null;
+          void refreshStaffCase(id);
+        },
+      }),
+    );
   }
   return main;
 }
@@ -2741,7 +3699,9 @@ function feedbackQueueList(): HTMLElement {
       void refreshStaffCase(item.id);
     });
     row.replaceChildren(
-      el("span", "case-list-copy",
+      el(
+        "span",
+        "case-list-copy",
         el("strong", "", item.originalText),
         el("small", "", item.departmentName ?? t("feedback.department")),
       ),
@@ -2808,12 +3768,24 @@ function signInPrompt(): HTMLElement {
   const prompt = el("div", "sign-in-prompt");
   prompt.append(el("p", "", t("auth.signInRequired")));
   const auth = webAuth.snapshot();
-  if (auth.status === "guest" || (state.page === "employee" && auth.status === "authenticated" && auth.mode !== "employee")) {
-    prompt.append(button(t(state.page === "employee" ? "auth.staffSignIn" : "auth.signIn"), "button-primary", () => {
-      openSignIn(state.page === "employee" ? "staff" : "profile");
-    }));
+  if (
+    auth.status === "guest" ||
+    (state.page === "employee" &&
+      auth.status === "authenticated" &&
+      auth.mode !== "employee")
+  ) {
+    prompt.append(
+      button(
+        t(state.page === "employee" ? "auth.staffSignIn" : "auth.signIn"),
+        "button-primary",
+        () => {
+          openSignIn(state.page === "employee" ? "staff" : "profile");
+        },
+      ),
+    );
   }
-  if (webAuth.snapshot().error) prompt.append(alertBox(webAuth.snapshot().error!, ""));
+  if (webAuth.snapshot().error)
+    prompt.append(alertBox(webAuth.snapshot().error!, ""));
   return prompt;
 }
 
@@ -2841,7 +3813,10 @@ function textArea(
   area.placeholder = placeholder;
   area.value = value;
   area.addEventListener("input", () => onInput(area.value));
-  return uiField(label, area, { className: "field", captionClassName: "field-caption" });
+  return uiField(label, area, {
+    className: "field",
+    captionClassName: "field-caption",
+  });
 }
 
 function selectStatuses(
@@ -2862,7 +3837,9 @@ function selectStatuses(
 }
 
 function statusPill(status: string): HTMLElement {
-  return uiStatus(statusName(status), { className: `status-pill status-${status}` });
+  return uiStatus(statusName(status), {
+    className: `status-pill status-${status}`,
+  });
 }
 
 function option(
@@ -2882,7 +3859,9 @@ function button(
   className: string,
   action: () => void,
 ): HTMLButtonElement {
-  const variant = className.match(/(?:^|\s)button-(primary|secondary|quiet|link)(?:\s|$)/)?.[1] as ButtonVariant | undefined;
+  const variant = className.match(
+    /(?:^|\s)button-(primary|secondary|quiet|link)(?:\s|$)/,
+  )?.[1] as ButtonVariant | undefined;
   if (variant && label) return uiButton(label, action, { variant, className });
   const result = el("button", className, label) as HTMLButtonElement;
   result.type = "button";
@@ -2929,17 +3908,38 @@ function alertBox(
 
 function iconNode(kind: string): HTMLElement {
   const icons: Record<string, string> = {
-    activity: Activity, "arrow-up": ArrowUp, briefcase: BriefcaseBusiness,
-    building: Building2, chart: ChartNoAxesColumn, "chevron-down": ChevronDown,
+    activity: Activity,
+    "arrow-up": ArrowUp,
+    briefcase: BriefcaseBusiness,
+    building: Building2,
+    chart: ChartNoAxesColumn,
+    "chevron-down": ChevronDown,
     "chevron-right": ChevronRight,
-    chat: MessageSquare, feedback: FileText,
-    files: BookOpen, inbox: Inbox, login: LogIn, logout: LogOut,
-    map: MapPin, menu: Menu, mic: Mic, panel: PanelLeftClose,
-    plus: Plus, plugins: Blocks, search: Search, tags: Tags,
-    taxonomy: ListTree, user: UserRound, users: Users,
-    bookmark: Bookmark, clipboard: ClipboardList, funding: Coins,
-    support: HeartHandshake, landmark: Landmark, participation: MessagesSquare,
-    dashboard: LayoutDashboard, check: Check,
+    chat: MessageSquare,
+    feedback: FileText,
+    files: BookOpen,
+    inbox: Inbox,
+    login: LogIn,
+    logout: LogOut,
+    map: MapPin,
+    menu: Menu,
+    mic: Mic,
+    panel: PanelLeftClose,
+    plus: Plus,
+    plugins: Blocks,
+    search: Search,
+    tags: Tags,
+    taxonomy: ListTree,
+    user: UserRound,
+    users: Users,
+    bookmark: Bookmark,
+    clipboard: ClipboardList,
+    funding: Coins,
+    support: HeartHandshake,
+    landmark: Landmark,
+    participation: MessagesSquare,
+    dashboard: LayoutDashboard,
+    check: Check,
   };
   const wrapper = el("span", "nav-icon");
   wrapper.innerHTML = icons[kind] ?? Activity;
@@ -2960,13 +3960,30 @@ function el<K extends keyof HTMLElementTagNameMap>(
 }
 
 function pageTitle(): string {
+  if (state.page === "not-found") return t("app.pageNotFound");
   if (state.page === "assistant") return t("nav.assistant");
   if (state.page === "signin") return t("auth.signIn");
   if (state.page === "feedback") return t("feedback.title");
-  if (state.page === "applications") return t(state.applicationView === "browse" ? "application.findRole" : "sidebar.myApplications");
-  if (state.page === "discovery") return t(`sidebar.${state.discoveryArea === "all" ? "explore" : state.discoveryArea}` as MessageKey);
-  if (state.page === "programs") return t(state.programView === "discover" ? "sidebar.programs" : state.programView === "mine" ? "sidebar.programRequests" : "sidebar.programSponsor");
-  if (state.page === "external-preparation") return t("sidebar.externalPreparation");
+  if (state.page === "applications")
+    return t(
+      state.applicationView === "browse"
+        ? "application.findRole"
+        : "sidebar.myApplications",
+    );
+  if (state.page === "discovery")
+    return t(
+      `sidebar.${state.discoveryArea === "all" ? "explore" : state.discoveryArea}` as MessageKey,
+    );
+  if (state.page === "programs")
+    return t(
+      state.programView === "discover"
+        ? "sidebar.programs"
+        : state.programView === "mine"
+          ? "sidebar.programRequests"
+          : "sidebar.programSponsor",
+    );
+  if (state.page === "external-preparation")
+    return t("sidebar.externalPreparation");
   if (state.page === "profile") return t("sidebar.profile");
   return t("nav.employee");
 }
@@ -2992,10 +4009,16 @@ async function ensureStaffSummary(): Promise<void> {
     const summary = await loadStaffWorkspaceSummary(token, organizationId);
     if (staffSummaryFor !== identity) return;
     staffSummary = summary;
-    if (state.employeePage === "assistant" && summary.settings.defaultView !== "assistant" && staffViewIsAllowed(summary.settings.defaultView as StaffView, summary)) {
+    if (
+      staffDefaultRequested &&
+      state.employeePage === "assistant" &&
+      summary.settings.defaultView !== "assistant" &&
+      staffViewIsAllowed(summary.settings.defaultView as StaffView, summary)
+    ) {
       state.employeePage = "feedback";
       state.staffView = summary.settings.defaultView as StaffView;
     }
+    staffDefaultRequested = false;
     if (!staffViewIsAllowed(state.staffView, summary)) {
       state.staffView = firstStaffView(summary);
       state.selectedFeedbackId = "";
@@ -3003,22 +4026,41 @@ async function ensureStaffSummary(): Promise<void> {
     }
   } catch (error) {
     if (staffSummaryFor !== identity) return;
-    const status = error instanceof Error && "status" in error ? error.status : null;
-    staffSummaryError = status === 401
-      ? (state.locale === "fr" ? "Connectez-vous pour continuer." : "Sign in to continue.")
-      : status === 403
-        ? (state.locale === "fr" ? "Ce compte n’a pas accès à cet espace." : "This account cannot access this workspace.")
-        : error instanceof Error ? error.message : (state.locale === "fr" ? "Espace indisponible." : "Workspace unavailable.");
+    const status =
+      error instanceof Error && "status" in error ? error.status : null;
+    staffSummaryError =
+      status === 401
+        ? state.locale === "fr"
+          ? "Connectez-vous pour continuer."
+          : "Sign in to continue."
+        : status === 403
+          ? state.locale === "fr"
+            ? "Ce compte n’a pas accès à cet espace."
+            : "This account cannot access this workspace."
+          : error instanceof Error
+            ? error.message
+            : state.locale === "fr"
+              ? "Espace indisponible."
+              : "Workspace unavailable.";
   }
   if (state.page === "employee") render();
 }
 
-function staffViewIsAllowed(view: StaffView, summary: StaffWorkspaceSummary): boolean {
-  return view === "issues" ? summary.capabilities.feedbackRead : viewAllowed(view, summary.capabilities);
+function staffViewIsAllowed(
+  view: StaffView,
+  summary: StaffWorkspaceSummary,
+): boolean {
+  return view === "issues"
+    ? summary.capabilities.feedbackRead
+    : viewAllowed(view, summary.capabilities);
 }
 
 function firstStaffView(summary: StaffWorkspaceSummary): StaffView {
-  return (["overview", "hiring", "applicants", "taxonomy", "audit"] as const).find((view) => viewAllowed(view, summary.capabilities)) ?? "overview";
+  return (
+    (["overview", "hiring", "applicants", "taxonomy", "audit"] as const).find(
+      (view) => viewAllowed(view, summary.capabilities),
+    ) ?? "overview"
+  );
 }
 
 function t(
@@ -3256,9 +4298,13 @@ async function reopenResidentCase(message: string): Promise<void> {
   state.receiptError = "";
   render();
   try {
-    state.receipt = await reopenResidentFeedback(state.receiptCredentials, message);
+    state.receipt = await reopenResidentFeedback(
+      state.receiptCredentials,
+      message,
+    );
   } catch (error) {
-    state.receiptError = error instanceof Error ? error.message : t("error.generic");
+    state.receiptError =
+      error instanceof Error ? error.message : t("error.generic");
   } finally {
     state.pending = "";
     render();
@@ -3351,17 +4397,11 @@ async function loadEmployeeQueue(): Promise<void> {
   render();
   try {
     if (state.employeePage === "feedback") {
-      const response = await api.getStaffFeedback(
-        token,
-        currentOrgId(),
-      );
+      const response = await api.getStaffFeedback(token, currentOrgId());
       state.feedbackQueue = response.submissions;
       state.feedbackQueueLoadedFor = token;
     } else {
-      const response = await api.getStaffApplications(
-        token,
-        currentOrgId(),
-      );
+      const response = await api.getStaffApplications(token, currentOrgId());
       state.applicationQueue = response.applications;
       state.applicationQueueLoadedFor = token;
     }

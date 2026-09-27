@@ -192,7 +192,7 @@ importers:
     devDependencies:
       '@remotion/cli':
         specifier: 4.0.400
-        version: 4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)
+        version: 4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/react':
         specifier: 18.3.20
         version: 18.3.20
@@ -226,6 +226,9 @@ importers:
       '@elevenlabs/client':
         specifier: ^1.25.0
         version: 1.25.0(@types/dom-mediacapture-record@1.0.22)
+      '@tanstack/router-core':
+        specifier: 1.170.0
+        version: 1.170.0
       lucide-static:
         specifier: 0.468.0
         version: 0.468.0
@@ -1629,6 +1632,14 @@ packages:
   '@speed-highlight/core@1.2.24':
     resolution: {integrity: sha512-qeW2e1l78afw8VhRPfPQ1Gjj+KU5XFQ/OFV5ti6eTa9bruO7mJyZtA4vw0ofqmA3tKCkROE9xLk3VZoeRc98nw==}
 
+  '@tanstack/history@1.162.0':
+    resolution: {integrity: sha512-79pf/RkhteYZTRgcR4F9kbk84P2N8rugQJswxfIqovlbRiT3yI7eBE+5QorIrZaOKktsgzRlXh1l/du/xpl4iA==}
+    engines: {node: '>=20.19'}
+
+  '@tanstack/router-core@1.170.0':
+    resolution: {integrity: sha512-NzSqZtPDshtFoDyXK6jZJNTF1s3l7TsMyqzyxlv/iGm+w2g5HITcqdgR02AgmqqtqoftvyU0V4VNcEfb3FMsrQ==}
+    engines: {node: '>=20.19'}
+
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
@@ -1839,6 +1850,9 @@ packages:
 
   commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
+
+  cookie-es@3.1.1:
+    resolution: {integrity: sha512-UaXxwISYJPTr9hwQxMFYZ7kNhSXboMXP+Z3TRX6f1/NyaGPfuNUZOWP1pUEb75B2HjfklIYLVRfWiFZJyC6Npg==}
 
   cookie@1.1.1:
     resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
@@ -2338,6 +2352,16 @@ packages:
     resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
     engines: {node: '>=10'}
     hasBin: true
+
+  seroval-plugins@1.6.7:
+    resolution: {integrity: sha512-4Nk35ttD3DTDJW4hgw5StsVAPeU6qnDFnULAouw6tQ7oLTV/ICXrWpsXo2EE52eSP2joUMazbVf52mFEcADqRw==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      seroval: ^1.0
+
+  seroval@1.6.7:
+    resolution: {integrity: sha512-AeDcLh0yO2SFm9W71essgnSzLV9DI8ZH0x0knXn2DMnUZj728mpLbxjlbB6IqKCmqh8JA3cEqRyGoNkt584JcQ==}
+    engines: {node: '>=10'}
 
   sharp@0.34.5:
     resolution: {integrity: sha512-Ou9I5Ft9WNcCbXrU9cMgPBcCK8LiwLqcbywW3t4oDV37n1pzpuNLsYiAV8eODnjbtQlSDwZ2cUEeQz4E54Hltg==}
@@ -3405,10 +3429,10 @@ snapshots:
 
   '@poppinss/exception@1.2.3': {}
 
-  '@remotion/bundler@4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)':
+  '@remotion/bundler@4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@remotion/media-parser': 4.0.400
-      '@remotion/studio': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)
+      '@remotion/studio': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@remotion/studio-shared': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       css-loader: 5.2.7(webpack@5.96.1(esbuild@0.25.0)(postcss@8.5.28))
       esbuild: 0.25.0
@@ -3436,14 +3460,14 @@ snapshots:
       - utf-8-validate
       - webpack-cli
 
-  '@remotion/cli@4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)':
+  '@remotion/cli@4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@remotion/bundler': 4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)
+      '@remotion/bundler': 4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@remotion/media-utils': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@remotion/player': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@remotion/renderer': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)
-      '@remotion/studio': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)
-      '@remotion/studio-server': 4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)
+      '@remotion/renderer': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@remotion/studio': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@remotion/studio-server': 4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@remotion/studio-shared': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       dotenv: 9.0.2
       minimist: 1.2.6
@@ -3508,12 +3532,12 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       remotion: 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
-  '@remotion/renderer@4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)':
+  '@remotion/renderer@4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@remotion/licensing': 4.0.400
       '@remotion/streaming': 4.0.400
       execa: 5.1.1
-      extract-zip: 2.0.1(supports-color@10.2.2)
+      extract-zip: 2.0.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       remotion: 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3534,11 +3558,11 @@ snapshots:
 
   '@remotion/streaming@4.0.400': {}
 
-  '@remotion/studio-server@4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)':
+  '@remotion/studio-server@4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/parser': 7.24.1
-      '@remotion/bundler': 4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)
-      '@remotion/renderer': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)
+      '@remotion/bundler': 4.0.400(postcss@8.5.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@remotion/renderer': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@remotion/studio-shared': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       memfs: 3.4.3
       open: 8.4.2
@@ -3572,11 +3596,11 @@ snapshots:
       - react
       - react-dom
 
-  '@remotion/studio@4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)':
+  '@remotion/studio@4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@remotion/media-utils': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@remotion/player': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@remotion/renderer': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@10.2.2)
+      '@remotion/renderer': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@remotion/studio-shared': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@remotion/web-renderer': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@remotion/zod-types': 4.0.400(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.22.3)
@@ -3692,6 +3716,15 @@ snapshots:
   '@sindresorhus/is@7.2.0': {}
 
   '@speed-highlight/core@1.2.24': {}
+
+  '@tanstack/history@1.162.0': {}
+
+  '@tanstack/router-core@1.170.0':
+    dependencies:
+      '@tanstack/history': 1.162.0
+      cookie-es: 3.1.1
+      seroval: 1.6.7
+      seroval-plugins: 1.6.7(seroval@1.6.7)
 
   '@types/chai@5.2.3':
     dependencies:
@@ -3943,6 +3976,8 @@ snapshots:
 
   commander@2.20.3: {}
 
+  cookie-es@3.1.1: {}
+
   cookie@1.1.1: {}
 
   cross-spawn@7.0.6:
@@ -4156,7 +4191,7 @@ snapshots:
 
   expect-type@1.4.0: {}
 
-  extract-zip@2.0.1(supports-color@10.2.2):
+  extract-zip@2.0.1:
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       get-stream: 5.2.0
@@ -4514,6 +4549,12 @@ snapshots:
       lru-cache: 6.0.0
 
   semver@7.8.5: {}
+
+  seroval-plugins@1.6.7(seroval@1.6.7):
+    dependencies:
+      seroval: 1.6.7
+
+  seroval@1.6.7: {}
 
   sharp@0.34.5:
     dependencies:
