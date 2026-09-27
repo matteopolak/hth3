@@ -1,0 +1,190 @@
+{
+  "version": "2026-09-26",
+  "checkedAt": "2026-09-27T01:35:00.000Z",
+  "expiresAt": "2026-10-04T01:35:00.000Z",
+  "reviewMethod": "Direct official publisher program pages reviewed for links and brief original descriptions. Status and deadline are included only where the cited page supports them.",
+  "records": [
+    {
+      "id": "canada-graduate-research-scholarship-masters",
+      "category": "funding",
+      "title": "Canada Graduate Research Scholarship – Master’s",
+      "summary": "Research master's scholarship worth $27,000 for 12 months. Apply through an eligible Canadian university using the Research Portal; the published deadline is December 1 before 8 p.m. Eastern.",
+      "url": "https://nserc-crsng.canada.ca/en/funding-opportunity/canada-graduate-research-scholarship-masters-program",
+      "publisher": "Natural Sciences and Engineering Research Council of Canada",
+      "jurisdiction": { "level": "federal", "code": "CA", "name": "Canada" },
+      "termsUrl": "https://www.canada.ca/en/transparency/terms.html",
+      "termsReview": "Link and independently written summary only; confirm NSERC-specific content rights before any reproduction.",
+      "applicationStatus": "open",
+      "closingDate": "2026-12-01",
+      "statusEvidence": "Official opportunity page labels the program Open and gives the December 1 deadline."
+    },
+    {
+      "id": "canada-graduate-research-scholarship-doctoral",
+      "category": "funding",
+      "title": "Canada Graduate Research Scholarship – Doctoral",
+      "summary": "Doctoral research scholarship worth $40,000 per year for 36 months. Application routes depend on enrolment; institutional deadlines can precede the agency's October 17 deadline.",
+      "url": "https://nserc-crsng.canada.ca/en/funding-opportunity/canada-graduate-research-scholarship-doctoral-program",
+      "publisher": "Natural Sciences and Engineering Research Council of Canada",
+      "jurisdiction": { "level": "federal", "code": "CA", "name": "Canada" },
+      "termsUrl": "https://www.canada.ca/en/transparency/terms.html",
+      "termsReview": "Link and independently written summary only; confirm NSERC-specific content rights before any reproduction.",
+      "applicationStatus": "unknown",
+      "closingDate": null,
+      "statusEvidence": "Official page lists an agency deadline but no single current status or institution-wide closing date."
+    },
+    {
+      "id": "bc-access-grant-part-time",
+      "category": "funding",
+      "title": "B.C. Access Grant (Part-Time)",
+      "summary": "Needs-based grant of up to $1,000 a year for qualifying part-time undergraduate study at a B.C. public institution. Assessment happens with the part-time student-aid application.",
+      "url": "https://studentaidbc.ca/explore/grants-scholarships/bc-access-grant-part-time",
+      "publisher": "StudentAid BC",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-BC",
+        "name": "British Columbia"
+      },
+      "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
+      "termsReview": "Link and independently written summary only; no B.C. page text reproduced.",
+      "applicationStatus": "unknown",
+      "closingDate": null,
+      "statusEvidence": "Official page says the grant is assessed automatically with student aid and gives no standalone intake deadline."
+    },
+    {
+      "id": "bc-provincial-tuition-waiver",
+      "category": "funding",
+      "title": "B.C. Provincial Tuition Waiver Program",
+      "summary": "May waive domestic tuition and eligible fees for current and former youth in care taking eligible study below graduate level. First-time applicants submit through an eligible school's financial aid office.",
+      "url": "https://studentaidbc.ca/explore/grants-scholarships/provincial-tuition-waiver-program",
+      "publisher": "StudentAid BC",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-BC",
+        "name": "British Columbia"
+      },
+      "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
+      "termsReview": "Link and independently written summary only; no B.C. page text reproduced.",
+      "applicationStatus": "unknown",
+      "closingDate": null,
+      "statusEvidence": "Official page gives an application route without a current universal intake deadline."
+    },
+    {
+      "id": "bc-learning-for-future-grant",
+      "category": "funding",
+      "title": "B.C. Learning for Future Grant",
+      "summary": "Annual $3,500 grant toward education costs for eligible Provincial Tuition Waiver Program students in qualifying study below graduate level. First-time applicants apply through their institution.",
+      "url": "https://studentaidbc.ca/explore/grants-scholarships/learning-future-grant",
+      "publisher": "StudentAid BC",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-BC",
+        "name": "British Columbia"
+      },
+      "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
+      "termsReview": "Link and independently written summary only; no B.C. page text reproduced.",
+      "applicationStatus": "unknown",
+      "closingDate": null,
+      "statusEvidence": "Official page gives program-year and annual declaration rules but no universal closing date."
+    },
+    {
+      "id": "bc-supplemental-bursary-disability",
+      "category": "funding",
+      "title": "B.C. Supplemental Bursary for Students with Disabilities",
+      "summary": "Non-repayable bursary for qualifying students with disabilities at B.C. public post-secondary schools. The amount depends on course load and federal disability-grant qualification.",
+      "url": "https://studentaidbc.ca/explore/grants-scholarships/bc-supplemental-bursary-students-disabilities",
+      "publisher": "StudentAid BC",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-BC",
+        "name": "British Columbia"
+      },
+      "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
+      "termsReview": "Link and independently written summary only; no B.C. page text reproduced.",
+      "applicationStatus": "unknown",
+      "closingDate": null,
+      "statusEvidence": "Official page refers applicants to the disability-funding process and gives no award closing date."
+    },
+    {
+      "id": "bc-delivered-canada-student-grant-disabilities",
+      "category": "funding",
+      "title": "Canada Student Grant for Students with Disabilities",
+      "summary": "Federal grant for qualifying full- or part-time students with a permanent or persistent disability. This B.C. delivery page gives the local disability-funding application route.",
+      "url": "https://studentaidbc.ca/explore/grants-scholarships/canada-student-grant-students-disabilities",
+      "publisher": "StudentAid BC",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-BC",
+        "name": "British Columbia"
+      },
+      "termsUrl": "https://www2.gov.bc.ca/gov/content/home/copyright",
+      "termsReview": "Link and independently written summary only; no B.C. page text reproduced.",
+      "applicationStatus": "unknown",
+      "closingDate": null,
+      "statusEvidence": "Official B.C. program page gives the application route but no standalone closing date."
+    },
+    {
+      "id": "ontario-learn-stay-medical-education",
+      "category": "funding",
+      "title": "Ontario Learn and Stay Grant for Medical Education",
+      "summary": "Covers eligible medical education costs for Ontario residents in first-year family medicine residency who agree to practise family medicine in Ontario for at least five years. Apply through OSAP.",
+      "url": "https://www.ontario.ca/page/ontario-learn-and-stay-grant-medical-education",
+      "publisher": "Government of Ontario",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-ON",
+        "name": "Ontario"
+      },
+      "termsUrl": "https://www.ontario.ca/page/terms-use",
+      "termsReview": "Ontario welcomes linking; independently written summary only, no page text copied.",
+      "applicationStatus": "open",
+      "closingDate": null,
+      "statusEvidence": "Official page updated September 17, 2026 explicitly says applications are now open, with no closing date shown."
+    },
+    {
+      "id": "ontario-trillium-benefit",
+      "category": "support",
+      "title": "Ontario Trillium Benefit",
+      "summary": "Tax-free support for qualifying Ontario residents toward energy, sales tax, and property tax costs. Apply through the annual income-tax return and ON-BEN form.",
+      "url": "https://www.ontario.ca/page/ontario-trillium-benefit",
+      "publisher": "Government of Ontario",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-ON",
+        "name": "Ontario"
+      },
+      "termsUrl": "https://www.ontario.ca/page/terms-use",
+      "termsReview": "Ontario welcomes linking; independently written summary only, no page text copied.",
+      "applicationStatus": "unknown",
+      "closingDate": null,
+      "statusEvidence": "Official page describes annual tax filing, including late filing, not a finite program intake."
+    },
+    {
+      "id": "ontario-trillium-drug-program",
+      "category": "support",
+      "title": "Ontario Trillium Drug Program",
+      "summary": "Helps qualifying Ontario households with high prescription-drug costs relative to income. The official page links an online application and explains reimbursement timing.",
+      "url": "https://www.ontario.ca/page/get-help-high-prescription-drug-costs",
+      "publisher": "Government of Ontario",
+      "jurisdiction": {
+        "level": "provincial",
+        "code": "CA-ON",
+        "name": "Ontario"
+      },
+      "termsUrl": "https://www.ontario.ca/page/terms-use",
+      "termsReview": "Ontario welcomes linking; independently written summary only, no page text copied.",
+      "applicationStatus": "unknown",
+      "closingDate": null,
+      "statusEvidence": "September 30 on the official page applies to reimbursement for the prior program year, not a general application closing date."
+    }
+  ],
+  "existingRecords": [
+    { "id": "canada-student-grants-loans", "category": "funding" },
+    { "id": "bc-access-grant-full-time", "category": "funding" },
+    { "id": "bc-adult-upgrading-grant", "category": "funding" },
+    { "id": "ontario-learn-stay-grant", "category": "funding" },
+    { "id": "canada-apprentice-loan", "category": "support" },
+    { "id": "canada-student-loan-forgiveness", "category": "support" },
+    { "id": "ontario-better-jobs", "category": "support" },
+    { "id": "alberta-rutherford-scholarship", "category": "funding" }
+  ]
+}
