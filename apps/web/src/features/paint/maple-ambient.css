@@ -1,0 +1,120 @@
+.page-wrap.has-maple-ambient {
+  position: relative;
+  isolation: isolate;
+}
+
+.envoy-maple-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.envoy-maple-leaf {
+  position: absolute;
+  top: 0;
+  left: var(--leaf-x);
+  display: block;
+  width: var(--leaf-size);
+  height: var(--leaf-size);
+  color: var(--leaf-color);
+  opacity: 0;
+  animation: envoy-maple-fall var(--leaf-duration) linear infinite;
+  animation-delay: var(--leaf-delay);
+  will-change: transform;
+}
+
+.envoy-maple-leaf svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.envoy-maple-leaf:nth-child(1) {
+  --leaf-x: 9%;
+  --leaf-size: 22px;
+  --leaf-color: #ef7b68;
+  --leaf-duration: 33s;
+  --leaf-delay: -21s;
+  --leaf-drift: 32px;
+}
+.envoy-maple-leaf:nth-child(2) {
+  --leaf-x: 82%;
+  --leaf-size: 28px;
+  --leaf-color: #efb84c;
+  --leaf-duration: 37s;
+  --leaf-delay: -12s;
+  --leaf-drift: -43px;
+}
+.envoy-maple-leaf:nth-child(3) {
+  --leaf-x: 48%;
+  --leaf-size: 18px;
+  --leaf-color: #50ae91;
+  --leaf-duration: 41s;
+  --leaf-delay: -31s;
+  --leaf-drift: 27px;
+}
+.envoy-maple-leaf:nth-child(4) {
+  --leaf-x: 94%;
+  --leaf-size: 21px;
+  --leaf-color: #9a75d1;
+  --leaf-duration: 35s;
+  --leaf-delay: -5s;
+  --leaf-drift: -35px;
+}
+.envoy-maple-leaf:nth-child(5) {
+  --leaf-x: 27%;
+  --leaf-size: 17px;
+  --leaf-color: #4b68db;
+  --leaf-duration: 43s;
+  --leaf-delay: -38s;
+  --leaf-drift: 29px;
+}
+
+@keyframes envoy-maple-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -42px, 0) rotate(-20deg);
+  }
+  8% {
+    opacity: 0.12;
+  }
+  88% {
+    opacity: 0.12;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--leaf-drift), calc(100vh + 110px), 0)
+      rotate(32deg);
+  }
+}
+
+@media (max-width: 620px) {
+  .envoy-maple-leaf:nth-child(n + 3) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .envoy-maple-leaf {
+    animation: none;
+    opacity: 0.09;
+    transform: rotate(-14deg);
+  }
+  .envoy-maple-leaf:nth-child(1) {
+    top: 14%;
+  }
+  .envoy-maple-leaf:nth-child(2) {
+    top: 72%;
+  }
+  .envoy-maple-leaf:nth-child(3) {
+    top: 43%;
+  }
+  .envoy-maple-leaf:nth-child(4) {
+    top: 27%;
+  }
+  .envoy-maple-leaf:nth-child(5) {
+    top: 84%;
+  }
+}
