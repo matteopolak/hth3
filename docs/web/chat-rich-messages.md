@@ -6,7 +6,7 @@ Resident and employee chats render assistant Markdown, compact source attributio
 
 ## How it works
 
-`apps/web/src/features/chat-rich/` turns assistant text into Markdown DOM using Marked, escapes raw HTML, then sanitizes the generated nodes with DOMPurify's narrow tag and attribute allowlist. Links must use HTTP or HTTPS and open with `noopener noreferrer`. Tool results with source records become a collapsed `From N sources` disclosure with up to five site favicons; opening it shows every loaded source, its publisher, and practice label. Other tool results use the existing structured result renderer.
+`apps/web/src/features/chat-rich/` turns assistant text into Markdown DOM using Marked, escapes raw HTML, then sanitizes the generated nodes with DOMPurify's narrow tag and attribute allowlist. Links must use HTTP or HTTPS and open with `noopener noreferrer`. Tool results with source records become a collapsed `From N sources` disclosure with icons from up to five distinct publisher sites. Missing icons use filled publisher initials; opening the disclosure shows every loaded source, its publisher, and practice label. Other tool results use the existing structured result renderer.
 
 Typing `@` at the caret opens an accessible list of tools returned by the conversation API for that role. Choosing one creates a removable chip and stores its exact tool name separately from the draft. Up to three selected names are sent in `toolMentions` to the Worker. The saved user message also carries `[[tool:name]]` references, but the browser presents friendly labels instead of raw names. The Worker validates names against its role-filtered catalogue and decides whether a tool can run; write calls still create proposals.
 
@@ -22,4 +22,4 @@ Add friendly tool labels in `mentions.ts`; the picker description comes from the
 
 ## Dependencies
 
-The web app depends on `marked`, `dompurify`, the Worker agent conversation routes, and the existing agent result/approval renderer. Site favicons load from source publisher origins with no referrer; a letter remains visible when no icon loads.
+The web app depends on `marked`, `dompurify`, the Worker agent conversation routes, and the existing agent result/approval renderer. Site favicons load from source publisher origins with no referrer. Missing icons use publisher initials; the count still refers to all loaded source records, including multiple records from one site.

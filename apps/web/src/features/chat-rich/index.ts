@@ -106,7 +106,17 @@ export function sourceAttribution(
   );
   const favicons = element("span", "chat-rich-favicons");
   favicons.setAttribute("aria-hidden", "true");
-  for (const item of entries.slice(0, 5)) favicons.append(sourceFavicon(item));
+  const shownPublishers = new Set<string>();
+  for (const item of entries) {
+    const sourceUrl = safeHttpUrl(item.sourceUrl ?? item.evidenceUrl);
+    const publisher = sourceUrl
+      ? new URL(sourceUrl).hostname.replace(/^www\./, "")
+      : (string(item.publisher) ?? sourceTitle(item)).toLocaleLowerCase();
+    if (shownPublishers.has(publisher)) continue;
+    shownPublishers.add(publisher);
+    favicons.append(sourceFavicon(item, shownPublishers.size - 1));
+    if (shownPublishers.size === 5) break;
+  }
   summary.append(favicons);
   const chevron = element("span", "chat-rich-sources-chevron");
   chevron.setAttribute("aria-hidden", "true");
@@ -154,14 +164,19 @@ export function sourceAttribution(
   return details;
 }
 
-function sourceFavicon(item: SourceRecord): HTMLElement {
-  const itemTitle = sourceTitle(item);
+function sourceFavicon(item: SourceRecord, position: number): HTMLElement {
+  const publisher = string(item.publisher) ?? sourceTitle(item);
+  const words = publisher.match(/[\p{L}\p{N}]+/gu) ?? [];
+  const initials =
+    words.length > 1
+      ? `${words[0]?.[0] ?? ""}${words[1]?.[0] ?? ""}`
+      : (words[0]?.slice(0, 2) ?? "S");
   const fallback = element(
     "span",
     "chat-rich-favicon-fallback",
-    itemTitle.slice(0, 1).toLocaleUpperCase(),
+    initials.toLocaleUpperCase(),
   );
-  const circle = element("span", "chat-rich-favicon");
+  const circle = element("span", `chat-rich-favicon chat-rich-favicon-${position % 5}`);
   circle.append(fallback);
   if (item.origin === "sample" || item.sample === true) return circle;
   const sourceUrl = safeHttpUrl(item.sourceUrl ?? item.evidenceUrl);
@@ -171,8 +186,9 @@ function sourceFavicon(item: SourceRecord): HTMLElement {
   image.loading = "lazy";
   image.decoding = "async";
   image.referrerPolicy = "no-referrer";
-  image.src = `${new URL(sourceUrl).origin}/favicon.ico`;
+  image.addEventListener("load", () => image.classList.add("is-loaded"));
   image.addEventListener("error", () => image.remove());
+  image.src = `${new URL(sourceUrl).origin}/favicon.ico`;
   circle.append(image);
   return circle;
 }
