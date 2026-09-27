@@ -21,6 +21,11 @@ import {
   publicOpportunityTool,
   relevantToolForMessage,
 } from "./guidance.js";
+import {
+  nearbyOfficeAnswer,
+  nearbyOfficeTool,
+  unsupportedOttawaFeedbackAnswer,
+} from "./nearby-guidance.js";
 import { proposalChanges, type ProposalChange } from "./proposal-changes.js";
 import { modelDeltas } from "./stream.js";
 import {
@@ -330,9 +335,29 @@ async function sendMessage(
       await storeMessage(conversation.id, "assistant", answer, context);
     return featureJson(context, { apiVersion: API_VERSION, message: answer });
   }
+  const unsupportedOttawa =
+    conversation.mode === "resident"
+      ? unsupportedOttawaFeedbackAnswer(safeMessage, conversation.locale)
+      : undefined;
+  if (unsupportedOttawa) {
+    await storeMessage(conversation.id, "user", safeMessage, context);
+    if (!deferAssistant)
+      await storeMessage(
+        conversation.id,
+        "assistant",
+        unsupportedOttawa,
+        context,
+      );
+    return featureJson(context, {
+      apiVersion: API_VERSION,
+      message: unsupportedOttawa,
+      groundedRead: true,
+    });
+  }
   const groundedTool =
-    mentionedTools.length === 0
-      ? (currentJobPostingsTool(safeMessage) ??
+    mentionedTools.length === 0 || mentionedTools.includes("search_nearby")
+      ? (nearbyOfficeTool(safeMessage) ??
+        currentJobPostingsTool(safeMessage) ??
         publicOpportunityTool(safeMessage))
       : undefined;
   if (groundedTool) {
@@ -355,24 +380,34 @@ async function sendMessage(
         503,
       );
     const answer =
-      groundedTool.args.area === "jobs"
-        ? currentJobPostingsAnswer(
+      groundedTool.name === "search_nearby"
+        ? nearbyOfficeAnswer(
             result.data,
             conversation.locale,
-            groundedTool.args,
+            String(groundedTool.args.location),
+            /\bOntario\b/iu.test(safeMessage) ? "Ontario" : undefined,
           )
-        : publicOpportunityAnswer(
-            result.data,
-            conversation.locale,
-            groundedTool,
-          );
+        : groundedTool.args.area === "jobs"
+          ? currentJobPostingsAnswer(
+              result.data,
+              conversation.locale,
+              groundedTool.args,
+            )
+          : publicOpportunityAnswer(
+              result.data,
+              conversation.locale,
+              groundedTool,
+            );
     await storeMessage(conversation.id, "user", safeMessage, context);
     if (!deferAssistant)
       await storeMessage(conversation.id, "assistant", answer, context);
     return featureJson(context, {
       apiVersion: API_VERSION,
       message: answer,
-      ...(groundedTool.name === "list_programs" ? {} : { toolResult: result }),
+      ...(groundedTool.name === "list_programs" ||
+      groundedTool.name === "search_nearby"
+        ? {}
+        : { toolResult: result }),
       groundedRead: true,
     });
   }
