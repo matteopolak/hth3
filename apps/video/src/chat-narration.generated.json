@@ -31,11 +31,11 @@
   },
   {
     "sceneId": "nearby",
-    "text": "If you need to go in person, ask where the office is. Then open Nearby and check the place on the map before leaving.",
-    "ttsText": "If you need to go in person, ask where the office is. Then open Nearby and check the place on the map before leaving.",
+    "text": "If you need to go in person, ask where the office is. Nearby confirms the Ottawa address, and its wider map helps you explore other services.",
+    "ttsText": "If you need to go in person, ask where the office is. Nearby confirms the Ottawa address, and its wider map helps you explore other services.",
     "file": "narration-chat/nearby-01.mp3",
     "startSeconds": 0.6,
-    "durationSeconds": 6.037188,
+    "durationSeconds": 8.173424,
     "voiceId": "yFCTR9LkeDbOvtFI8axB",
     "voiceName": "asdf"
   },
