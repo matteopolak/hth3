@@ -1,5 +1,5 @@
 import type { Locale } from "@civicresolve/contracts/v1";
-import type { Map as MapLibreMap, Marker } from "maplibre-gl";
+import type { Map as MapLibreMap, Marker, Popup } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./nearby-map.css";
@@ -42,6 +42,9 @@ const copy = {
     noCoordinates: "These sources have no verified map locations.",
     list: "View list",
     marker: "Show details for",
+    cluster: "locations together. Zoom in to separate them.",
+    clusterList: "Locations in this area",
+    moreLocations: "View all locations in the list",
   },
   fr: {
     region: "Carte des lieux provenant de sources",
@@ -52,6 +55,9 @@ const copy = {
       "Ces sources n'ont aucun emplacement cartographique vérifié.",
     list: "Voir la liste",
     marker: "Afficher les détails de",
+    cluster: "lieux regroupés. Zoomez pour les séparer.",
+    clusterList: "Lieux dans cette zone",
+    moreLocations: "Voir tous les lieux dans la liste",
   },
 } as const;
 
@@ -120,6 +126,7 @@ export function createNearbyMap(options: NearbyMapOptions): NearbyMapView {
   let loadTimeout: number | undefined;
   let resizeObserver: ResizeObserver | null = null;
   let fallbackQueued = false;
+  let clusterPopup: Popup | null = null;
 
   function unavailable(message: string): void {
     if (disposed) return;
@@ -132,6 +139,8 @@ export function createNearbyMap(options: NearbyMapOptions): NearbyMapView {
     for (const marker of markers) marker.remove();
     markers = [];
     markerButtons.clear();
+    clusterPopup?.remove();
+    clusterPopup = null;
     const previous = map;
     map = null;
     previous?.remove();
@@ -157,13 +166,107 @@ export function createNearbyMap(options: NearbyMapOptions): NearbyMapView {
     return marker;
   }
 
+  function clusterElement(group: NearbyMapPoint[]): HTMLButtonElement {
+    const cluster = button(String(group.length), "nearby-map-cluster", () => {
+      if (!map) return;
+      const center = clusterCenter(group);
+      if (map.getZoom() < 15) {
+        map.easeTo({
+          center,
+          zoom: Math.min(map.getZoom() + 2, 16),
+          duration: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? 0
+            : 350,
+        });
+      } else {
+        const content = document.createElement("div");
+        content.className = "nearby-map-cluster-list";
+        const heading = document.createElement("strong");
+        heading.textContent = text.clusterList;
+        content.append(heading);
+        for (const point of group.slice(0, 12)) {
+          content.append(
+            button(point.title, "nearby-map-cluster-item", () => {
+              clusterPopup?.remove();
+              options.onSelect(point.id);
+            }),
+          );
+        }
+        if (group.length > 12)
+          content.append(
+            button(
+              text.moreLocations,
+              "nearby-map-cluster-item",
+              options.onFallback,
+            ),
+          );
+        clusterPopup?.remove();
+        clusterPopup = new maplibrePopup({
+          closeButton: true,
+          maxWidth: "260px",
+        })
+          .setLngLat(center)
+          .setDOMContent(content)
+          .addTo(map);
+        content.querySelector<HTMLButtonElement>("button")?.focus();
+      }
+    });
+    cluster.setAttribute("aria-label", `${group.length} ${text.cluster}`);
+    cluster.title = `${group.length} ${text.clusterList}`;
+    return cluster;
+  }
+
+  function clusterCenter(group: NearbyMapPoint[]): [number, number] {
+    const sum = group.reduce<[number, number]>(
+      (position, point) => [
+        position[0] + point.longitude,
+        position[1] + point.latitude,
+      ],
+      [0, 0],
+    );
+    return [sum[0] / group.length, sum[1] / group.length];
+  }
+
+  function groupedPoints(): NearbyMapPoint[][] {
+    if (!map) return [];
+    const unselected = points.filter((point) => point.id !== selectedId);
+    const pixels = unselected.map((point) =>
+      map!.project([point.longitude, point.latitude]),
+    );
+    const parents = unselected.map((_, index) => index);
+    const find = (index: number): number => {
+      while (parents[index] !== index) {
+        parents[index] = parents[parents[index]!]!;
+        index = parents[index]!;
+      }
+      return index;
+    };
+    const spacing = window.matchMedia("(pointer: coarse)").matches ? 56 : 46;
+    for (let first = 0; first < pixels.length; first++) {
+      for (let second = first + 1; second < pixels.length; second++) {
+        if (
+          Math.hypot(
+            pixels[first]!.x - pixels[second]!.x,
+            pixels[first]!.y - pixels[second]!.y,
+          ) < spacing
+        )
+          parents[find(second)] = find(first);
+      }
+    }
+    const groups = new globalThis.Map<number, NearbyMapPoint[]>();
+    for (const [index, point] of unselected.entries()) {
+      const root = find(index);
+      const group = groups.get(root) ?? [];
+      group.push(point);
+      groups.set(root, group);
+    }
+    return [...groups.values()];
+  }
+
   function updateSelection(id: string | null, pan = true): void {
     selectedId = id;
-    for (const [pointId, marker] of markerButtons) {
-      const active = pointId === id;
-      marker.classList.toggle("is-selected", active);
-      marker.setAttribute("aria-pressed", String(active));
-    }
+    renderMarkers();
     const selected = points.find((point) => point.id === id);
     if (pan && map && selected) {
       map.easeTo({
@@ -175,19 +278,45 @@ export function createNearbyMap(options: NearbyMapOptions): NearbyMapView {
     }
   }
 
-  function updateMarkers(fit = false): void {
+  function renderMarkers(): void {
     if (!map || !loaded) return;
+    clusterPopup?.remove();
+    clusterPopup = null;
     for (const marker of markers) marker.remove();
     markers = [];
     markerButtons.clear();
-    for (const point of points) {
-      const element = markerElement(point);
-      markerButtons.set(point.id, element);
-      const marker = new maplibreMarker({ element, anchor: "bottom" })
-        .setLngLat([point.longitude, point.latitude])
-        .addTo(map);
-      markers.push(marker);
+    for (const group of groupedPoints()) {
+      const point = group[0]!;
+      const element =
+        group.length === 1 ? markerElement(point) : clusterElement(group);
+      if (group.length === 1) markerButtons.set(point.id, element);
+      markers.push(
+        new maplibreMarker({ element, anchor: "center" })
+          .setLngLat(
+            group.length === 1
+              ? [point.longitude, point.latitude]
+              : clusterCenter(group),
+          )
+          .addTo(map),
+      );
     }
+    const selected = points.find((point) => point.id === selectedId);
+    if (selected) {
+      const element = markerElement(selected);
+      element.classList.add("is-selected");
+      element.setAttribute("aria-pressed", "true");
+      element.style.zIndex = "10";
+      markerButtons.set(selected.id, element);
+      markers.push(
+        new maplibreMarker({ element, anchor: "center" })
+          .setLngLat([selected.longitude, selected.latitude])
+          .addTo(map),
+      );
+    }
+  }
+
+  function updateMarkers(fit = false): void {
+    if (!map || !loaded) return;
     if (fit && points.length > 0) {
       if (points.length === 1) {
         const point = points[0]!;
@@ -209,11 +338,12 @@ export function createNearbyMap(options: NearbyMapOptions): NearbyMapView {
         map.fitBounds(bounds, { padding: 55, maxZoom: 12, duration: 0 });
       }
     }
-    updateSelection(selectedId, !fit);
+    renderMarkers();
   }
 
   // The constructor is loaded lazily; only a user opening Nearby loads MapLibre.
   let maplibreMarker: typeof Marker;
+  let maplibrePopup: typeof Popup;
   async function mount(): Promise<void> {
     if (disposed || !element.isConnected || map) return;
     if (points.length === 0) {
@@ -229,6 +359,7 @@ export function createNearbyMap(options: NearbyMapOptions): NearbyMapView {
       if (disposed || !element.isConnected) return;
       maplibre.setWorkerUrl(workerUrl);
       maplibreMarker = maplibre.Marker;
+      maplibrePopup = maplibre.Popup;
       map = new maplibre.Map({
         container: mapElement,
         style: styleUrl(),
@@ -252,6 +383,7 @@ export function createNearbyMap(options: NearbyMapOptions): NearbyMapView {
         element.classList.add("is-ready");
         updateMarkers(true);
       });
+      map.on("moveend", renderMarkers);
       map.on("error", () => {
         if (!loaded) unavailable(text.unavailable);
       });
@@ -287,6 +419,8 @@ export function createNearbyMap(options: NearbyMapOptions): NearbyMapView {
       for (const marker of markers) marker.remove();
       markers = [];
       markerButtons.clear();
+      clusterPopup?.remove();
+      clusterPopup = null;
       map?.remove();
       map = null;
     },

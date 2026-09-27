@@ -65,7 +65,9 @@
 }
 
 .nearby-map-list-button:focus-visible,
-.nearby-map-marker:focus-visible {
+.nearby-map-marker:focus-visible,
+.nearby-map-cluster:focus-visible,
+.nearby-map-cluster-item:focus-visible {
   outline: 3px solid #202020;
   outline-offset: 3px;
 }
@@ -77,8 +79,8 @@
 .nearby-map-marker {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border: 2px solid #fff;
   border-radius: 999px;
   background: #202020;
@@ -108,10 +110,62 @@
 
 .nearby-map-marker:hover,
 .nearby-map-marker.is-selected {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-width: 3px;
   box-shadow: 0 3px 12px rgb(0 0 0 / 0.3);
+}
+
+.nearby-map-cluster {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #202020;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+  color: #fff;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nearby-map-cluster:hover {
+  background: #444;
+}
+
+.nearby-map-cluster-list {
+  display: grid;
+  gap: 2px;
+  max-height: 240px;
+  overflow: auto;
+  min-width: 180px;
+}
+
+.nearby-map-cluster-list strong {
+  padding: 5px 7px;
+  font-size: 12px;
+}
+
+.nearby-map-cluster-item {
+  display: block;
+  width: 100%;
+  min-height: 34px;
+  border: 0;
+  border-radius: 5px;
+  background: #fff;
+  color: #202020;
+  padding: 7px;
+  text-align: left;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.nearby-map-cluster-item:hover {
+  background: #f2f2f2;
 }
 
 .nearby-map-view .maplibregl-control-container {
@@ -156,6 +210,15 @@
   .nearby-map-marker {
     width: 44px;
     height: 44px;
+  }
+
+  .nearby-map-cluster {
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .nearby-map-cluster-item {
+    min-height: 44px;
   }
 
   .nearby-map-view .maplibregl-ctrl-group button,
