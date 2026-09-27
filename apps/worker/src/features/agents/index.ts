@@ -17,6 +17,8 @@ import {
   currentJobPostingsAnswer,
   currentJobPostingsTool,
   isCapabilityQuestion,
+  publicOpportunityAnswer,
+  publicOpportunityTool,
   relevantToolForMessage,
 } from "./guidance.js";
 import { proposalChanges, type ProposalChange } from "./proposal-changes.js";
@@ -328,16 +330,17 @@ async function sendMessage(
       await storeMessage(conversation.id, "assistant", answer, context);
     return featureJson(context, { apiVersion: API_VERSION, message: answer });
   }
-  const vacancyTool =
+  const groundedTool =
     mentionedTools.length === 0
-      ? currentJobPostingsTool(safeMessage)
+      ? (currentJobPostingsTool(safeMessage) ??
+        publicOpportunityTool(safeMessage))
       : undefined;
-  if (vacancyTool) {
+  if (groundedTool) {
     const outcome = await callTool(
       request,
       conversation,
-      vacancyTool.name,
-      vacancyTool.args,
+      groundedTool.name,
+      groundedTool.args,
       context,
     );
     if (outcome instanceof Response) return outcome;
@@ -348,21 +351,28 @@ async function sendMessage(
       return featureError(
         context,
         "SOURCE_UNAVAILABLE",
-        "Current postings could not be checked right now.",
+        "Current information could not be checked right now.",
         503,
       );
-    const answer = currentJobPostingsAnswer(
-      result.data,
-      conversation.locale,
-      vacancyTool.args,
-    );
+    const answer =
+      groundedTool.args.area === "jobs"
+        ? currentJobPostingsAnswer(
+            result.data,
+            conversation.locale,
+            groundedTool.args,
+          )
+        : publicOpportunityAnswer(
+            result.data,
+            conversation.locale,
+            groundedTool,
+          );
     await storeMessage(conversation.id, "user", safeMessage, context);
     if (!deferAssistant)
       await storeMessage(conversation.id, "assistant", answer, context);
     return featureJson(context, {
       apiVersion: API_VERSION,
       message: answer,
-      toolResult: result,
+      ...(groundedTool.name === "list_programs" ? {} : { toolResult: result }),
       groundedRead: true,
     });
   }
@@ -1707,7 +1717,7 @@ function requestsFeedbackPreparation(message: string): boolean {
 }
 
 function claimsUnverifiedAction(message: string): boolean {
-  return /\b(?:i(?:'ve| have)?(?: now| just)?\s+(?:prepared|created|drafted|called|submitted|sent|filed|published|updated|closed|uploaded|attached)|(?:proposal card|action preview|feedback preview|report draft)\s+(?:is|has been)\s+(?:ready|displayed|prepared|created)|(?:here(?:'s| is)|below is)\s+(?:the|your|a)\s+(?:feedback\s+)?(?:report\s+)?(?:preview|draft|proposal)|(?:j['’]ai|je viens de)\s+(?:préparé|créé|rédigé|envoyé|soumis)|(?:aperçu|brouillon)\s+(?:est|a été)\s+(?:prêt|préparé|créé))/i.test(
+  return /\b(?:i(?:'ve| have)?(?: now| just)?\s+(?:prepared|created|drafted|called|submitted|sent|filed|published|updated|closed|uploaded|attached)|(?:proposal card|action preview|feedback preview|report draft|preview)\s+(?:is|has been)\s+(?:ready|displayed|prepared|created)|(?:here(?:'s| is)|below is)\s+(?:the|your|a)\s+(?:feedback\s+)?(?:report\s+)?(?:preview|draft|proposal)|(?:j['’]ai|je viens de)\s+(?:préparé|créé|rédigé|envoyé|soumis)|(?:aperçu|brouillon)\s+(?:est|a été)\s+(?:prêt|préparé|créé))/i.test(
     message,
   );
 }

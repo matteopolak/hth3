@@ -4,6 +4,8 @@ import {
   currentJobPostingsAnswer,
   currentJobPostingsTool,
   isCapabilityQuestion,
+  publicOpportunityAnswer,
+  publicOpportunityTool,
   relevantToolForMessage,
 } from "./guidance.js";
 import { prepareTool } from "./tools.js";
@@ -26,6 +28,56 @@ it("routes a specific Ottawa jobs question to bounded sourced discovery", () => 
       args: {},
     }),
   ).toEqual({ name: "list_source_records", args: {} });
+});
+
+it("grounds support, funding, and Envoy program questions in read-only APIs", () => {
+  const support = publicOpportunityTool(
+    "What official support programs in Ontario could help someone retrain for work? Show the source and how to continue.",
+  );
+  expect(support).toEqual({
+    name: "search_discovery",
+    args: { area: "support", location: "Ontario", q: "training", limit: 12 },
+  });
+  expect(prepareTool(support!.name, support!.args, "resident", null).path).toBe(
+    "/api/v1/discovery?area=support&location=Ontario&q=training&limit=12",
+  );
+  const funding = publicOpportunityTool(
+    "What student grants are available in British Columbia? Show official sources and where the application happens.",
+  );
+  expect(prepareTool(funding!.name, funding!.args, "resident", null).path).toBe(
+    "/api/v1/discovery?area=funding&location=British+Columbia&limit=12",
+  );
+  const answer = publicOpportunityAnswer(
+    {
+      items: [
+        {
+          title: "Better Jobs Ontario",
+          publisher: "Government of Ontario",
+          summary: "Explore training support.",
+          handoff: { url: "https://www.ontario.ca/page/better-jobs-ontario" },
+        },
+      ],
+    },
+    "en",
+    support!,
+  );
+  expect(answer).toContain(
+    "[Better Jobs Ontario](https://www.ontario.ca/page/better-jobs-ontario)",
+  );
+  expect(answer).toContain("continue on the publisher's site");
+  const programs = publicOpportunityTool(
+    "Which programs can I apply to through Envoy? Please distinguish practice programs from official programs.",
+  );
+  expect(
+    prepareTool(programs!.name, programs!.args, "resident", null).path,
+  ).toBe("/api/v1/programs");
+  expect(
+    publicOpportunityAnswer(
+      { programs: [{ title: "Community support intake", sample: true }] },
+      "en",
+      programs!,
+    ),
+  ).toContain("Community support intake — practice intake");
 });
 
 it("finds current City of Ottawa roles and their closing dates without a model-selected tool", () => {

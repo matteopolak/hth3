@@ -10,11 +10,138 @@ interface VacancyItem {
   listing?: { closingDate?: unknown } | null;
 }
 
+interface DiscoveryItem {
+  title?: unknown;
+  summary?: unknown;
+  publisher?: unknown;
+  handoff?: { url?: unknown } | null;
+}
+
+interface ProgramItem {
+  title?: unknown;
+  sponsor?: unknown;
+  sample?: unknown;
+  status?: unknown;
+}
+
 function markdownText(value: string): string {
   return value
     .replace(/\s+/gu, " ")
     .trim()
     .replace(/([\\`*_{}\[\]()!])/gu, "\\$1");
+}
+
+function officialLink(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      ? url.toString().replace(/[()]/gu, (char) => encodeURIComponent(char))
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function publicOpportunityTool(
+  message: string,
+): SelectedTool | undefined {
+  if (
+    /\bprograms?\b/iu.test(message) &&
+    /\b(?:through|on|in|via)\s+Envoy\b/iu.test(message) &&
+    /\b(?:apply|available|which|what|list|show)\b/iu.test(message)
+  )
+    return { name: "list_programs", args: {} };
+
+  const support = /\b(?:support|benefits?)\b/iu.test(message);
+  const funding =
+    /\b(?:funding|grants?|scholarships?|bursar(?:y|ies))\b/iu.test(message);
+  if (
+    (!support && !funding) ||
+    !/\b(?:what|which|find|show|list|search|available|official|current|où|quels?|trouver|montrer|chercher|disponibles?|officiels?)\b/iu.test(
+      message,
+    )
+  )
+    return undefined;
+
+  const area = funding ? "funding" : "support";
+  const location = /\b(?:British Columbia|Colombie-Britannique|BC)\b/iu.test(
+    message,
+  )
+    ? "British Columbia"
+    : /\bOntario\b/iu.test(message)
+      ? "Ontario"
+      : undefined;
+  const training =
+    area === "support" &&
+    /\b(?:retrain|retraining|training|train for work|formation|reconversion)\b/iu.test(
+      message,
+    );
+  return {
+    name: "search_discovery",
+    args: {
+      area,
+      ...(location ? { location } : {}),
+      ...(training ? { q: "training" } : {}),
+      limit: 12,
+    },
+  };
+}
+
+export function publicOpportunityAnswer(
+  data: unknown,
+  locale: "en" | "fr",
+  tool: SelectedTool,
+): string {
+  if (tool.name === "list_programs") {
+    const programs = (data as { programs?: ProgramItem[] } | null)?.programs;
+    if (!Array.isArray(programs) || programs.length === 0)
+      return locale === "fr"
+        ? "Aucun programme d'admission directe n'est actuellement publié dans Envoy. Les programmes officiels sont accessibles depuis les pages de leurs éditeurs."
+        : "No direct-intake programs are currently published in Envoy. Official programs continue on their publishers' sites.";
+    const lines = programs.slice(0, 12).map((item) => {
+      const title = markdownText(String(item.title ?? "Program"));
+      const sponsor = markdownText(String(item.sponsor ?? "Envoy"));
+      const practice = item.sample === true;
+      return locale === "fr"
+        ? `- ${title} — ${practice ? "admission d'exercice" : "admission publiée"} (${sponsor})`
+        : `- ${title} — ${practice ? "practice intake" : "published intake"} (${sponsor})`;
+    });
+    const intro =
+      locale === "fr"
+        ? "Voici les programmes d'admission publiés dans Envoy. Les programmes d'exercice ne sont pas des demandes gouvernementales."
+        : "These are Envoy's published intake programs. Practice intakes are not government applications.";
+    return `${intro}\n\n${lines.join("\n")}`;
+  }
+  const result = data as { items?: DiscoveryItem[]; total?: number } | null;
+  const items = Array.isArray(result?.items) ? result.items : [];
+  const area = tool.args.area === "funding" ? "funding" : "support";
+  if (items.length === 0)
+    return locale === "fr"
+      ? `Je n'ai trouvé aucune offre ${area === "funding" ? "de financement" : "d'aide"} correspondante parmi les sources publiées.`
+      : `I found no matching ${area} programs among the published sources.`;
+  const noun =
+    area === "funding"
+      ? locale === "fr"
+        ? "aides financières"
+        : "funding opportunities"
+      : locale === "fr"
+        ? "programmes d'aide"
+        : "support programs";
+  const intro =
+    locale === "fr"
+      ? `J'ai trouvé ${items.length} ${noun} provenant de sources officielles. Vérifiez l'admissibilité et poursuivez sur le site de l'éditeur.`
+      : `I found ${items.length} ${noun} from official sources. Check eligibility and continue on the publisher's site.`;
+  const lines = items.map((item) => {
+    const title = markdownText(String(item.title ?? "Program"));
+    const publisher = markdownText(String(item.publisher ?? "Official source"));
+    const summary =
+      typeof item.summary === "string" ? markdownText(item.summary) : "";
+    const url = officialLink(item.handoff?.url);
+    const linkedTitle = url ? `[${title}](${url})` : title;
+    return `- ${linkedTitle} — ${publisher}${summary ? `. ${summary}` : ""}`;
+  });
+  return `${intro}\n\n${lines.join("\n")}`;
 }
 
 /** High-confidence current job searches use verified individual listings. */
