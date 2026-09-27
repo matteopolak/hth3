@@ -2649,6 +2649,26 @@ body {
 .sidebar .nav-item:disabled .nav-icon {
   color: #626262;
 }
+
+/* Keep the navigation rail quiet; feature surfaces can retain their accents. */
+.sidebar .nav-icon,
+.sidebar .nav-item .nav-icon svg.envoy-solid-icon {
+  color: #737373;
+}
+.sidebar .nav-item:hover .nav-icon,
+.sidebar .nav-item:hover .nav-icon svg.envoy-solid-icon {
+  color: #404040;
+}
+.sidebar .nav-item.is-active .nav-icon,
+.sidebar .nav-item.is-active .nav-icon svg.envoy-solid-icon {
+  color: #526784;
+}
+.sidebar .nav-item:disabled .nav-icon,
+.sidebar .nav-item:disabled .nav-icon svg.envoy-solid-icon,
+.sidebar .nav-item[aria-disabled="true"] .nav-icon,
+.sidebar .nav-item[aria-disabled="true"] .nav-icon svg.envoy-solid-icon {
+  color: #7d7d7d;
+}
 .chat-model-option-copy small,
 .chat-model-note,
 .chat-prompt-copy small {
