@@ -121,6 +121,13 @@ describe("source curator API", () => {
     expect((await request("dev-curator")).status).toBe(200);
   });
 
+  it("keeps an explicit source refresh behind curator authorization", async () => {
+    const path = "/api/v1/staff/sources/refresh";
+    expect((await request(undefined, path, "POST")).status).toBe(401);
+    expect((await request("dev-civic-staff", path, "POST")).status).toBe(403);
+    expect((await request("dev-curator", path, "GET")).status).toBe(405);
+  });
+
   it("rejects status overrides and non-HTTPS evidence", async () => {
     const statusOverride = await request(
       "dev-curator",

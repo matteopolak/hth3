@@ -9,11 +9,12 @@ export async function ingestOfficialSources(
   database: D1Database,
   fetcher: typeof fetch = fetch,
   now = new Date(),
+  selection: "all" | "vacancies" = "all",
 ): Promise<{
   imported: number;
   failures: { sourceId: string; code: string }[];
 }> {
-  const result = await fetchOfficialRecords(fetcher, now);
+  const result = await fetchOfficialRecords(fetcher, now, selection);
   const bySource = new Map<string, OfficialIngestRecord[]>();
   for (const record of result.records) {
     const existing = bySource.get(record.sourceId) ?? [];

@@ -229,10 +229,18 @@ const worker = {
     }
   },
   scheduled(
-    _event: unknown,
+    event: { cron?: string },
     env: Env,
     context: { waitUntil(promise: Promise<unknown>): void },
   ): void {
+    // An operator can invoke this cron only in a Wrangler remote preview with
+    // --test-scheduled; production config does not register this schedule.
+    if (event.cron === "0 0 1 1 *") {
+      context.waitUntil(
+        ingestOfficialSources(env.DB, fetch, new Date(), "vacancies"),
+      );
+      return;
+    }
     context.waitUntil(deliverFeedbackOutbox(env));
     context.waitUntil(refreshOfficialSourcesWhenDue(env.DB));
   },

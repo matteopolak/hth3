@@ -7,6 +7,7 @@ import {
 } from "../../auth/identity.js";
 import { sha256Hex, stableId, type FeatureContext } from "../shared.js";
 import { featureError, featureJson } from "../shared.js";
+import { ingestOfficialSources } from "./ingest.js";
 
 const COLLECTION = "/api/v1/staff/sources";
 const SOURCE_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
@@ -115,6 +116,12 @@ export async function handleSourceCuratorRequest(
       403,
     );
 
+  if (url.pathname === `${COLLECTION}/refresh`) {
+    if (request.method !== "POST")
+      return featureError(context, "METHOD_NOT_ALLOWED", "Use POST.", 405);
+    return refreshVacancies(context, actor);
+  }
+
   if (url.pathname === COLLECTION) {
     if (request.method !== "GET")
       return featureError(context, "METHOD_NOT_ALLOWED", "Use GET.", 405);
@@ -139,6 +146,79 @@ export async function handleSourceCuratorRequest(
   if (parts.length === 3 && parts[1] === "changes" && request.method === "GET")
     return getChange(context, sourceId, parts[2]!);
   return featureError(context, "NOT_FOUND", "Source route not found.", 404);
+}
+
+/** Explicit, curator-only refresh for immediate post-deploy vacancy ingestion. */
+async function refreshVacancies(
+  context: FeatureContext,
+  actor: AuthenticatedActor,
+): Promise<Response> {
+  const now = new Date();
+  const slot = Math.floor(now.getTime() / (5 * 60_000));
+  const eventId = `source-refresh-vacancies-${slot}`;
+  const started = await context.env.DB.prepare(
+    `INSERT OR IGNORE INTO audit_events
+      (id, actor_subject, organization_id, action, entity_type,
+       entity_id, details_json, created_at)
+     VALUES (?, ?, NULL, 'source.refresh', 'source_registry',
+       'vacancies', ?, ?)`,
+  )
+    .bind(
+      eventId,
+      actor.subject,
+      JSON.stringify({ status: "started", selection: "vacancies" }),
+      now.toISOString(),
+    )
+    .run();
+  if (started.meta.changes !== 1)
+    return featureError(
+      context,
+      "REFRESH_RECENTLY_STARTED",
+      "A vacancy refresh has already started in this five-minute window.",
+      429,
+    );
+
+  try {
+    const result = await ingestOfficialSources(
+      context.env.DB,
+      fetch,
+      now,
+      "vacancies",
+    );
+    await context.env.DB.prepare(
+      "UPDATE audit_events SET details_json=? WHERE id=?",
+    )
+      .bind(
+        JSON.stringify({
+          status: "completed",
+          selection: "vacancies",
+          ...result,
+        }),
+        eventId,
+      )
+      .run();
+    return featureJson(context, {
+      apiVersion: API_VERSION,
+      selection: "vacancies",
+      ...result,
+      requestId: context.requestId,
+    });
+  } catch {
+    await context.env.DB.prepare(
+      "UPDATE audit_events SET details_json=? WHERE id=?",
+    )
+      .bind(
+        JSON.stringify({ status: "failed", selection: "vacancies" }),
+        eventId,
+      )
+      .run();
+    return featureError(
+      context,
+      "REFRESH_FAILED",
+      "The vacancy refresh did not complete.",
+      503,
+    );
+  }
 }
 
 async function listSources(context: FeatureContext): Promise<Response> {

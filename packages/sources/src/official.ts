@@ -68,15 +68,23 @@ export interface OfficialIngestResult {
 export async function fetchOfficialRecords(
   fetcher: typeof fetch = fetch,
   now = new Date(),
+  selection: "all" | "vacancies" = "all",
 ): Promise<OfficialIngestResult> {
-  const results = await Promise.all([
-    fetchFederalRecords(fetcher, now),
+  const vacancyFetches = [
     fetchFederalVacancies(fetcher, now),
-    fetchBcOfficialRecords(fetcher, now),
-    fetchOntarioOfficialRecords(fetcher, now),
     fetchProvincialVacancies(fetcher, now),
     fetchCityVacancies(fetcher, now),
-  ]);
+  ];
+  const results = await Promise.all(
+    selection === "vacancies"
+      ? vacancyFetches
+      : [
+          ...vacancyFetches,
+          fetchFederalRecords(fetcher, now),
+          fetchBcOfficialRecords(fetcher, now),
+          fetchOntarioOfficialRecords(fetcher, now),
+        ],
+  );
   return {
     records: results.flatMap((result) => result.records),
     failedSources: results.flatMap((result) => result.failedSources),
