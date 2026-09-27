@@ -17,7 +17,7 @@ const specs = {
   home: { seconds: 24, route: "/" },
   jobs: { seconds: 16, route: "/explore/jobs" },
   participation: { seconds: 12, route: "/explore/participation" },
-  sources: { seconds: 55, route: "/explore/jobs" },
+  sources: { seconds: 41, route: "/explore/jobs" },
   agent: { seconds: 50, route: "/" },
   "chat-sources": { seconds: 35, route: "/" },
   feedback: { seconds: 40, route: "/feedback" },
@@ -208,11 +208,11 @@ try {
     for (let frame = 0; frame < frameCount; frame++) {
       const started = Date.now();
       if (mode === "sources") {
-        if (frame === 8 * fps)
+        if (frame === 23 * fps)
           await act(frame, "participation", () => clickText(["Participation"]));
-        if (frame === 19 * fps)
+        if (frame === 32 * fps)
           await act(frame, "nearby", () => clickText(["Nearby"]));
-        if (frame === 29 * fps)
+        if (frame === 36 * fps)
           await act(frame, "select-map-pin", () =>
             evaluate(`(() => {
             const pin = document.querySelector('.nearby-map-marker');
@@ -220,7 +220,7 @@ try {
             pin.click(); return true;
           })()`),
           );
-        if (frame === 37 * fps)
+        if (frame === 39 * fps)
           await act(frame, "list", () => clickText(["List"]));
       }
       if (mode === "agent" || mode === "chat-sources") {

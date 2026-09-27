@@ -36,37 +36,37 @@
   },
   {
     "sceneId": "sources",
-    "text": "A nearby service record shows its publisher, address, and a link to the official site. Participation links also lead to the government publisher.",
+    "text": "Each job posting keeps its publisher, location, closing date, and original link. Residents can compare openings without losing the source.",
     "file": "narration-draft/sources-03.m4a",
     "startSeconds": 15.368572,
-    "durationSeconds": 8.919683
+    "durationSeconds": 9.215692
   },
   {
     "sceneId": "sources",
-    "text": "The job board shows the publisher, closing date, and source link for each posting. The original listing has the final details.",
+    "text": "The consultation view shows who is asking for input and when the window closes, then sends residents to the publisher to respond.",
     "file": "narration-draft/sources-04.m4a",
-    "startSeconds": 24.988255,
-    "durationSeconds": 8.080454
+    "startSeconds": 25.284264,
+    "durationSeconds": 7.465215
   },
   {
     "sceneId": "sources",
-    "text": "Before visiting, residents should confirm current hours and services with the source agency.",
+    "text": "Nearby services show locations and source links. Confirm current hours with the agency before visiting.",
     "file": "narration-draft/sources-05.m4a",
-    "startSeconds": 33.768709,
-    "durationSeconds": 5.470748
+    "startSeconds": 33.449479,
+    "durationSeconds": 6.527664
   },
   {
     "sceneId": "sources",
     "text": "The SwiftUI companion also shows nearby services on an iPhone simulator.",
     "file": "narration-draft/sources-06.m4a",
-    "startSeconds": 39.939457000000004,
+    "startSeconds": 40.677142999999994,
     "durationSeconds": 4.769297
   },
   {
     "sceneId": "sources",
     "text": "Physical-device and production API checks remain ahead for the native app.",
     "file": "narration-draft/sources-07.m4a",
-    "startSeconds": 45.408754,
+    "startSeconds": 46.14643999999999,
     "durationSeconds": 4.374558
   },
   {
