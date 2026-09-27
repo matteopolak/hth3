@@ -6,6 +6,7 @@ import type {
   SourceRecord,
   SourceRecordWithDetails,
 } from "@civicresolve/sources";
+import { effectiveListingStatus } from "@civicresolve/sources";
 import { authenticateRequest } from "../../auth/index.js";
 import { featureError, featureJson, type FeatureContext } from "../shared.js";
 
@@ -26,6 +27,9 @@ const TYPES = [
   "consultation_finder",
   "source_record",
   "sample_record",
+  "job_posting",
+  "support_program",
+  "funding_opportunity",
 ] as const;
 type DiscoveryType = (typeof TYPES)[number];
 const AUDIENCES = [
@@ -51,6 +55,11 @@ interface DetailRow {
   latitude: number | null;
   longitude: number | null;
   area: Area | null;
+  listing_category: "job" | "support" | "funding" | null;
+  posted_date: string | null;
+  closing_date: string | null;
+  location_text: string | null;
+  application_status: "open" | "closed" | "unknown" | null;
 }
 
 interface SavedRow {
@@ -145,6 +154,17 @@ async function search(url: URL, context: FeatureContext): Promise<Response> {
       400,
     );
   const location = url.searchParams.get("location")?.trim() ?? "";
+  const applicationStatus = url.searchParams.get("applicationStatus");
+  if (
+    applicationStatus &&
+    !["open", "closed", "unknown"].includes(applicationStatus)
+  )
+    return featureError(
+      context,
+      "INVALID_FILTER",
+      "Unknown application status.",
+      400,
+    );
   if (location.length > 80)
     return featureError(
       context,
@@ -178,6 +198,9 @@ async function search(url: URL, context: FeatureContext): Promise<Response> {
     return featureError(context, "INVALID_FILTER", "Invalid pagination.", 400);
 
   const includeSamples = url.searchParams.get("includeSamples") === "true";
+  const includeFinders = url.searchParams.get("includeFinders") === "true";
+  const includeClosed = url.searchParams.get("includeClosed") === "true";
+  const includeStale = url.searchParams.get("includeStale") === "true";
   const records = await listSourceRecords(context.env.DB, { includeSamples });
   const details = await loadDetails(context);
   const needle = q.toLocaleLowerCase();
@@ -185,7 +208,27 @@ async function search(url: URL, context: FeatureContext): Promise<Response> {
   const filtered = records
     .map((record) => discoveryItem(record, details.get(record.id)))
     .filter((item) => area === null || item.area === area)
+    .filter(
+      (item) =>
+        includeFinders || !isFinderArea(item.area) || item.listing !== null,
+    )
+    .filter(
+      (item) =>
+        includeStale ||
+        freshness !== null ||
+        status !== null ||
+        item.listing === null ||
+        item.verified,
+    )
+    .filter(
+      (item) => includeClosed || item.listing?.applicationStatus !== "closed",
+    )
     .filter((item) => type === null || item.type === type)
+    .filter(
+      (item) =>
+        applicationStatus === null ||
+        item.listing?.applicationStatus === applicationStatus,
+    )
     .filter((item) => audience === null || item.navigationAudience === audience)
     .filter(
       (item) =>
@@ -196,7 +239,7 @@ async function search(url: URL, context: FeatureContext): Promise<Response> {
     .filter(
       (item) =>
         !needle ||
-        `${item.title} ${item.summary} ${item.publisher} ${item.jurisdiction.name}`
+        `${item.title} ${item.summary} ${item.publisher} ${item.jurisdiction.name} ${item.listing?.locationText ?? ""}`
           .toLocaleLowerCase()
           .includes(needle),
     )
@@ -205,7 +248,7 @@ async function search(url: URL, context: FeatureContext): Promise<Response> {
         !place ||
         item.jurisdiction.code.toLocaleLowerCase() === place ||
         (place.startsWith("ca-") && item.jurisdiction.code === "CA") ||
-        `${item.title} ${item.summary} ${item.jurisdiction.name} ${item.jurisdiction.municipality?.name ?? ""}`
+        `${item.title} ${item.summary} ${item.jurisdiction.name} ${item.jurisdiction.municipality?.name ?? ""} ${item.listing?.locationText ?? ""}`
           .toLocaleLowerCase()
           .includes(place),
     )
@@ -224,6 +267,9 @@ async function search(url: URL, context: FeatureContext): Promise<Response> {
     limit,
     offset,
     samplesIncluded: includeSamples,
+    findersIncluded: includeFinders,
+    closedIncluded: includeClosed,
+    staleIncluded: includeStale,
     requestId: context.requestId,
   });
 }
@@ -420,10 +466,13 @@ async function findItem(
   const record = await getSourceRecord(context.env.DB, id, { includeSamples });
   if (!record) return null;
   const detail = await context.env.DB.prepare(
-    `SELECT d.record_id, d.kind, d.latitude, d.longitude, a.area
+    `SELECT r.id AS record_id, d.kind, d.latitude, d.longitude, a.area,
+       l.category AS listing_category, l.posted_date, l.closing_date,
+       l.location_text, l.application_status
      FROM source_records AS r
      LEFT JOIN source_record_details AS d ON d.record_id = r.id
      LEFT JOIN discovery_record_areas AS a ON a.record_id = r.id
+     LEFT JOIN source_record_listings AS l ON l.record_id = r.id
      WHERE r.id = ?`,
   )
     .bind(id)
@@ -435,10 +484,13 @@ async function loadDetails(
   context: FeatureContext,
 ): Promise<Map<string, DetailRow>> {
   const result = await context.env.DB.prepare(
-    `SELECT r.id AS record_id, d.kind, d.latitude, d.longitude, a.area
+    `SELECT r.id AS record_id, d.kind, d.latitude, d.longitude, a.area,
+       l.category AS listing_category, l.posted_date, l.closing_date,
+       l.location_text, l.application_status
      FROM source_records AS r
      LEFT JOIN source_record_details AS d ON d.record_id = r.id
-     LEFT JOIN discovery_record_areas AS a ON a.record_id = r.id`,
+     LEFT JOIN discovery_record_areas AS a ON a.record_id = r.id
+     LEFT JOIN source_record_listings AS l ON l.record_id = r.id`,
   ).all<DetailRow>();
   return new Map((result.results ?? []).map((row) => [row.record_id, row]));
 }
@@ -448,6 +500,18 @@ function discoveryItem(
   detail: DetailRow | null | undefined,
 ) {
   const area = detail?.area ?? areaForKind(detail?.kind);
+  const listing = detail?.listing_category
+    ? {
+        category: detail.listing_category,
+        postedDate: detail.posted_date,
+        closingDate: detail.closing_date,
+        locationText: detail.location_text,
+        applicationStatus: effectiveListingStatus(record, {
+          closingDate: detail.closing_date,
+          applicationStatus: detail.application_status ?? "unknown",
+        }),
+      }
+    : null;
   const coordinates =
     typeof detail?.latitude === "number" && typeof detail.longitude === "number"
       ? { latitude: detail.latitude, longitude: detail.longitude }
@@ -456,14 +520,21 @@ function discoveryItem(
     ...record,
     kind: detail?.kind ?? null,
     coordinates,
+    listing,
   };
   const type: DiscoveryType =
     record.origin === "sample"
       ? "sample_record"
-      : (detail?.kind ??
-        (record.sourceId === "federal-consultations-finder"
-          ? "consultation_finder"
-          : "source_record"));
+      : listing?.category === "job"
+        ? "job_posting"
+        : listing?.category === "support"
+          ? "support_program"
+          : listing?.category === "funding"
+            ? "funding_opportunity"
+            : (detail?.kind ??
+              (record.sourceId === "federal-consultations-finder"
+                ? "consultation_finder"
+                : "source_record"));
   const navigationAudience = audienceForArea(area);
   const handoff =
     record.origin !== "sample" &&
@@ -481,10 +552,15 @@ function discoveryItem(
     ...withDetails,
     area,
     type,
+    listing,
     navigationAudience,
     audienceBasis: "navigation_only" as const,
     handoff,
   };
+}
+
+function isFinderArea(area: Area | null): boolean {
+  return area === "jobs" || area === "support" || area === "funding";
 }
 
 function audienceForArea(area: Area | null): NavigationAudience | null {

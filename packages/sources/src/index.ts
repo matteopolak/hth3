@@ -1,4 +1,7 @@
-import type { OfficialRecordKind } from "./official.js";
+import type {
+  OfficialListingMetadata,
+  OfficialRecordKind,
+} from "./official.js";
 
 export type SourceOrigin = "official_external" | "participating_org" | "sample";
 
@@ -98,6 +101,23 @@ export interface SourceRecord {
 export interface SourceRecordWithDetails extends SourceRecord {
   kind: OfficialRecordKind | null;
   coordinates: { latitude: number; longitude: number } | null;
+  listing: OfficialListingMetadata | null;
+}
+
+/** Never keep an "open" claim after review expires or on an unknown cutoff day. */
+export function effectiveListingStatus(
+  record: Pick<SourceRecord, "verified">,
+  listing: Pick<OfficialListingMetadata, "closingDate" | "applicationStatus">,
+  now = new Date(),
+): OfficialListingMetadata["applicationStatus"] {
+  if (listing.applicationStatus === "closed") return "closed";
+  if (listing.closingDate) {
+    const today = now.toISOString().slice(0, 10);
+    if (listing.closingDate < today) return "closed";
+    if (listing.closingDate === today) return "unknown";
+  }
+  if (!record.verified) return "unknown";
+  return listing.applicationStatus;
 }
 
 export interface SourceRecordRow {
