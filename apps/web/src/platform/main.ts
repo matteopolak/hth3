@@ -342,8 +342,8 @@ function applyRoute(route: Partial<AppState>): void {
 
 const initialRoute = routeState();
 if (initialRoute) applyRoute(initialRoute);
-listenForRoutes((route) => {
-  if (window.location.pathname === "/staff") staffDefaultRequested = true;
+listenForRoutes((route, pathname) => {
+  if (pathname === "/staff") staffDefaultRequested = true;
   applyRoute(route);
   render();
   if (state.page === "employee" && currentToken()) {

@@ -18,6 +18,8 @@ Add a route to `routePaths`, then update both `routeState()` and `routePath()` i
 
 When adding a nested staff or discovery view, update the corresponding union and sidebar action. Test direct load, an in-app transition, and browser back. Check both Vite dev and the built Worker asset fallback if deployment configuration changes.
 
+TanStack history can notify subscribers before its queued `window.history.pushState` runs. The listener must parse the history event's location, and render-time synchronization must compare with `router.history.location`; reading `window.location` during that notification can restore the previous page under the new URL.
+
 ## Configuration
 
 The package is pinned as `@tanstack/router-core@1.170.0` in `apps/web/package.json` under the workspace's strict `minimumReleaseAge: 20160` pnpm policy. `apps/worker/wrangler.dev.toml` and `apps/worker/wrangler.toml` use `not_found_handling = "single-page-application"` and `run_worker_first = ["/api", "/api/*"]`. Auth0's redirect URI remains `/callback`.

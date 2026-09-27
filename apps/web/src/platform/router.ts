@@ -213,19 +213,21 @@ export function syncRoute(state: RouteState): void {
   )
     return;
   const path = routePath(state);
-  if (path && window.location.pathname !== path) {
+  // Browser history updates window.location in a microtask after notifying subscribers.
+  // Compare against TanStack's current location so a pending push is not repeated.
+  if (path && router.history.location.pathname !== path) {
     void router.navigate({
       to: path,
-      replace: window.location.pathname === "/staff",
+      replace: router.history.location.pathname === "/staff",
     });
   }
 }
 
 export function listenForRoutes(
-  onRoute: (route: Partial<RouteState>) => void,
+  onRoute: (route: Partial<RouteState>, pathname: string) => void,
 ): void {
-  router.history.subscribe(() => {
-    const route = routeState();
-    if (route) onRoute(route);
+  router.history.subscribe(({ location }) => {
+    const route = routeState(location.pathname);
+    if (route) onRoute(route, location.pathname);
   });
 }
