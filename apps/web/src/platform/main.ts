@@ -3400,7 +3400,6 @@ function feedbackForm(): HTMLElement {
       "button-secondary",
       () => void stopVoice(),
     );
-    stop.disabled = state.voiceStatus === "connecting";
     voice.append(
       stop,
       el(
@@ -3486,14 +3485,19 @@ async function startVoice(
     voiceSessionTarget = target;
     const { Conversation } = await import("@elevenlabs/client");
     if (serial !== voiceStartSerial) return;
+    const seenUserEventIds = new Set<number>();
     const session = await Conversation.startSession({
       signedUrl: signed.signedUrl,
       connectionType: "websocket",
       userId: signed.voiceSessionToken,
       dynamicVariables: { secret__envoy_voice_token: signed.voiceSessionToken },
-      onMessage: ({ role, message }) => {
+      onMessage: ({ role, message, event_id: eventId }) => {
         if (serial !== voiceStartSerial) return;
         if (role === "user") {
+          if (eventId !== undefined) {
+            if (seenUserEventIds.has(eventId)) return;
+            seenUserEventIds.add(eventId);
+          }
           if (
             /^(yes|oui)[,\s]*(please\s+)?(send|submit|envoyer|soumettre)(\s+(it|this|le|la|ça))?[.!\s]*$/i.test(
               message.trim(),
@@ -3525,7 +3529,7 @@ async function startVoice(
         state.voiceError = t("voice.unavailable");
         state.voiceStatus = "idle";
         voiceSession = null;
-        voiceSessionToken = null;
+        finishVoiceSession(signed.voiceSessionToken);
         render();
       },
       onDisconnect: () => {
