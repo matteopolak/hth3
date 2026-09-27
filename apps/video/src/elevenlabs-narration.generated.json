@@ -1,0 +1,65 @@
+[
+  {
+    "sceneId": "open",
+    "text": "Meet envoy. Find civic services, ask a question, and send feedback to Envoy’s review team from one place.",
+    "file": "narration-elevenlabs/open-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 7.012426
+  },
+  {
+    "sceneId": "sources",
+    "text": "The jobs board lists current official vacancies and closing dates. Choose a role, prepare for the official site, then open the publisher’s application page. Nearby maps seventy-eight service locations. Consultations also link to official sources.",
+    "file": "narration-elevenlabs/sources-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 15.650249
+  },
+  {
+    "sceneId": "agent",
+    "text": "Describe a local concern in plain language. The assistant can find context and prepare an editable report proposal. Nothing is sent until the resident reviews it and chooses to submit.",
+    "file": "narration-elevenlabs/agent-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 11.099138
+  },
+  {
+    "sceneId": "feedback",
+    "text": "The feedback form makes the destination clear before submission. Reports enter Envoy’s own review queue, not a government office. The resident receives a private receipt for follow-up.",
+    "file": "narration-elevenlabs/feedback-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 10.866939
+  },
+  {
+    "sceneId": "voice",
+    "text": "For voice, the Worker signs a short-lived ElevenLabs session. In a verified call, a fictional streetlight concern was transcribed and the agent asked for the nearest intersection. A report still requires resident review; web microphone handoff remains unverified.",
+    "file": "narration-elevenlabs/voice-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 16.300408
+  },
+  {
+    "sceneId": "tiger",
+    "text": "D1 retains report bodies. An outbox sends only event metadata to Tiger for trends. A read-only query on September twenty-sixth found four delivered events and four aggregated events. That is historical delivery evidence, not a live staff dashboard.",
+    "file": "narration-elevenlabs/tiger-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 17.693605
+  },
+  {
+    "sceneId": "presage",
+    "text": "The native SwiftUI app wires Presage SmartSpectra to an optional breathing check. It asks for camera consent and can offer a quieter layout. The simulator build works; a live reading still needs verification on a physical iPhone.",
+    "file": "narration-elevenlabs/presage-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 15.18585
+  },
+  {
+    "sceneId": "auth",
+    "text": "Auth0 hosts organization sign-in. The Worker validates token signature, issuer, and audience, then checks D1 membership and scopes. Staff tools can triage reports, assign them, and respond inside Envoy. Hosted login is configured; a real scoped staff action remains unverified.",
+    "file": "narration-elevenlabs/auth-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 19.783401
+  },
+  {
+    "sceneId": "closing",
+    "text": "Official sources remain linked. Feedback stays with Envoy until a participating organization is onboarded. Find the next step at envoy dot surf.",
+    "file": "narration-elevenlabs/closing-01.mp3",
+    "startSeconds": 0.6,
+    "durationSeconds": 9.705941
+  }
+]
