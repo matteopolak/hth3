@@ -2,9 +2,10 @@
   {
     "sceneId": "open",
     "text": "Meet envoy. Find civic services, ask a question, and send feedback to Envoy’s review team from one place.",
+    "ttsText": "Meet onvoy. Find civic services, ask a question, and send feedback to Onvoy’s review team from one place.",
     "file": "narration-custom/open-01.mp3",
     "startSeconds": 0.6,
-    "durationSeconds": 5.897868,
+    "durationSeconds": 5.851429,
     "voiceId": "R5rU293t7xe8dI1rhLd0",
     "voiceName": "robert"
   },
@@ -29,9 +30,10 @@
   {
     "sceneId": "feedback",
     "text": "The feedback form makes the destination clear before submission. Reports enter Envoy’s own review queue, not a government office. The resident receives a private receipt for follow-up.",
+    "ttsText": "The feedback form makes the destination clear before submission. Reports enter Onvoy’s own review queue, not a government office. The resident receives a private receipt for follow-up.",
     "file": "narration-custom/feedback-01.mp3",
     "startSeconds": 0.6,
-    "durationSeconds": 10.3561,
+    "durationSeconds": 9.98458,
     "voiceId": "yFCTR9LkeDbOvtFI8axB",
     "voiceName": "asdf"
   },
@@ -65,6 +67,7 @@
   {
     "sceneId": "auth",
     "text": "Auth0 hosts organization sign-in. The Worker validates token signature, issuer, and audience, then checks D1 membership and scopes. Staff tools can triage reports, assign them, and respond inside Envoy. Hosted login is configured; a real scoped staff action remains unverified.",
+    "ttsText": "Auth0 hosts organization sign-in. The Worker validates token signature, issuer, and audience, then checks D1 membership and scopes. Staff tools can triage reports, assign them, and respond inside Onvoy. Hosted login is configured; a real scoped staff action remains unverified.",
     "file": "narration-custom/auth-01.mp3",
     "startSeconds": 0.6,
     "durationSeconds": 21.362358,
@@ -74,9 +77,10 @@
   {
     "sceneId": "closing",
     "text": "Official sources remain linked. Feedback stays with Envoy until a participating organization is onboarded. Find the next step at envoy dot surf.",
+    "ttsText": "Official sources remain linked. Feedback stays with Onvoy until a participating organization is onboarded. Find the next step at onvoy dot surf.",
     "file": "narration-custom/closing-01.mp3",
     "startSeconds": 0.6,
-    "durationSeconds": 8.126984,
+    "durationSeconds": 7.755465,
     "voiceId": "R5rU293t7xe8dI1rhLd0",
     "voiceName": "robert"
   }

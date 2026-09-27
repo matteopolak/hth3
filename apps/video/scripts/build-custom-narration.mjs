@@ -27,18 +27,26 @@ function run(command, args) {
 }
 
 const source = JSON.parse(readFileSync(outputPath, "utf8"));
+const onlyFlag = process.argv.find((arg) => arg.startsWith("--only="));
+const selectedIds = onlyFlag
+  ? new Set(onlyFlag.slice("--only=".length).split(",").filter(Boolean))
+  : new Set(source.map((scene) => scene.sceneId));
+if ([...selectedIds].some((id) => !source.some((scene) => scene.sceneId === id))) {
+  throw new Error("Unknown scene in --only");
+}
+const selected = source.filter((scene) => selectedIds.has(scene.sceneId));
 const subscription = JSON.parse(run("elevenlabs", [
   "user", "subscription", "get", "--format", "json",
   "--query", "{character_count:character_count,character_limit:character_limit,can_extend_character_limit:can_extend_character_limit}",
 ]));
-const requiredCharacters = source.reduce((sum, scene) => sum + scene.text.length, 0);
+const requiredCharacters = selected.reduce((sum, scene) => sum + (scene.ttsText ?? scene.text).length, 0);
 if (subscription.can_extend_character_limit !== false ||
     subscription.character_limit - subscription.character_count < requiredCharacters) {
   throw new Error("Included ElevenLabs credits are insufficient or overage protection is not disabled");
 }
 mkdirSync(audioRoot, { recursive: true });
-const generated = [];
-for (const scene of source) {
+const generated = source.map((scene) => ({ ...scene }));
+for (const scene of selected) {
   const [voiceName, voiceId] = voices[scene.sceneId] ?? [];
   if (!voiceId) throw new Error(`Unknown scene: ${scene.sceneId}`);
   const file = `narration-custom/${scene.sceneId}-01.mp3`;
@@ -47,7 +55,7 @@ for (const scene of source) {
     "text-to-speech", "convert",
     "--voice-id", voiceId,
     "--model-id", "eleven_multilingual_v2",
-    "--text", scene.text,
+    "--text", scene.ttsText ?? scene.text,
     "--output-format", "mp3_44100_128",
     "--output", absoluteFile,
     "--format", "json",
@@ -59,16 +67,18 @@ for (const scene of source) {
   if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
     throw new Error(`Invalid duration for ${scene.sceneId}`);
   }
-  generated.push({
+  const updated = {
     sceneId: scene.sceneId,
     text: scene.text,
+    ...(scene.ttsText ? { ttsText: scene.ttsText } : {}),
     file,
     startSeconds: 0.6,
     durationSeconds,
     voiceId,
     voiceName,
-  });
+  };
+  generated[source.findIndex((entry) => entry.sceneId === scene.sceneId)] = updated;
   console.log(`${scene.sceneId}: ${voiceName}, ${durationSeconds.toFixed(2)}s`);
-  writeFileSync(outputPath, `${JSON.stringify(generated, null, 2)}\n`);
 }
+writeFileSync(outputPath, `${JSON.stringify(generated, null, 2)}\n`);
 console.log(`Wrote ${outputPath}`);
