@@ -268,6 +268,7 @@ const worker = {
 async function refreshOfficialSourcesWhenDue(
   database: D1Database,
 ): Promise<void> {
+  const now = Date.now();
   const state = await database
     .prepare(
       "SELECT fetched_at, updated_at, last_error FROM source_registry WHERE id = ?",
@@ -278,11 +279,46 @@ async function refreshOfficialSourcesWhenDue(
       updated_at: string;
       last_error: string | null;
     }>();
-  const lastAttempt =
-    state?.fetched_at ?? (state?.last_error ? state.updated_at : null);
+  const lastAttempt = state?.last_error ? state.updated_at : state?.fetched_at;
   const retryAfter = state?.last_error ? 15 * 60_000 : 86_400_000;
-  if (!lastAttempt || Date.now() - Date.parse(lastAttempt) >= retryAfter)
+  if (!lastAttempt || now - Date.parse(lastAttempt) >= retryAfter) {
     await ingestOfficialSources(database);
+    return;
+  }
+
+  // City vacancies expire after 12 hours; refresh them independently of the
+  // slower Service BC office cycle so public jobs remain verified.
+  const vacancySources = await database
+    .prepare(
+      `SELECT id, fetched_at, updated_at, last_error FROM source_registry
+       WHERE id IN (
+         'federal-student-specialized-inventories',
+         'bc-public-service-vacancies',
+         'city-ottawa-open-jobs',
+         'city-toronto-open-jobs'
+       )`,
+    )
+    .all<{
+      id: string;
+      fetched_at: string | null;
+      updated_at: string;
+      last_error: string | null;
+    }>();
+  const rows = vacancySources.results ?? [];
+  if (
+    rows.length < 4 ||
+    rows.some((source) => {
+      const attempt = source.last_error
+        ? source.updated_at
+        : (source.fetched_at ?? source.updated_at);
+      const interval = source.last_error ? 15 * 60_000 : 6 * 60 * 60_000;
+      return (
+        !Number.isFinite(Date.parse(attempt)) ||
+        now - Date.parse(attempt) >= interval
+      );
+    })
+  )
+    await ingestOfficialSources(database, fetch, new Date(now), "vacancies");
 }
 
 async function handleLocalOutboxSmoke(
