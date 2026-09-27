@@ -18,6 +18,7 @@ import {
   type OfficialJob,
   type Posting,
 } from "./api.js";
+import { formatSourceDateOnly } from "./dates.js";
 import "./styles.css";
 
 interface Options {
@@ -468,7 +469,7 @@ export function createPublicApplicationsPage(options: Options): HTMLElement {
       const place = listing?.locationText ?? record.jurisdiction.name;
       const facts =
         isPosting && listing
-          ? `<div class="ja-facts"><div><span>${h(text.locationLabel)}</span><strong>${h(place)}</strong></div>${listing.postedDate ? `<div><span>${h(text.posted)}</span><strong>${h(date(listing.postedDate, options.locale))}</strong></div>` : ""}${listing.closingDate ? `<div><span>${h(text.closing)}</span><strong>${h(date(listing.closingDate, options.locale))}</strong></div>` : ""}<div><span>${h(text.source)}</span><strong>${h(listing.applicationStatus === "open" ? text.statusOpen : text.statusUnknown)}</strong></div></div>`
+          ? `<div class="ja-facts"><div><span>${h(text.locationLabel)}</span><strong>${h(place)}</strong></div>${listing.postedDate ? `<div><span>${h(text.posted)}</span><strong>${h(formatSourceDateOnly(listing.postedDate, options.locale))}</strong></div>` : ""}${listing.closingDate ? `<div><span>${h(text.closing)}</span><strong>${h(formatSourceDateOnly(listing.closingDate, options.locale))}</strong></div>` : ""}<div><span>${h(text.source)}</span><strong>${h(listing.applicationStatus === "open" ? text.statusOpen : text.statusUnknown)}</strong></div></div>`
           : "";
       return `<article class="ja-detail"><div class="ja-detail-head"><h2>${h(record.title)}</h2><p class="ja-org">${h(record.publisher)} · ${h(place)}</p></div>${facts}<section class="ja-section"><h3>${h(isPosting ? text.about : text.officialFinder)}</h3><p>${h(record.summary)}</p></section><div class="ja-actions">${isPosting ? `<button class="ja-btn" data-action="prepare" data-id="${h(record.id)}">${h(text.prepare)}${icon(ArrowRight)}</button>` : ""}<a class="ja-btn primary" target="_blank" rel="noopener noreferrer" href="${h(record.handoff?.url ?? record.sourceUrl)}">${h(text.openOfficial)}${icon(ArrowUpRight)}</a></div><p class="ja-footnote">${h(isPosting ? text.officialNote : text.finderNote)}</p></article>`;
     }

@@ -10,9 +10,11 @@ Envoy's Apply for work page shows current, individually sourced public-sector va
 
 Each vacancy shows its publisher, sourced location, posting date, and closing date when provided. The primary action opens the publisher's exact job posting. The optional preparation action stores answers for an external application; it does not submit anything to the publisher. Finder links lead to a publisher search page and are labeled as job boards, not individual vacancies. Existing practice applications remain visible in the owner's private My applications history with their truthful label.
 
+Published posting and closing dates are calendar dates without a time zone. The Apply page formats them in UTC at midday, matching Jobs and preserving the publisher's date for viewers in western time zones. Application activity timestamps still use the viewer's local time zone.
+
 ## How to change it
 
-Keep the two discovery queries separate. A `jobs_finder` result must never appear as a current individual vacancy. Keep the `verified`, `freshness`, closing status, source URL, and handoff checks when changing the official result filter. Keep sample exposure explicit in the Worker API and retain the client-side filter as a defensive boundary. Add new detail facts only when the discovery API provides their provenance.
+Keep the two discovery queries separate. A `jobs_finder` result must never appear as a current individual vacancy. Keep the `verified`, `freshness`, closing status, source URL, and handoff checks when changing the official result filter. Keep sample exposure explicit in the Worker API and retain the client-side filter as a defensive boundary. Add new detail facts only when the discovery API provides their provenance. Keep date-only fields on the `formatSourceDateOnly` path; parsing them as local timestamps shifts deadlines backward in negative UTC offsets.
 
 ## Configuration
 
