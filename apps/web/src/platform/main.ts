@@ -1232,7 +1232,7 @@ function chatPage(mode: ChatMode): HTMLElement {
         ),
       );
   }
-  if (chat.pending) thread.append(loadingState());
+  if (chat.pending) thread.append(chatLoadingState());
   page.append(thread);
 
   if (chat.error) page.append(alertBox(chat.error, ""));
@@ -3901,6 +3901,19 @@ function loadingState(): HTMLElement {
     spinner(),
     el("span", "", t("common.loading")),
   );
+}
+
+function chatLoadingState(): HTMLElement {
+  const status = el("div", "chat-typing");
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-label", t("assistant.responding"));
+  const dots = el("span", "chat-typing-dots");
+  dots.setAttribute("aria-hidden", "true");
+  for (let index = 0; index < 3; index += 1) {
+    dots.append(el("span", "chat-typing-dot"));
+  }
+  status.append(el("span", "chat-author", t("app.name")), dots);
+  return status;
 }
 
 function spinner(): HTMLElement {

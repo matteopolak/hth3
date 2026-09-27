@@ -123,6 +123,7 @@ const en = {
   "assistant.modelFastDetail": "Compact display",
   "assistant.modelDisplayOnly": "Preview only. Replies use one fixed model.",
   "assistant.thinking": "Thinking",
+  "assistant.responding": "Envoy is responding",
   "assistant.thinkingDisplay": "Thinking",
   "assistant.thinkingLight": "Light",
   "assistant.thinkingStandard": "Standard",

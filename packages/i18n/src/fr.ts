@@ -131,6 +131,7 @@ const fr: Catalogue = {
   "assistant.modelDisplayOnly":
     "Aperçu seulement. Les réponses utilisent un modèle fixe.",
   "assistant.thinking": "Réflexion",
+  "assistant.responding": "Envoy prépare sa réponse",
   "assistant.thinkingDisplay": "Réflexion",
   "assistant.thinkingLight": "Léger",
   "assistant.thinkingStandard": "Standard",
