@@ -25,6 +25,8 @@ import { createPublicProgramsPage } from "../features/programs/index.js";
 import { createExternalPreparationPage } from "../features/external-preparation/index.js";
 import { createResidentFeedbackCase } from "../features/feedback/resident-case.js";
 import { reopenResidentFeedback } from "../features/feedback/api.js";
+import { playPaintSplash } from "../features/paint/index.js";
+import { solidNavIcon } from "../features/paint/solid-icons.js";
 import {
   agentApprovalIntro,
   agentApprovalState,
@@ -1589,7 +1591,9 @@ function chatModelMenu(mode: ChatMode): HTMLElement {
     if (selected) option.append(iconNode("check"));
     menu.append(option);
   }
-  menu.append(el("p", "chat-model-note", t("assistant.modelDisplayOnly")));
+  const modelNote = el("p", "chat-model-note", t("assistant.modelDisplayOnly"));
+  modelNote.id = `chat-model-note-${mode}`;
+  menu.append(modelNote);
   const levels = [
     "assistant.thinkingLight",
     "assistant.thinkingStandard",
@@ -1616,9 +1620,7 @@ function chatModelMenu(mode: ChatMode): HTMLElement {
   slider.step = "1";
   slider.value = String(chat.thinkingLevel);
   slider.setAttribute("aria-valuetext", t(levels[chat.thinkingLevel]));
-  const note = el("p", "chat-thinking-note", t("assistant.thinkingFixed"));
-  note.id = `chat-thinking-note-${mode}`;
-  slider.setAttribute("aria-describedby", note.id);
+  slider.setAttribute("aria-describedby", modelNote.id);
   slider.addEventListener("input", () => {
     chat.thinkingLevel = Number(slider.value) as ChatState["thinkingLevel"];
     const value = t(levels[chat.thinkingLevel]);
@@ -1641,7 +1643,6 @@ function chatModelMenu(mode: ChatMode): HTMLElement {
       el("span", "", t(levels[1])),
       el("span", "", t(levels[2])),
     ),
-    note,
   );
   menu.append(panel);
   return menu;
@@ -3942,7 +3943,7 @@ function iconNode(kind: string): HTMLElement {
     check: Check,
   };
   const wrapper = el("span", "nav-icon");
-  wrapper.innerHTML = icons[kind] ?? Activity;
+  wrapper.innerHTML = solidNavIcon(kind) ?? icons[kind] ?? Activity;
   return wrapper;
 }
 
@@ -4192,6 +4193,9 @@ async function checkFeedbackBeforeReview(): Promise<void> {
 
 async function submitFeedback(): Promise<void> {
   if (!state.sandboxAcknowledged || !state.feedbackDraft.trim()) return;
+  const sendBounds = document
+    .querySelector<HTMLElement>("[data-send-feedback]")
+    ?.getBoundingClientRect();
   state.pending = "feedback";
   state.error = null;
   render();
@@ -4232,6 +4236,7 @@ async function submitFeedback(): Promise<void> {
     state.notice = t("feedback.submitted", {
       receiptId: response.submission.id,
     });
+    if (sendBounds) playPaintSplash(sendBounds, "coral");
     await refreshReceipt(false);
   } catch (error) {
     state.error = formatError(error);
