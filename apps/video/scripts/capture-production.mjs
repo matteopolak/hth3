@@ -124,6 +124,13 @@ try {
       match.focus(); match.click(); return true;
     })()`);
   }
+  async function clickSelector(selector) {
+    return await evaluate(`(() => {
+      const node = document.querySelector(${JSON.stringify(selector)});
+      if (!(node instanceof HTMLElement)) return false;
+      node.focus(); node.click(); return true;
+    })()`);
+  }
   async function typeText(selector, value) {
     return await evaluate(`(() => {
       const node = document.querySelector(${JSON.stringify(selector)});
@@ -207,6 +214,24 @@ try {
     const frameCount = specs[mode].seconds * fps;
     for (let frame = 0; frame < frameCount; frame++) {
       const started = Date.now();
+      if (mode === "home") {
+        if (frame === 4 * fps)
+          await act(frame, "open-add-menu", () =>
+            clickSelector(".chat-add-button"),
+          );
+        if (frame === 14 * fps)
+          await act(frame, "return-to-add-menu", () =>
+            clickSelector(".chat-add-button"),
+          );
+        if (frame === 18 * fps)
+          await act(frame, "open-model-choice", () =>
+            clickSelector(".chat-model-button"),
+          );
+        if (frame === 22 * fps)
+          await act(frame, "close-model-choice", () =>
+            clickSelector(".chat-model-button"),
+          );
+      }
       if (mode === "sources") {
         if (frame === 23 * fps)
           await act(frame, "participation", () => clickText(["Participation"]));

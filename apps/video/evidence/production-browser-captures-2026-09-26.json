@@ -1,0 +1,84 @@
+{
+  "captureDateLocal": "2026-09-26 America/Toronto",
+  "origin": "https://envoy.matteopolak.workers.dev/",
+  "method": "A separate headless Chrome profile captured unaltered production browser frames through Chrome DevTools Protocol. Video browser viewport: 1600 by 812. Devpost gallery viewport: 1200 by 800. The user's active browser was not used.",
+  "boundary": "The assistant proposal and feedback review were left unsubmitted. No municipality or government agency receives these reports. The native iPhone simulator and dated Tiger query have separate provenance.",
+  "clips": [
+    {
+      "file": "captures/production-home-2026-09-26.mp4",
+      "recordedAt": "2026-09-27T02:49:25.737Z",
+      "seconds": 24,
+      "sha256": "5a3888b5a18cc2e97af772d84595069b982b61f3b35d268f388515bb64405baa",
+      "observed": "Guest composer, add menu with Available tools entry, and model choice. An attempted plugin-menu click did not open a tool panel; no tool was run."
+    },
+    {
+      "file": "captures/production-sources-2026-09-26.mp4",
+      "recordedAt": "2026-09-27T02:47:45.088Z",
+      "seconds": 41,
+      "sha256": "0ea6f02aaf05f08cfe56d1abb8774f21c024b59a29418a70696732d89c9a63da",
+      "observed": "Jobs displayed 25 individual official postings. Participation displayed four open consultations. Nearby displayed 78 results, a tiled map with clusters and left results, an opened Service BC detail, and List. All route and map actions succeeded."
+    },
+    {
+      "file": "captures/production-agent-2026-09-26.mp4",
+      "recordedAt": "2026-09-27T02:49:05.888Z",
+      "seconds": 50,
+      "sha256": "71be2c5077c545ed70f113fb5eb6ff90ab0a5f92b35b385cd4f8feaf3bd6e15d",
+      "observed": "The guest asked about a damaged bench at Nathan Phillips Square and asked Envoy not to submit. The production assistant returned a pending editable feedback proposal, with Envoy's review team named as destination and Confirm disabled until acknowledgement. No approval or submission occurred."
+    },
+    {
+      "file": "captures/production-feedback-2026-09-26.mp4",
+      "recordedAt": "2026-09-27T02:30:07.229Z",
+      "seconds": 40,
+      "sha256": "a2dc158482afde0e0db3dc1353fb5e2cd44fd749c72eefaab171dab352d92b9c",
+      "observed": "A non-emergency pedestrian-signal concern was typed on the public feedback page. Review showed the original words and Envoy-only destination. The acknowledgement stayed unchecked and Submit feedback stayed disabled; no report was submitted."
+    }
+  ],
+  "stills": [
+    {
+      "file": "captures/production-home-2026-09-26.png",
+      "sha256": "2857004cc739e1ec044310d653c0867feb4c60f1f04acfce2c18b2affdbda8e9"
+    },
+    {
+      "file": "captures/production-jobs-2026-09-26.png",
+      "sha256": "8adb1f1b92eb9b828f7759c6538f67f00d2507294c4f092921bdca0e07cdbbb4"
+    },
+    {
+      "file": "captures/production-participation-2026-09-26.png",
+      "sha256": "0d6948ce6c3af5137c935eab771b6bf1e380e33511f0bea065cc535712ecedd6"
+    },
+    {
+      "file": "captures/production-nearby-2026-09-26.png",
+      "sha256": "54fce9425976e5bb40885238d265d7f29e5262684ff113be69a57f3a2e1217e0"
+    },
+    {
+      "file": "captures/production-agent-pending-2026-09-26.png",
+      "sha256": "08383bf081e6438e3b19774aca97967bd4bab485b0998ce091f7f78de18fd253"
+    },
+    {
+      "file": "captures/production-feedback-review-2026-09-26.png",
+      "sha256": "e5f90ed9a7049f8c255ef4bf4273334307594c67a8c7403288c17cba5de1e842"
+    }
+  ],
+  "gallery": [
+    {
+      "file": "gallery/assistant-2026-09-26.png",
+      "recordedAt": "2026-09-27T02:36:26.748Z",
+      "sha256": "13337ae2c256e1ea473f1e740f8a7171b7bd35abd0286bc788cfacd8e0d86389"
+    },
+    {
+      "file": "gallery/jobs-2026-09-26.png",
+      "recordedAt": "2026-09-27T02:36:38.189Z",
+      "sha256": "c2f9f573823d0abb24701821ac22ba84858e5a9f8a87d536a2057581049a0d53"
+    },
+    {
+      "file": "gallery/nearby-2026-09-26.png",
+      "recordedAt": "2026-09-27T02:47:28.473Z",
+      "sha256": "357a66da36fb3ed66ad82167fa9f38e026e6cb249a45d2d7b50ce14fc22e5366"
+    },
+    {
+      "file": "gallery/feedback-2026-09-26.png",
+      "recordedAt": "2026-09-27T02:36:53.610Z",
+      "sha256": "66051ad7724f75722554ad376174b59cc764d77deda4772b905c20ad0b8a4502"
+    }
+  ]
+}

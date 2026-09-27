@@ -6,28 +6,28 @@ type DraftClip = {
   description: string;
 };
 
-// These short recordings show the local color build or unified deployed site on
-// 2026-09-26. They establish only the visible interaction, not final coverage.
+// Selected deployed-site recordings from 2026-09-26. The source scene uses its
+// final fourteen seconds for the separately identified SwiftUI simulator still.
 export const draftClips: Partial<Record<SceneId, DraftClip>> = {
   home: {
-    file: "captures/color-home-interaction-2026-09-26.mp4",
-    seconds: 16,
-    description: "Local color build guest entry, 2026-09-26",
+    file: "captures/production-home-2026-09-26.mp4",
+    seconds: 24,
+    description: "Production guest composer, add menu, and model choice",
   },
   sources: {
-    file: "captures/color-sources-interaction-2026-09-26.mp4",
-    seconds: 48,
+    file: "captures/production-sources-2026-09-26.mp4",
+    seconds: 41,
     description:
-      "Local color build Jobs, Participation and Nearby navigation, 2026-09-26",
+      "Production Jobs, Participation, and Nearby route and map interactions",
   },
   agent: {
-    file: "captures/color-agent-interaction-2026-09-26.mp4",
+    file: "captures/production-agent-2026-09-26.mp4",
     seconds: 50,
-    description: "Unified production pending feedback approval, 2026-09-26",
+    description: "Production Workers AI pending, unsubmitted feedback proposal",
   },
   feedback: {
-    file: "captures/color-feedback-interaction-2026-09-26.mp4",
-    seconds: 28,
-    description: "Local color build feedback entry and review, 2026-09-26",
+    file: "captures/production-feedback-2026-09-26.mp4",
+    seconds: 40,
+    description: "Production feedback entry and Envoy-only review",
   },
 };
