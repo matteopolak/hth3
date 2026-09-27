@@ -2,7 +2,7 @@
 
 ## What it is
 
-This is the scene map for the 94-second motion revision of the chat-centered Envoy film. It preserves the 104-second first review file and uses the same four recorded voices. It starts with questions and actions shown in the deployed product, then uses short source-code inserts and moving, source-backed explanations for ElevenLabs, Tiger, Presage, and Auth0. The earlier 150-second `EnvoyRecut` is a comparison cut; none of these local review files is an approved upload.
+This is the scene map for the approved 94-second [chat-centered Envoy film](https://youtu.be/7arR-ro1gS8). It preserves the 104-second first review file and uses the same four recorded voices. It starts with questions and actions shown in the deployed product, then uses short source-code inserts and moving, source-backed explanations for ElevenLabs, Tiger, Presage, and Auth0. The earlier 150-second `EnvoyRecut` is a comparison cut.
 
 ## How it works
 
