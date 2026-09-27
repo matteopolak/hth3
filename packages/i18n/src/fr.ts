@@ -8,6 +8,7 @@ const fr: Catalogue = {
   "app.openMenu": "Ouvrir le menu",
   "app.closeMenu": "Fermer le menu",
   "app.collapseMenu": "Réduire la barre latérale",
+  "app.pageNotFound": "Page introuvable",
   "sidebar.workspace": "Espace de travail",
   "sidebar.inbox": "Boîte de réception",
   "sidebar.overview": "Vue d’ensemble",
@@ -55,38 +56,49 @@ const fr: Catalogue = {
   "assistant.staffMode": "Assistant de l’équipe",
   "assistant.newChat": "Nouvelle conversation",
   "assistant.welcome": "Comment Envoy peut vous aider?",
-  "assistant.suggestionsHeading": "Découvrez ce qu’Envoy peut faire",
+  "assistant.suggestionsHeading":
+    "Commencez par une tâche ou posez votre question",
   "assistant.tryPrompt": "Essayer",
   "assistant.cardJobsTitle": "Trouver un emploi",
   "assistant.cardJobsDetail": "Offres provenant de sources",
-  "assistant.cardJobsPrompt": "Trouvez les offres d’emploi actuelles à Toronto et montrez leurs sources officielles.",
+  "assistant.cardJobsPrompt":
+    "Trouvez les offres d’emploi actuelles à Toronto et montrez leurs sources officielles.",
   "assistant.cardSupportTitle": "Explorer l’aide",
   "assistant.cardSupportDetail": "Services et prestations",
-  "assistant.cardSupportPrompt": "Recherchez les services et prestations pour les résidents de Toronto. Montrez les sources actuelles et les critères d’admissibilité.",
+  "assistant.cardSupportPrompt":
+    "Recherchez les services et prestations pour les résidents de Toronto. Montrez les sources actuelles et les critères d’admissibilité.",
   "assistant.cardProgramsTitle": "Préparer une demande",
   "assistant.cardProgramsDetail": "Programmes et financement",
-  "assistant.cardProgramsPrompt": "Aidez-moi à trouver un programme d’aide ou de financement à Toronto et à préparer une demande. Montrez sa destination avant tout envoi.",
+  "assistant.cardProgramsPrompt":
+    "Aidez-moi à trouver un programme d’aide ou de financement à Toronto et à préparer une demande. Montrez sa destination avant tout envoi.",
   "assistant.cardIssueTitle": "Signaler un problème",
   "assistant.cardIssueDetail": "Vérifier et rédiger",
-  "assistant.cardIssuePrompt": "J’ai un problème civique à Toronto. Aidez-moi à rédiger un signalement, à vérifier s’il est déjà suivi et à l’examiner avant l’envoi.",
+  "assistant.cardIssuePrompt":
+    "J’ai un problème civique à Toronto. Aidez-moi à rédiger un signalement, à vérifier s’il est déjà suivi et à l’examiner avant l’envoi.",
   "assistant.cardInboxTitle": "Examiner les avis",
   "assistant.cardInboxDetail": "Boîte de commentaires",
-  "assistant.cardInboxPrompt": "Résumez les commentaires récents de notre organisation et indiquez ceux qui nécessitent une réponse.",
+  "assistant.cardInboxPrompt":
+    "Résumez les commentaires récents de notre organisation et indiquez ceux qui nécessitent une réponse.",
   "assistant.cardThemesTitle": "Repérer les tendances",
   "assistant.cardThemesDetail": "Thèmes fondés sur les avis",
-  "assistant.cardThemesPrompt": "Montrez les principaux thèmes des 30 derniers jours, avec le nombre de dossiers et les sources.",
+  "assistant.cardThemesPrompt":
+    "Montrez les principaux thèmes des 30 derniers jours, avec le nombre de dossiers et les sources.",
   "assistant.cardApplicantsTitle": "Examiner les candidats",
   "assistant.cardApplicantsDetail": "Recrutement",
-  "assistant.cardApplicantsPrompt": "Listez les candidats récents à nos offres et indiquez ceux qui attendent une évaluation.",
+  "assistant.cardApplicantsPrompt":
+    "Listez les candidats récents à nos offres et indiquez ceux qui attendent une évaluation.",
   "assistant.cardSourcesTitle": "Examiner les sources",
   "assistant.cardSourcesDetail": "Éditeurs des sources publiques",
-  "assistant.cardSourcesPrompt": "Listez les sources publiques disponibles dans Envoy et indiquez leurs éditeurs.",
+  "assistant.cardSourcesPrompt":
+    "Listez les sources publiques disponibles dans Envoy et indiquez leurs éditeurs.",
   "assistant.cardTaxonomyTitle": "Examiner la taxonomie",
   "assistant.cardTaxonomyDetail": "Catégories et brouillons",
-  "assistant.cardTaxonomyPrompt": "Montrez la taxonomie actuelle de notre organisation et tout brouillon, avec les principales catégories.",
+  "assistant.cardTaxonomyPrompt":
+    "Montrez la taxonomie actuelle de notre organisation et tout brouillon, avec les principales catégories.",
   "assistant.cardRequestsTitle": "Vérifier les demandes",
   "assistant.cardRequestsDetail": "Demandes de programmes",
-  "assistant.cardRequestsPrompt": "Listez les demandes de programmes reçues par notre organisation et celles qui nécessitent des précisions.",
+  "assistant.cardRequestsPrompt":
+    "Listez les demandes de programmes reçues par notre organisation et celles qui nécessitent des précisions.",
   "assistant.searchChats": "Chercher une conversation",
   "assistant.noRecentChats": "Aucune conversation récente.",
   "assistant.noMatchingChats": "Aucune conversation correspondante.",
@@ -96,10 +108,13 @@ const fr: Catalogue = {
   "assistant.signInForResume": "Se connecter pour téléverser un CV",
   "assistant.invalidResume": "Choisissez un CV PDF ou DOCX.",
   "assistant.conversation": "Conversation",
-  "assistant.supportPrompt": "Aidez-moi à trouver des services de soutien à Toronto.",
-  "assistant.fundingPrompt": "Aidez-moi à trouver des possibilités de financement à Toronto.",
+  "assistant.supportPrompt":
+    "Aidez-moi à trouver des services de soutien à Toronto.",
+  "assistant.fundingPrompt":
+    "Aidez-moi à trouver des possibilités de financement à Toronto.",
   "assistant.nearbyPrompt": "Quels services sont proches de moi à Toronto?",
-  "assistant.participationPrompt": "Comment participer aux décisions locales à Toronto?",
+  "assistant.participationPrompt":
+    "Comment participer aux décisions locales à Toronto?",
   "assistant.toolUnavailable": "Cet outil n’est pas disponible pour ce compte.",
   "assistant.toolPrompt": "Aidez-moi avec cette action : {action}",
   "assistant.chooseArea": "Choisir une région",
@@ -109,31 +124,46 @@ const fr: Catalogue = {
   "assistant.modelSettings": "Choisir le modèle",
   "assistant.modelBalanced": "Envoy · Équilibré",
   "assistant.modelFast": "Envoy · Rapide",
+  "assistant.effortBalanced": "Équilibré",
+  "assistant.effortFast": "Rapide",
   "assistant.modelBalancedDetail": "Affichage par défaut",
   "assistant.modelFastDetail": "Affichage compact",
-  "assistant.modelDisplayOnly": "Choix d’affichage seulement. Les réponses utilisent Granite Micro.",
+  "assistant.modelDisplayOnly":
+    "Aperçu seulement. Les réponses utilisent un modèle fixe.",
   "assistant.thinking": "Réflexion",
+  "assistant.thinkingDisplay": "Aperçu de la réflexion",
+  "assistant.thinkingLight": "Léger",
   "assistant.thinkingStandard": "Standard",
-  "assistant.thinkingFixed": "Le niveau de réflexion est fixe pour ce modèle.",
+  "assistant.thinkingDeep": "Approfondi",
   "assistant.areaToronto": "Toronto (Ontario)",
-  "assistant.areaOnly": "Toronto est la seule région prise en charge pour le moment.",
+  "assistant.areaOnly":
+    "Toronto est la seule région prise en charge pour le moment.",
   "assistant.uploadResume": "Téléverser un CV",
-  "assistant.resumeUploadReady": "Choisissez ici un CV PDF ou DOCX à téléverser dans votre profil privé.",
+  "assistant.resumeUploadReady":
+    "Choisissez ici un CV PDF ou DOCX à téléverser dans votre profil privé.",
   "assistant.attachEvidence": "Joindre une pièce",
-  "assistant.feedbackEvidenceHint": "Ajoutez jusqu’à trois fichiers PDF, PNG ou JPEG à ce brouillon. Chaque fichier peut peser au plus 5 Mo.",
-  "assistant.feedbackEvidenceNeedsDraft": "Préparez un brouillon de signalement avant de joindre des pièces.",
-  "assistant.invalidEvidence": "Choisissez un fichier PDF, PNG ou JPEG de 5 Mo ou moins.",
+  "assistant.feedbackEvidenceHint":
+    "Ajoutez jusqu’à trois fichiers PDF, PNG ou JPEG à ce brouillon. Chaque fichier peut peser au plus 5 Mo.",
+  "assistant.feedbackEvidenceNeedsDraft":
+    "Préparez un brouillon de signalement avant de joindre des pièces.",
+  "assistant.invalidEvidence":
+    "Choisissez un fichier PDF, PNG ou JPEG de 5 Mo ou moins.",
   "assistant.filesSignIn": "Connectez-vous pour téléverser un CV.",
   "assistant.searchTools": "Chercher des outils",
   "assistant.noTools": "Aucun outil correspondant.",
   "assistant.readTool": "Exécuter",
   "assistant.writeTool": "Préparer",
   "assistant.you": "Vous",
-  "assistant.placeholder": "Posez une question sur les emplois, les prestations, le financement, les services, les candidatures ou un enjeu local…",
-  "assistant.staffPlaceholder": "Posez une question sur les avis, les candidats, le recrutement, les programmes ou le travail d’équipe…",
-  "assistant.staffCuratorPlaceholder": "Posez une question sur les sources, la taxonomie ou l’activité de l’organisation…",
-  "assistant.staffHiringPlaceholder": "Posez une question sur les candidatures et les décisions…",
-  "assistant.staffFeedbackPlaceholder": "Posez une question sur les avis, les dossiers ou les thèmes récurrents…",
+  "assistant.placeholder":
+    "Posez une question sur les emplois, les prestations, le financement, les services, les candidatures ou un enjeu local…",
+  "assistant.staffPlaceholder":
+    "Posez une question sur les avis, les candidats, le recrutement, les programmes ou le travail d’équipe…",
+  "assistant.staffCuratorPlaceholder":
+    "Posez une question sur les sources, la taxonomie ou l’activité de l’organisation…",
+  "assistant.staffHiringPlaceholder":
+    "Posez une question sur les candidatures et les décisions…",
+  "assistant.staffFeedbackPlaceholder":
+    "Posez une question sur les avis, les dossiers ou les thèmes récurrents…",
   "assistant.send": "Envoyer",
   "assistant.reviewAction": "Vérifier l’action",
   "assistant.proposedChanges": "Modifications proposées",
@@ -149,8 +179,10 @@ const fr: Catalogue = {
   "assistant.reviewReport": "Vérifier le signalement",
   "assistant.confirmReport": "Confirmer et envoyer le signalement",
   "assistant.reviewUpdatedReport": "Vérifier le signalement modifié",
-  "assistant.reportDestination": "Destination : l’équipe d’Envoy chargée des avis. Aucun envoi à la Ville de Toronto.",
-  "assistant.confirmDestination": "Je comprends qu’aucune municipalité ni agence gouvernementale ne reçoit ce signalement.",
+  "assistant.reportDestination":
+    "Destination : l’équipe d’Envoy chargée des avis. Aucun envoi à la Ville de Toronto.",
+  "assistant.confirmDestination":
+    "Je comprends qu’aucune municipalité ni agence gouvernementale ne reçoit ce signalement.",
   "assistant.approve": "Approuver l’action",
   "assistant.decline": "Refuser",
   "assistant.actionCompleted": "Action terminée.",
@@ -167,10 +199,14 @@ const fr: Catalogue = {
   "voice.unavailable":
     "La voix est indisponible pour le moment. Vous pouvez toujours saisir votre commentaire.",
   "voice.checking": "Vérification de la séance vocale…",
-  "voice.submitted": "Votre avis vocal a été envoyé. Votre reçu privé figure ci-dessous.",
-  "voice.duplicate": "Un avis semblable existe peut-être déjà. Vérifiez votre brouillon avant d’en envoyer un autre.",
-  "voice.notSubmitted": "La séance vocale s’est terminée sans envoi. Vérifiez et envoyez votre brouillon quand vous serez prêt.",
-  "voice.notConfirmed": "Nous n’avons pas pu confirmer l’envoi vocal. Vérifiez votre brouillon avant d’envoyer un autre avis.",
+  "voice.submitted":
+    "Votre avis vocal a été envoyé. Votre reçu privé figure ci-dessous.",
+  "voice.duplicate":
+    "Un avis semblable existe peut-être déjà. Vérifiez votre brouillon avant d’en envoyer un autre.",
+  "voice.notSubmitted":
+    "La séance vocale s’est terminée sans envoi. Vérifiez et envoyez votre brouillon quand vous serez prêt.",
+  "voice.notConfirmed":
+    "Nous n’avons pas pu confirmer l’envoi vocal. Vérifiez votre brouillon avant d’envoyer un autre avis.",
   "language.english": "Anglais",
   "language.french": "Français",
   "common.loading": "Chargement…",
@@ -190,11 +226,14 @@ const fr: Catalogue = {
   "auth.staff": "Équipe",
   "auth.staffDetail": "Examinez les commentaires et le recrutement.",
   "auth.continueStaff": "Continuer comme membre de l’équipe",
-  "auth.guestAccess": "Vous pouvez discuter et envoyer un commentaire sans vous connecter.",
+  "auth.guestAccess":
+    "Vous pouvez discuter et envoyer un commentaire sans vous connecter.",
   "auth.localAccess": "Accès local de développement",
   "auth.unconfigured": "La connexion n’est pas configurée pour cette version.",
-  "auth.resumeIntent": "Après la connexion, ajoutez votre CV dans la discussion.",
-  "assistant.confirmPracticeDestination": "Je comprends que cette demande d’exercice reste dans Envoy et n’est pas transmise à un organisme public.",
+  "auth.resumeIntent":
+    "Après la connexion, ajoutez votre CV dans la discussion.",
+  "assistant.confirmPracticeDestination":
+    "Je comprends que cette demande d’exercice reste dans Envoy et n’est pas transmise à un organisme public.",
   "auth.signIn": "Se connecter",
   "auth.changeAccount": "Changer de compte",
   "auth.staffSignIn": "Connexion du personnel",
@@ -207,13 +246,16 @@ const fr: Catalogue = {
     "Expliquez à l’équipe ce qui s’est passé et comment améliorer le service.",
   "feedback.messageLabel": "Que s’est-il passé?",
   "feedback.heading": "Signaler une préoccupation",
-  "feedback.shortIntro": "Décrivez la situation. Vous pourrez vérifier votre avis avant de l’envoyer.",
+  "feedback.shortIntro":
+    "Décrivez la situation. Vous pourrez vérifier votre avis avant de l’envoyer.",
   "feedback.stepWrite": "Rédiger",
   "feedback.stepReview": "Vérifier et envoyer",
   "feedback.formHeading": "Que souhaitez-vous nous dire?",
-  "feedback.formHint": "Indiquez ce qui s’est passé, où et quand, si vous le savez.",
+  "feedback.formHint":
+    "Indiquez ce qui s’est passé, où et quand, si vous le savez.",
   "feedback.addSuggestion": "Ajouter une suggestion (facultatif)",
-  "feedback.reviewHint": "Vous pouvez modifier votre avis avant de le confirmer.",
+  "feedback.reviewHint":
+    "Vous pouvez modifier votre avis avant de le confirmer.",
   "feedback.messagePlaceholder": "Décrivez votre expérience",
   "feedback.improvementLabel": "Qu’est-ce qui améliorerait la situation?",
   "feedback.improvementPlaceholder": "Proposez un changement utile",
@@ -221,9 +263,11 @@ const fr: Catalogue = {
   "feedback.reviewTitle": "Vérifiez votre avis",
   "feedback.edit": "Modifier l’avis",
   "feedback.duplicateTitle": "Un problème semblable est déjà suivi",
-  "feedback.duplicateExplanation": "Vous pouvez voir son état actuel ci-dessous. S’il s’agit d’un autre problème ou d’une récidive, confirmez-le avant d’envoyer un rapport distinct.",
+  "feedback.duplicateExplanation":
+    "Vous pouvez voir son état actuel ci-dessous. S’il s’agit d’un autre problème ou d’une récidive, confirmez-le avant d’envoyer un rapport distinct.",
   "feedback.duplicateStatus": "État actuel",
-  "feedback.separateIssue": "Il s’agit d’un autre problème ou d’une récidive. Envoyer un rapport distinct.",
+  "feedback.separateIssue":
+    "Il s’agit d’un autre problème ou d’une récidive. Envoyer un rapport distinct.",
   "feedback.submitSeparate": "Envoyer un rapport distinct",
   "feedback.sandboxAcknowledgement":
     "Je comprends que mon avis va à l’équipe d’Envoy chargée des avis et n’est pas envoyé à la Ville de Toronto ni à un autre organisme gouvernemental.",
@@ -320,7 +364,8 @@ const fr: Catalogue = {
   "error.abuseUnavailable":
     "Le service de commentaires est temporairement indisponible. Réessayez plus tard.",
   "error.rateLimited": "Trop de demandes. Attendez avant de réessayer.",
-  "error.duplicateCheckUnavailable": "La recherche de problèmes semblables est indisponible. Réessayez avant l’envoi.",
+  "error.duplicateCheckUnavailable":
+    "La recherche de problèmes semblables est indisponible. Réessayez avant l’envoi.",
   "error.invalidEvidence":
     "La pièce jointe n’a pas été acceptée. Vérifiez son format et sa taille.",
   "error.emergency":

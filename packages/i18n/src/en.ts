@@ -4,6 +4,7 @@ const en = {
   "app.openMenu": "Open menu",
   "app.closeMenu": "Close menu",
   "app.collapseMenu": "Collapse sidebar",
+  "app.pageNotFound": "Page not found",
   "sidebar.workspace": "Workspace",
   "sidebar.inbox": "Inbox",
   "sidebar.overview": "Overview",
@@ -51,38 +52,48 @@ const en = {
   "assistant.staffMode": "Staff assistant",
   "assistant.newChat": "New chat",
   "assistant.welcome": "How can Envoy help?",
-  "assistant.suggestionsHeading": "See what Envoy can do",
+  "assistant.suggestionsHeading": "Start with a task, or ask anything",
   "assistant.tryPrompt": "Try",
   "assistant.cardJobsTitle": "Find work",
   "assistant.cardJobsDetail": "Search sourced jobs",
-  "assistant.cardJobsPrompt": "Find current job opportunities in Toronto and show their official sources.",
+  "assistant.cardJobsPrompt":
+    "Find current job opportunities in Toronto and show their official sources.",
   "assistant.cardSupportTitle": "Explore support",
   "assistant.cardSupportDetail": "Services and benefits",
-  "assistant.cardSupportPrompt": "Search support services and benefit programs for Toronto residents. Show current sourced records and explain any eligibility limits.",
+  "assistant.cardSupportPrompt":
+    "Search support services and benefit programs for Toronto residents. Show current sourced records and explain any eligibility limits.",
   "assistant.cardProgramsTitle": "Prepare a request",
   "assistant.cardProgramsDetail": "Programs and funding",
-  "assistant.cardProgramsPrompt": "Help me find a support or funding program in Toronto and prepare a request. Show me where it will go before submitting anything.",
+  "assistant.cardProgramsPrompt":
+    "Help me find a support or funding program in Toronto and prepare a request. Show me where it will go before submitting anything.",
   "assistant.cardIssueTitle": "Report an issue",
   "assistant.cardIssueDetail": "Check and draft a report",
-  "assistant.cardIssuePrompt": "I have a civic issue in Toronto. Help me write a report, check whether it is already tracked, and let me review it before submitting.",
+  "assistant.cardIssuePrompt":
+    "I have a civic issue in Toronto. Help me write a report, check whether it is already tracked, and let me review it before submitting.",
   "assistant.cardInboxTitle": "Review reports",
   "assistant.cardInboxDetail": "Check the feedback inbox",
-  "assistant.cardInboxPrompt": "Summarize recent feedback in our organization's inbox and identify reports that need a response.",
+  "assistant.cardInboxPrompt":
+    "Summarize recent feedback in our organization's inbox and identify reports that need a response.",
   "assistant.cardThemesTitle": "Spot patterns",
   "assistant.cardThemesDetail": "Grounded feedback themes",
-  "assistant.cardThemesPrompt": "Show the main feedback themes from the last 30 days, with supporting case counts and source links.",
+  "assistant.cardThemesPrompt":
+    "Show the main feedback themes from the last 30 days, with supporting case counts and source links.",
   "assistant.cardApplicantsTitle": "Review applicants",
   "assistant.cardApplicantsDetail": "Hiring pipeline",
-  "assistant.cardApplicantsPrompt": "List recent applicants to our organization's postings and highlight those awaiting review.",
+  "assistant.cardApplicantsPrompt":
+    "List recent applicants to our organization's postings and highlight those awaiting review.",
   "assistant.cardSourcesTitle": "Inspect sources",
   "assistant.cardSourcesDetail": "Public source publishers",
-  "assistant.cardSourcesPrompt": "List the public sources available in Envoy and show their publishers.",
+  "assistant.cardSourcesPrompt":
+    "List the public sources available in Envoy and show their publishers.",
   "assistant.cardTaxonomyTitle": "Review taxonomy",
   "assistant.cardTaxonomyDetail": "Categories and drafts",
-  "assistant.cardTaxonomyPrompt": "Show our organization's current taxonomy and any draft, with the main categories.",
+  "assistant.cardTaxonomyPrompt":
+    "Show our organization's current taxonomy and any draft, with the main categories.",
   "assistant.cardRequestsTitle": "Check requests",
   "assistant.cardRequestsDetail": "Program intake",
-  "assistant.cardRequestsPrompt": "List incoming program applications for our organization and identify requests that need more information.",
+  "assistant.cardRequestsPrompt":
+    "List incoming program applications for our organization and identify requests that need more information.",
   "assistant.searchChats": "Search chats",
   "assistant.noRecentChats": "No recent chats yet.",
   "assistant.noMatchingChats": "No matching chats.",
@@ -95,7 +106,8 @@ const en = {
   "assistant.supportPrompt": "Help me find support services in Toronto.",
   "assistant.fundingPrompt": "Help me find funding opportunities in Toronto.",
   "assistant.nearbyPrompt": "What services are available near me in Toronto?",
-  "assistant.participationPrompt": "How can I participate in local decisions in Toronto?",
+  "assistant.participationPrompt":
+    "How can I participate in local decisions in Toronto?",
   "assistant.toolUnavailable": "This tool is unavailable for this account.",
   "assistant.toolPrompt": "Help me with this action: {action}",
   "assistant.chooseArea": "Choose area",
@@ -105,19 +117,26 @@ const en = {
   "assistant.modelSettings": "Select model",
   "assistant.modelBalanced": "Envoy · Balanced",
   "assistant.modelFast": "Envoy · Fast",
+  "assistant.effortBalanced": "Balanced",
+  "assistant.effortFast": "Fast",
   "assistant.modelBalancedDetail": "Default display",
   "assistant.modelFastDetail": "Compact display",
-  "assistant.modelDisplayOnly": "Display choice only. Replies use Granite Micro.",
+  "assistant.modelDisplayOnly": "Preview only. Replies use one fixed model.",
   "assistant.thinking": "Thinking",
+  "assistant.thinkingDisplay": "Thinking preview",
+  "assistant.thinkingLight": "Light",
   "assistant.thinkingStandard": "Standard",
-  "assistant.thinkingFixed": "Thinking level is fixed for this model.",
+  "assistant.thinkingDeep": "Deep",
   "assistant.areaToronto": "Toronto, Ontario",
   "assistant.areaOnly": "Toronto is the currently supported area.",
   "assistant.uploadResume": "Upload résumé",
-  "assistant.resumeUploadReady": "Choose a PDF or DOCX résumé here to upload it to your private profile.",
+  "assistant.resumeUploadReady":
+    "Choose a PDF or DOCX résumé here to upload it to your private profile.",
   "assistant.attachEvidence": "Attach evidence",
-  "assistant.feedbackEvidenceHint": "Add up to three PDF, PNG, or JPEG files to this report draft. Each file can be up to 5 MB.",
-  "assistant.feedbackEvidenceNeedsDraft": "Prepare a feedback report draft before attaching evidence.",
+  "assistant.feedbackEvidenceHint":
+    "Add up to three PDF, PNG, or JPEG files to this report draft. Each file can be up to 5 MB.",
+  "assistant.feedbackEvidenceNeedsDraft":
+    "Prepare a feedback report draft before attaching evidence.",
   "assistant.invalidEvidence": "Choose a PDF, PNG, or JPEG file up to 5 MB.",
   "assistant.filesSignIn": "Sign in to upload a résumé.",
   "assistant.searchTools": "Search tools",
@@ -125,11 +144,16 @@ const en = {
   "assistant.readTool": "Run",
   "assistant.writeTool": "Prepare request",
   "assistant.you": "You",
-  "assistant.placeholder": "Ask about jobs, benefits, funding, services, applications, or a civic issue…",
-  "assistant.staffPlaceholder": "Ask about feedback, applicants, hiring, programs, or team work…",
-  "assistant.staffCuratorPlaceholder": "Ask about sources, taxonomy, or organization activity…",
-  "assistant.staffHiringPlaceholder": "Ask about applicants and application decisions…",
-  "assistant.staffFeedbackPlaceholder": "Ask about feedback, cases, and recurring themes…",
+  "assistant.placeholder":
+    "Ask about jobs, benefits, funding, services, applications, or a civic issue…",
+  "assistant.staffPlaceholder":
+    "Ask about feedback, applicants, hiring, programs, or team work…",
+  "assistant.staffCuratorPlaceholder":
+    "Ask about sources, taxonomy, or organization activity…",
+  "assistant.staffHiringPlaceholder":
+    "Ask about applicants and application decisions…",
+  "assistant.staffFeedbackPlaceholder":
+    "Ask about feedback, cases, and recurring themes…",
   "assistant.send": "Send",
   "assistant.reviewAction": "Review action",
   "assistant.proposedChanges": "Proposed changes",
@@ -145,8 +169,10 @@ const en = {
   "assistant.reviewReport": "Review report",
   "assistant.confirmReport": "Confirm and submit report",
   "assistant.reviewUpdatedReport": "Review updated report",
-  "assistant.reportDestination": "Destination: Envoy's review team. Not sent to the City of Toronto.",
-  "assistant.confirmDestination": "I understand no municipality or government agency receives this report.",
+  "assistant.reportDestination":
+    "Destination: Envoy's review team. Not sent to the City of Toronto.",
+  "assistant.confirmDestination":
+    "I understand no municipality or government agency receives this report.",
   "assistant.approve": "Approve action",
   "assistant.decline": "Decline",
   "assistant.actionCompleted": "Action completed.",
@@ -163,10 +189,14 @@ const en = {
   "voice.unavailable":
     "Voice is unavailable right now. You can still type your feedback.",
   "voice.checking": "Checking the voice session…",
-  "voice.submitted": "Your spoken report was submitted. Your private receipt is shown below.",
-  "voice.duplicate": "A similar report may already exist. Review your draft before sending another.",
-  "voice.notSubmitted": "The voice session ended without a submission. Review and send your draft when ready.",
-  "voice.notConfirmed": "We could not confirm a voice submission. Review your draft before sending another report.",
+  "voice.submitted":
+    "Your spoken report was submitted. Your private receipt is shown below.",
+  "voice.duplicate":
+    "A similar report may already exist. Review your draft before sending another.",
+  "voice.notSubmitted":
+    "The voice session ended without a submission. Review and send your draft when ready.",
+  "voice.notConfirmed":
+    "We could not confirm a voice submission. Review your draft before sending another report.",
   "language.english": "English",
   "language.french": "French",
   "common.loading": "Loading…",
@@ -190,7 +220,8 @@ const en = {
   "auth.localAccess": "Local development access",
   "auth.unconfigured": "Sign-in is not configured for this build.",
   "auth.resumeIntent": "After signing in, add your résumé in chat.",
-  "assistant.confirmPracticeDestination": "I understand this practice application stays in Envoy and does not reach a government agency.",
+  "assistant.confirmPracticeDestination":
+    "I understand this practice application stays in Envoy and does not reach a government agency.",
   "auth.signIn": "Sign in",
   "auth.changeAccount": "Change account",
   "auth.staffSignIn": "Sign in as staff",
@@ -202,7 +233,8 @@ const en = {
     "Tell the team what happened and what would make the service better.",
   "feedback.messageLabel": "What happened?",
   "feedback.heading": "Share a concern",
-  "feedback.shortIntro": "Tell us what happened. You can review your report before sending it.",
+  "feedback.shortIntro":
+    "Tell us what happened. You can review your report before sending it.",
   "feedback.stepWrite": "Write",
   "feedback.stepReview": "Review and send",
   "feedback.formHeading": "What would you like to share?",
@@ -216,9 +248,11 @@ const en = {
   "feedback.reviewTitle": "Review your report",
   "feedback.edit": "Edit report",
   "feedback.duplicateTitle": "A similar issue is already being tracked",
-  "feedback.duplicateExplanation": "You can check its current status below. If this is a different issue or a recurrence, confirm that before sending a separate report.",
+  "feedback.duplicateExplanation":
+    "You can check its current status below. If this is a different issue or a recurrence, confirm that before sending a separate report.",
   "feedback.duplicateStatus": "Current status",
-  "feedback.separateIssue": "This is a different issue or a recurrence. Send a separate report.",
+  "feedback.separateIssue":
+    "This is a different issue or a recurrence. Send a separate report.",
   "feedback.submitSeparate": "Submit separate report",
   "feedback.sandboxAcknowledgement":
     "I understand this report goes to Envoy's review team and is not sent to the City of Toronto or another government agency.",
@@ -313,7 +347,8 @@ const en = {
   "error.abuseUnavailable":
     "Feedback is temporarily unavailable. Please try again later.",
   "error.rateLimited": "Too many requests. Please wait before trying again.",
-  "error.duplicateCheckUnavailable": "Similar issues could not be checked. Try again before submitting.",
+  "error.duplicateCheckUnavailable":
+    "Similar issues could not be checked. Try again before submitting.",
   "error.invalidEvidence":
     "The attachment could not be accepted. Check its format and size.",
   "error.emergency":
