@@ -159,24 +159,6 @@
   margin-left: -7px;
 }
 
-.chat-rich-favicon img {
-  grid-area: 1 / 1;
-  width: 17px;
-  height: 17px;
-  border-radius: 3px;
-  object-fit: contain;
-  background: transparent;
-  opacity: 0;
-}
-
-.chat-rich-favicon img.is-loaded {
-  opacity: 1;
-}
-
-.chat-rich-favicon:has(img.is-loaded) .chat-rich-favicon-fallback {
-  visibility: hidden;
-}
-
 .chat-rich-favicon-fallback {
   grid-area: 1 / 1;
 }

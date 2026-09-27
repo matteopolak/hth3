@@ -178,18 +178,6 @@ function sourceFavicon(item: SourceRecord, position: number): HTMLElement {
   );
   const circle = element("span", `chat-rich-favicon chat-rich-favicon-${position % 5}`);
   circle.append(fallback);
-  if (item.origin === "sample" || item.sample === true) return circle;
-  const sourceUrl = safeHttpUrl(item.sourceUrl ?? item.evidenceUrl);
-  if (!sourceUrl) return circle;
-  const image = element("img", "");
-  image.alt = "";
-  image.loading = "lazy";
-  image.decoding = "async";
-  image.referrerPolicy = "no-referrer";
-  image.addEventListener("load", () => image.classList.add("is-loaded"));
-  image.addEventListener("error", () => image.remove());
-  image.src = `${new URL(sourceUrl).origin}/favicon.ico`;
-  circle.append(image);
   return circle;
 }
 
