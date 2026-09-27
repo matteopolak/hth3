@@ -4,9 +4,9 @@ Envoy helps people find public services and opportunities, understand their next
 
 ## Demo and project links
 
-- **Live app and API:** [civicresolve-api-production.matteopolak.workers.dev](https://civicresolve-api-production.matteopolak.workers.dev/). The root page and `/api/healthz` were verified with HTTP 200.
+- **Live app and API:** [envoy.matteopolak.workers.dev](https://envoy.matteopolak.workers.dev/). The root page and `/api/healthz` were verified with HTTP 200.
 - **Repository:** [github.com/matteopolak/hth3](https://github.com/matteopolak/hth3)
-- **Five-minute review video:** not hosted yet. The [storyboard](docs/video-storyboard.md) describes the planned evidence-backed cut; the current local render is a draft, not submission footage.
+- **Five-minute video:** [watch or download the captioned MP4](https://github.com/matteopolak/hth3/releases/download/v0.1.0-hth3-review/envoy-review.mp4). The [video notes](docs/video-production.md) identify the capture origins and pending live acceptance.
 
 ## What is real and what is practice data
 
