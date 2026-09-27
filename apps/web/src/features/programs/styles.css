@@ -25,39 +25,19 @@
   height: 18px;
   stroke-width: 1.8;
 }
-.pg-tabs {
-  display: flex;
-  gap: 24px;
-  border-bottom: 1px solid #e7e7e7;
-  padding-top: 10px;
-}
-.pg-tabs button {
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: none;
-  padding: 11px 2px;
-  color: #777;
-  font-size: 14px;
-  cursor: pointer;
-}
-.pg-tabs button.active {
-  border-color: #202020;
-  color: #202020;
-  font-weight: 600;
-}
-.public-programs > .program-intake {
-  padding: 0;
-  min-height: 0;
-}
-.public-programs > .program-intake .pi-top {
-  border-bottom: 0;
+.pg-disclosure {
+  max-width: 78ch;
+  padding: 8px 0 15px;
+  color: #555;
+  font-size: 13px;
+  line-height: 1.45;
 }
 .pg-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin: 29px 0 18px;
+  margin: 12px 0 18px;
 }
 .pg-segments {
   display: flex;
@@ -117,6 +97,12 @@
   padding: 13px 12px 20px 0;
   overflow: auto;
   max-height: calc(100vh - 210px);
+}
+.pg-count {
+  display: block;
+  padding: 4px 15px 10px;
+  color: #6a6a6a;
+  font-size: 12px;
 }
 .pg-row {
   display: flex;
@@ -253,20 +239,17 @@
     display: block;
   }
   .pg-list {
-    display: flex;
-    gap: 8px;
-    max-height: none;
-    overflow-x: auto;
+    display: block;
+    max-height: 310px;
+    overflow-y: auto;
     border-right: 0;
     border-bottom: 1px solid #e7e7e7;
     padding: 11px 0;
   }
   .pg-row {
-    flex: 0 0 240px;
-    border-color: #e7e7e7;
-  }
-  .pg-row:only-child {
-    flex-basis: 100%;
+    width: 100%;
+    border-bottom: 1px solid #ededed;
+    border-radius: 0;
   }
   .pg-detail {
     max-width: none;
@@ -275,18 +258,12 @@
   }
 }
 @media (max-width: 400px) {
-  .pg-row {
-    flex-basis: 100%;
-  }
   .pg-detail h2 {
     font-size: 24px;
   }
 }
 
 /* Official program discovery has its own green and yellow paint accents. */
-.pg-tabs button.active {
-  border-color: #25816a;
-}
 .pg-segments button.active,
 .pg-button.primary {
   background: #24735f;

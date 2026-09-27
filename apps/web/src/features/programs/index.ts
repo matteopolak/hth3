@@ -20,7 +20,10 @@ interface OfficialProgram {
   sourceUrl: string;
   freshness: string;
   jurisdiction: { name: string };
-  area: string | null;
+  area: "support" | "funding" | null;
+  type: string;
+  origin: string;
+  handoff: { destination: string; url: string } | null;
 }
 
 const base = (
@@ -38,13 +41,15 @@ const icon = (svg: string) =>
   `<span class="pg-icon" aria-hidden="true">${svg}</span>`;
 const copy = {
   en: {
-    inApp: "Participating programs",
-    official: "Official sources",
+    all: "All",
     support: "Support",
     funding: "Funding",
+    sourceSingular: "official source",
+    sources: "official sources",
     search: "Search official sources",
-    source: "Official finder",
-    view: "View details",
+    source: "Official source",
+    directory: "Official directory",
+    official: "Open official site",
     prepare: "Prepare in Envoy",
     publisher: "Publisher",
     current: "Current",
@@ -53,17 +58,21 @@ const copy = {
     loading: "Loading official sources…",
     error: "Official sources are unavailable right now.",
     retry: "Try again",
+    disclosure:
+      "No government organization participates in Envoy’s in-app program intake yet. Apply on the publisher’s site.",
     notice:
       "Complete applications on the publisher’s site. Envoy does not record an external submission.",
   },
   fr: {
-    inApp: "Programmes participants",
-    official: "Sources officielles",
+    all: "Tout",
     support: "Soutien",
     funding: "Financement",
+    sourceSingular: "source officielle",
+    sources: "sources officielles",
     search: "Rechercher des sources officielles",
-    source: "Recherche officielle",
-    view: "Voir les détails",
+    source: "Source officielle",
+    directory: "Répertoire officiel",
+    official: "Ouvrir le site officiel",
     prepare: "Préparer dans Envoy",
     publisher: "Éditeur",
     current: "À jour",
@@ -72,6 +81,8 @@ const copy = {
     loading: "Chargement des sources officielles…",
     error: "Les sources officielles sont indisponibles pour le moment.",
     retry: "Réessayer",
+    disclosure:
+      "Aucun organisme gouvernemental ne participe encore aux demandes intégrées d’Envoy. Faites votre demande sur le site de l’éditeur.",
     notice:
       "Terminez les demandes sur le site de l’éditeur. Envoy n’enregistre aucune demande externe.",
   },
@@ -82,9 +93,7 @@ export function createPublicProgramsPage(options: Options): HTMLElement {
   const text = copy[options.locale];
   const root = document.createElement("section");
   root.className = "public-programs";
-  const intake = createProgramIntakePage(options);
-  let tab: "inApp" | "official" = "inApp";
-  let area: "support" | "funding" = "support";
+  let area: "all" | "support" | "funding" = "all";
   let records: OfficialProgram[] = [];
   let selected = "";
   let query = "";
@@ -96,12 +105,34 @@ export function createPublicProgramsPage(options: Options): HTMLElement {
     error = "";
     render();
     try {
-      const response = await fetch(`${base}/discovery?area=${area}&limit=100`);
-      if (!response.ok) throw new Error();
-      const body = (await response.json()) as { items?: OfficialProgram[] };
-      records = (body.items ?? []).filter((item) =>
-        item.sourceUrl.startsWith("https://"),
+      const responses = await Promise.allSettled(
+        (["support", "funding"] as const).map(async (scope) => {
+          const response = await fetch(
+            `${base}/discovery?area=${scope}&includeFinders=true&limit=100`,
+          );
+          if (!response.ok) throw new Error();
+          return (await response.json()) as { items?: OfficialProgram[] };
+        }),
       );
+      if (responses.every((result) => result.status === "rejected"))
+        throw new Error();
+      records = responses
+        .flatMap((result) =>
+          result.status === "fulfilled" ? (result.value.items ?? []) : [],
+        )
+        .filter(
+          (item) =>
+            item.origin === "official_external" &&
+            item.handoff?.destination === "official_external" &&
+            item.handoff.url.startsWith("https://") &&
+            (item.area === "support" || item.area === "funding"),
+        )
+        .sort(
+          (a, b) =>
+            Number(a.type.endsWith("_finder")) -
+              Number(b.type.endsWith("_finder")) ||
+            a.title.localeCompare(b.title, options.locale),
+        );
       selected = records.some((item) => item.id === selected)
         ? selected
         : (records[0]?.id ?? "");
@@ -115,43 +146,32 @@ export function createPublicProgramsPage(options: Options): HTMLElement {
 
   function render(): void {
     root.replaceChildren();
-    const tabs = document.createElement("div");
-    tabs.className = "pg-tabs";
-    tabs.innerHTML = `<button class="${tab === "inApp" ? "active" : ""}" data-tab="inApp">${h(text.inApp)}</button><button class="${tab === "official" ? "active" : ""}" data-tab="official">${h(text.official)}</button>`;
-    root.append(tabs);
-    if (tab === "inApp") {
-      root.append(intake);
-      return;
-    }
-    const visible = records.filter((item) =>
-      `${item.title} ${item.summary} ${item.publisher} ${item.jurisdiction.name}`
-        .toLowerCase()
-        .includes(query),
+    const visible = records.filter(
+      (item) =>
+        (area === "all" || item.area === area) &&
+        `${item.title} ${item.summary} ${item.publisher} ${item.jurisdiction.name}`
+          .toLowerCase()
+          .includes(query),
     );
     const active = visible.find((item) => item.id === selected) ?? visible[0];
     const panel = document.createElement("div");
     panel.className = "pg-official";
-    panel.innerHTML = `<div class="pg-toolbar"><div class="pg-segments"><button data-area="support" class="${area === "support" ? "active" : ""}">${h(text.support)}</button><button data-area="funding" class="${area === "funding" ? "active" : ""}">${h(text.funding)}</button></div><label class="pg-search">${icon(Search)}<input id="pg-query" type="search" aria-label="${h(text.search)}" placeholder="${h(text.search)}" value="${h(query)}" /></label></div>${loading ? `<p class="pg-state">${h(text.loading)}</p>` : error ? `<p class="pg-state" role="alert">${h(error)} <button data-action="retry">${h(text.retry)}</button></p>` : `<div class="pg-split"><div class="pg-list">${visible.map((item) => `<button class="pg-row ${active?.id === item.id ? "selected" : ""}" data-record="${h(item.id)}"><span>${h(text.source)} · ${h(item.jurisdiction.name)}</span><strong>${h(item.title)}</strong><small>${h(item.publisher)}</small>${icon(ArrowRight)}</button>`).join("") || `<p class="pg-state">${h(text.empty)}</p>`}</div><article class="pg-detail">${active ? `<span class="pg-kicker">${h(text.source)}</span><h2>${h(active.title)}</h2><p>${h(active.summary)}</p><dl><div><dt>${h(text.publisher)}</dt><dd>${h(active.publisher)}</dd></div><div><dt>${h(text.current)}</dt><dd>${h(active.freshness === "current" ? text.current : text.stale)}</dd></div></dl><p class="pg-note">${h(text.notice)}</p><div class="pg-actions"><button class="pg-button primary" data-action="prepare" data-id="${h(active.id)}">${h(text.prepare)}${icon(ArrowRight)}</button><a class="pg-button" target="_blank" rel="noopener noreferrer" href="${h(active.sourceUrl)}">${h(text.official)}${icon(ArrowUpRight)}</a></div>` : `<p class="pg-state">${h(text.empty)}</p>`}</article></div>`}`;
+    panel.innerHTML = `<div class="pg-disclosure">${h(text.disclosure)}</div><div class="pg-toolbar"><div class="pg-segments"><button data-area="all" class="${area === "all" ? "active" : ""}">${h(text.all)}</button><button data-area="support" class="${area === "support" ? "active" : ""}">${h(text.support)}</button><button data-area="funding" class="${area === "funding" ? "active" : ""}">${h(text.funding)}</button></div><label class="pg-search">${icon(Search)}<input id="pg-query" type="search" aria-label="${h(text.search)}" placeholder="${h(text.search)}" value="${h(query)}" /></label></div>${loading ? `<p class="pg-state">${h(text.loading)}</p>` : error ? `<p class="pg-state" role="alert">${h(error)} <button data-action="retry">${h(text.retry)}</button></p>` : `<div class="pg-split"><div class="pg-list"><span class="pg-count">${visible.length} ${h(visible.length === 1 ? text.sourceSingular : text.sources)}</span>${visible.map((item) => `<button class="pg-row ${active?.id === item.id ? "selected" : ""}" data-record="${h(item.id)}"><span>${h(item.type.endsWith("_finder") ? text.directory : item.area === "support" ? text.support : text.funding)} · ${h(item.jurisdiction.name)}</span><strong>${h(item.title)}</strong><small>${h(item.publisher)}</small>${icon(ArrowRight)}</button>`).join("") || `<p class="pg-state">${h(text.empty)}</p>`}</div><article class="pg-detail">${active ? `<span class="pg-kicker">${h(active.type.endsWith("_finder") ? text.directory : text.source)}</span><h2>${h(active.title)}</h2><p>${h(active.summary)}</p><dl><div><dt>${h(text.publisher)}</dt><dd>${h(active.publisher)}</dd></div><div><dt>${h(text.current)}</dt><dd>${h(active.freshness === "current" ? text.current : text.stale)}</dd></div></dl><p class="pg-note">${h(text.notice)}</p><div class="pg-actions"><button class="pg-button primary" data-action="prepare" data-id="${h(active.id)}">${h(text.prepare)}${icon(ArrowRight)}</button><a class="pg-button" target="_blank" rel="noopener noreferrer" href="${h(active.handoff?.url ?? active.sourceUrl)}">${h(text.official)}${icon(ArrowUpRight)}</a></div>` : `<p class="pg-state">${h(text.empty)}</p>`}</article></div>`}`;
     root.append(panel);
   }
 
   root.addEventListener("click", (event) => {
     const target = (event.target as HTMLElement).closest<HTMLElement>(
-      "[data-tab],[data-area],[data-record],[data-action]",
+      "[data-area],[data-record],[data-action]",
     );
     if (!target) return;
-    if (target.dataset.tab === "inApp" || target.dataset.tab === "official") {
-      tab = target.dataset.tab;
-      if (tab === "official" && !records.length) void load();
-      else render();
-    }
     if (
+      target.dataset.area === "all" ||
       target.dataset.area === "support" ||
       target.dataset.area === "funding"
     ) {
       area = target.dataset.area;
-      query = "";
-      void load();
+      render();
     }
     if (target.dataset.record) {
       selected = target.dataset.record;
@@ -171,6 +191,6 @@ export function createPublicProgramsPage(options: Options): HTMLElement {
     if (position !== null) input?.setSelectionRange(position, position);
   });
 
-  render();
+  void load();
   return root;
 }
