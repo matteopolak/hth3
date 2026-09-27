@@ -1,0 +1,12 @@
+{
+  "file": "captures/current-signin-envoy-surf-2026-09-27.png",
+  "sha256": "b7876866fa2335bbf1ec2baf4d6c988dfe4957e85963242e119f4588b112f31c",
+  "origin": "https://envoy.surf/",
+  "route": "/signin",
+  "recordedAt": "2026-09-27T05:13:00.341Z",
+  "viewport": {
+    "width": 1600,
+    "height": 812
+  },
+  "observed": "Isolated signed-out browser shows the dedicated resident and staff sign-in choices. No button was activated, no Auth0 token was acquired, and no staff action was accepted."
+}

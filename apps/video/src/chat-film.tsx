@@ -10,8 +10,10 @@ import {
 } from "remotion";
 import evidence from "./evidence-snippets.generated.json";
 import narration from "./chat-narration.generated.json";
+import { TurningMonitor } from "./monitor-turn";
 import { Monitor } from "./recut";
 import { highlightCode } from "./syntax";
+import { TechnicalMotion } from "./technical-motion";
 
 const fps = 30;
 const beats = [
@@ -94,9 +96,43 @@ const beats = [
   },
 ] as const;
 
-type Beat = (typeof beats)[number];
+type Beat = {
+  id: (typeof beats)[number]["id"];
+  seconds: number;
+  color: string;
+  line: string;
+  marker: string;
+};
 export const chatFilmFps = fps;
 export const chatFilmDurationFrames = beats.reduce(
+  (total, beat) => total + beat.seconds * fps,
+  0,
+);
+
+const motionSeconds: Record<Beat["id"], number> = {
+  opening: 8,
+  jobs: 10,
+  training: 10,
+  nearby: 9,
+  concern: 9,
+  submit: 8,
+  voice: 8,
+  tiger: 8,
+  presage: 8,
+  auth: 11,
+  close: 5,
+};
+const motionMarkers: Partial<Record<Beat["id"], string>> = {
+  voice: "Voice follow-up",
+  presage: "SwiftUI consent flow",
+  auth: "Organization-scoped access",
+};
+const motionBeats: Beat[] = beats.map((beat) => ({
+  ...beat,
+  seconds: motionSeconds[beat.id],
+  marker: motionMarkers[beat.id] ?? beat.marker,
+}));
+export const chatFilmMotionDurationFrames = motionBeats.reduce(
   (total, beat) => total + beat.seconds * fps,
   0,
 );
@@ -237,7 +273,13 @@ function SourceCode({
   );
 }
 
-function IntroModel({ frame }: { frame: number }) {
+function IntroModel({
+  frame,
+  motion = false,
+}: {
+  frame: number;
+  motion?: boolean;
+}) {
   return (
     <AbsoluteFill
       style={{
@@ -261,50 +303,74 @@ function IntroModel({ frame }: { frame: number }) {
         <br />a question.
       </div>
       <div style={{ position: "absolute", top: 160, left: 650 }}>
-        <Monitor frame={frame}>
-          <Img
-            src={staticFile("captures/current-home-envoy-surf-2026-09-26.png")}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        </Monitor>
+        {motion ? (
+          <TurningMonitor frame={frame} travelFrames={43} endIndex={20}>
+            <Img
+              src={staticFile(
+                "captures/current-home-envoy-surf-2026-09-26.png",
+              )}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </TurningMonitor>
+        ) : (
+          <Monitor frame={frame}>
+            <Img
+              src={staticFile(
+                "captures/current-home-envoy-surf-2026-09-26.png",
+              )}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </Monitor>
+        )}
       </div>
     </AbsoluteFill>
   );
 }
 
-function Product({ beat, frame }: { beat: Beat; frame: number }) {
+function Product({
+  beat,
+  frame,
+  motion = false,
+}: {
+  beat: Beat;
+  frame: number;
+  motion?: boolean;
+}) {
   if (beat.id === "opening")
     return frame < 45 ? (
-      <IntroModel frame={frame} />
+      <IntroModel frame={frame} motion={motion} />
     ) : (
       <Video
         path="captures/current-chat-jobs-envoy-surf-2026-09-27.mp4"
         speed={1.15}
       />
     );
-  if (beat.id === "jobs")
-    return frame < 3 * fps ? (
+  if (beat.id === "jobs") {
+    const handoffFrame = (motion ? 2 : 3) * fps;
+    return frame < handoffFrame ? (
       <Video
         path="captures/current-chat-jobs-envoy-surf-2026-09-27.mp4"
         start={12}
       />
     ) : (
-      <Sequence from={3 * fps}>
+      <Sequence from={handoffFrame}>
         <Video
           path="captures/current-job-flow-envoy-surf-2026-09-26.mp4"
           speed={2}
         />
       </Sequence>
     );
-  if (beat.id === "training")
-    return frame < 6 * fps ? (
+  }
+  if (beat.id === "training") {
+    const fundingFrame = (motion ? 5 : 6) * fps;
+    return frame < fundingFrame ? (
       <Video
         path="captures/current-chat-support-envoy-surf-2026-09-27.mp4"
         start={8}
         speed={1.5}
       />
     ) : (
-      <Sequence from={6 * fps}>
+      <Sequence from={fundingFrame}>
         <Video
           path="captures/current-chat-funding-bc-envoy-surf-2026-09-27.mp4"
           start={10}
@@ -312,28 +378,33 @@ function Product({ beat, frame }: { beat: Beat; frame: number }) {
         />
       </Sequence>
     );
-  if (beat.id === "nearby")
-    return frame < 4 * fps ? (
+  }
+  if (beat.id === "nearby") {
+    const listFrame = (motion ? 3 : 4) * fps;
+    const mapFrame = (motion ? 4.5 : 6) * fps;
+    return frame < listFrame ? (
       <Video
         path="captures/current-chat-nearby-envoy-surf-2026-09-27.mp4"
         start={8}
         speed={1.5}
       />
-    ) : frame < 6 * fps ? (
+    ) : frame < mapFrame ? (
       <Still
         path="captures/current-nearby-ottawa-list-envoy-surf-2026-09-27.png"
-        frame={frame - 4 * fps}
-        drift={0.00012}
+        frame={frame - listFrame}
+        drift={0.00025}
       />
     ) : (
       <Still
         path="captures/current-nearby-envoy-surf-2026-09-26.png"
-        frame={frame - 6 * fps}
-        drift={0.00025}
+        frame={frame - mapFrame}
+        drift={motion ? 0.00055 : 0.00025}
       />
     );
-  if (beat.id === "concern")
-    return frame < 6 * fps ? (
+  }
+  if (beat.id === "concern") {
+    const pendingFrame = (motion ? 5 : 6) * fps;
+    return frame < pendingFrame ? (
       <Video
         path="captures/current-agent-envoy-surf-2026-09-26.mp4"
         start={7}
@@ -342,18 +413,38 @@ function Product({ beat, frame }: { beat: Beat; frame: number }) {
     ) : (
       <Still
         path="captures/current-agent-pending-envoy-surf-2026-09-26.png"
-        frame={frame - 6 * fps}
+        frame={frame - pendingFrame}
         drift={0.0003}
       />
     );
-  if (beat.id === "submit")
-    return (
+  }
+  if (beat.id === "submit") {
+    const submitted = (
       <Video
         path="captures/production-feedback-submit-redacted-2026-09-26.mp4"
         start={2}
         speed={2.4}
       />
     );
+    return motion ? (
+      <>
+        {submitted}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: 300,
+            height: 974,
+            backdropFilter: "grayscale(1)",
+            pointerEvents: "none",
+          }}
+        />
+      </>
+    ) : (
+      submitted
+    );
+  }
   if (beat.id === "voice")
     return (
       <Still
@@ -449,7 +540,7 @@ function Caption({ beat, frame }: { beat: Beat; frame: number }) {
   );
 }
 
-function BeatScene({ beat }: { beat: Beat }) {
+function BeatScene({ beat, motion = false }: { beat: Beat; motion?: boolean }) {
   const frame = useCurrentFrame();
   const voice = narration.find((entry) => entry.sceneId === beat.id)!;
   const codeKind =
@@ -468,11 +559,27 @@ function BeatScene({ beat }: { beat: Beat }) {
         opacity: Math.max(0, fade),
       }}
     >
-      <Product beat={beat} frame={frame} />
-      {codeKind && frame < 85 && (
+      <Product beat={beat} frame={frame} motion={motion} />
+      {motion && codeKind && frame >= 85 && (
+        <div style={{ opacity: Math.min(1, (frame - 85) / 10) }}>
+          <TechnicalMotion kind={codeKind} frame={frame - 85} />
+        </div>
+      )}
+      {codeKind && frame < (motion ? 95 : 85) && (
         <>
-          <AbsoluteFill style={{ background: "#1423339a" }} />
-          <SourceCode kind={codeKind} frame={frame} />
+          <AbsoluteFill
+            style={{
+              background: "#1423339a",
+              opacity: motion && frame >= 85 ? 1 - (frame - 85) / 10 : 1,
+            }}
+          />
+          <div
+            style={{
+              opacity: motion && frame >= 85 ? 1 - (frame - 85) / 10 : 1,
+            }}
+          >
+            <SourceCode kind={codeKind} frame={frame} />
+          </div>
         </>
       )}
       <div
@@ -497,12 +604,12 @@ function BeatScene({ beat }: { beat: Beat }) {
   );
 }
 
-function MusicBed() {
+function MusicBed({ durationFrames }: { durationFrames: number }) {
   const frame = useCurrentFrame();
   const fade = Math.min(
     1,
     frame / (1.5 * fps),
-    (chatFilmDurationFrames - frame) / (2.5 * fps),
+    (durationFrames - frame) / (2.5 * fps),
   );
   return (
     <Audio
@@ -512,12 +619,16 @@ function MusicBed() {
   );
 }
 
-export function EnvoyChatFilm() {
+function Film({ motion }: { motion: boolean }) {
+  const selectedBeats = motion ? motionBeats : beats;
+  const durationFrames = motion
+    ? chatFilmMotionDurationFrames
+    : chatFilmDurationFrames;
   let from = 0;
   return (
     <AbsoluteFill style={{ background: "#fbfbfa" }}>
-      <MusicBed />
-      {beats.map((beat) => {
+      <MusicBed durationFrames={durationFrames} />
+      {selectedBeats.map((beat) => {
         const start = from;
         from += beat.seconds * fps;
         return (
@@ -526,10 +637,18 @@ export function EnvoyChatFilm() {
             from={start}
             durationInFrames={beat.seconds * fps}
           >
-            <BeatScene beat={beat} />
+            <BeatScene beat={beat} motion={motion} />
           </Sequence>
         );
       })}
     </AbsoluteFill>
   );
+}
+
+export function EnvoyChatFilm() {
+  return <Film motion={false} />;
+}
+
+export function EnvoyChatFilmMotion() {
+  return <Film motion />;
 }

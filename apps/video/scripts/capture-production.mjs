@@ -27,6 +27,8 @@ const specs = {
   "job-flow": { seconds: 18, route: "/explore/jobs" },
   "feedback-submit": { seconds: 24, route: "/feedback" },
   "still-home": { seconds: 0, route: "/" },
+  "still-jobs": { seconds: 0, route: "/explore/jobs" },
+  "still-signin": { seconds: 0, route: "/signin" },
   "still-nearby": { seconds: 0, route: "/explore/nearby" },
   "still-nearby-ottawa": { seconds: 0, route: "/explore/nearby" },
   "gallery-assistant": { seconds: 0, route: "/" },
@@ -184,6 +186,7 @@ try {
   const stamp = recordedAt.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
 
   if (isGallery || isStill) {
+    if (mode === "still-jobs") await delay(4000);
     if (mode === "gallery-nearby" || mode === "still-nearby")
       await delay(mode === "still-nearby" ? 6500 : 2600);
     if (mode === "still-nearby-ottawa") {
