@@ -674,6 +674,9 @@ async function streamMessage(
     groundedRead?: boolean;
   };
   const draft = envelope.message;
+  const toolStatus = (envelope.toolResult as { status?: unknown } | undefined)
+    ?.status;
+  const toolFailed = typeof toolStatus === "number" && toolStatus >= 400;
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -692,7 +695,9 @@ async function streamMessage(
       };
       let answer = "";
       try {
-        if (envelope.groundedRead) {
+        if (toolFailed) {
+          answer = draft;
+        } else if (envelope.groundedRead) {
           answer = draft;
           send("text", { delta: draft });
         } else if (context.env.AI && (await reserveAiCall(context))) {

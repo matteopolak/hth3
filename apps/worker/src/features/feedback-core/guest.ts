@@ -192,7 +192,8 @@ async function checkGuestFeedbackDuplicate(
     );
   }
   const limited = await enforceGuestAbuseLimit(request, context, "create", {
-    bucketNamespace: "duplicate-check",
+    bucketNamespace: "duplicate-check-v2",
+    repeatKey: `${body.municipalityId}:${body.category ?? ""}:${normalizeFeedbackDuplicateText(message) ?? message.normalize("NFKC").toLowerCase().trim()}`,
   });
   if (limited) return limited;
   const destination = await resolveDestination(
