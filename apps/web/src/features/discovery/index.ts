@@ -975,8 +975,9 @@ export function createDiscoveryPage({
         "discovery-detail-publisher",
         `${item.publisher} · ${item.jurisdiction.name}`,
       ),
-      node("p", "discovery-summary", item.summary),
     );
+    if (area !== "nearby" || !item.service)
+      view.append(node("p", "discovery-summary", item.summary));
     if (item.origin === "sample")
       view.append(node("p", "discovery-notice", text.practiceNote));
     if (item.type === "job_posting") view.append(jobFacts(item));
